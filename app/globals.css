@@ -1,0 +1,435 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* fixed navbar is ~4.5rem tall: keep anchor targets from hiding under it */
+    scroll-padding-top: 4.5rem;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  body {
+    background-color: theme("colors.bg");
+    color: theme("colors.ink");
+    /* safety net: decorative layers must never create sideways scrolling */
+    overflow-x: clip;
+  }
+
+  /* no 300ms tap delay / double-tap zoom on interactive elements, and a
+     subtle brand-coloured tap flash instead of the default grey box */
+  a,
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(53, 224, 201, 0.16);
+  }
+
+  ::selection {
+    background-color: theme("colors.marigold");
+    color: theme("colors.bg");
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid theme("colors.circuit");
+    outline-offset: 3px;
+  }
+}
+
+@layer utilities {
+  /* full-screen hero that doesn't jump when mobile browser bars show/hide:
+     svh = the *small* viewport height (100vh fallback for older browsers) */
+  .min-h-hero {
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+
+  /* --- CyberDog: stepped, mechanical motion instead of organic easing --- */
+  @keyframes leg-step {
+    0%,
+    100% {
+      transform: rotate(-9deg);
+    }
+    50% {
+      transform: rotate(9deg);
+    }
+  }
+
+  .leg-step {
+    animation: leg-step 0.34s steps(4, jump-end) infinite;
+  }
+
+  .leg-step-b {
+    animation-delay: 0.17s;
+  }
+
+  @keyframes led-blink {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .led-blink {
+    animation: led-blink 1.4s ease-in-out infinite;
+  }
+
+  @keyframes dog-eye-blink {
+    0%,
+    88%,
+    100% {
+      opacity: 1;
+    }
+    94% {
+      opacity: 0.2;
+    }
+  }
+
+  .dog-eye {
+    animation: dog-eye-blink 4.2s ease-in-out infinite;
+  }
+
+  .dog-eye-alert {
+    animation: dog-eye-blink 1.1s ease-in-out infinite;
+  }
+
+  @keyframes dog-antenna-pulse {
+    0%,
+    100% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .dog-antenna {
+    animation: dog-antenna-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes chip-fade-in {
+    from {
+      opacity: 0;
+      height: 0;
+    }
+    to {
+      opacity: 1;
+      height: var(--chip-height, auto);
+    }
+  }
+
+  /* --- Hero background: synthwave grid floor + skyline flicker + circuit pulses --- */
+  @keyframes grid-drift {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 0 56px;
+    }
+  }
+
+  .hero-grid-floor {
+    animation: grid-drift 6s linear infinite;
+  }
+
+  @keyframes window-flicker {
+    0%,
+    100% {
+      opacity: 0.85;
+    }
+    45% {
+      opacity: 0.85;
+    }
+    48% {
+      opacity: 0.2;
+    }
+    52% {
+      opacity: 0.85;
+    }
+    76% {
+      opacity: 0.85;
+    }
+    78% {
+      opacity: 0.3;
+    }
+    82% {
+      opacity: 0.85;
+    }
+  }
+
+  .window-flicker {
+    animation: window-flicker 5.5s ease-in-out infinite;
+  }
+
+  @keyframes horizon-pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scaleX(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scaleX(1.03);
+    }
+  }
+
+  .horizon-pulse {
+    animation: horizon-pulse 6s ease-in-out infinite;
+  }
+
+  @keyframes trace-pulse {
+    0% {
+      stroke-dashoffset: 240;
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 0;
+    }
+  }
+
+  .trace-pulse {
+    stroke-dasharray: 12 228;
+    animation: trace-pulse linear infinite;
+  }
+
+  /* --- Section backdrops (Tracks / Events / Schedule / Footer) --- */
+  @keyframes beam-sway {
+    from {
+      transform: rotate(-7deg);
+    }
+    to {
+      transform: rotate(7deg);
+    }
+  }
+
+  .beam-sway {
+    transform-origin: 50% 0;
+    animation: beam-sway 9s ease-in-out infinite alternate;
+  }
+
+  @keyframes radar-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .radar-spin {
+    animation: radar-spin 12s linear infinite;
+  }
+
+  @keyframes rail-flow {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(1400%);
+      opacity: 0;
+    }
+  }
+
+  .rail-flow {
+    animation: rail-flow 5s linear infinite;
+  }
+
+  @keyframes node-pulse {
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.6);
+    }
+  }
+
+  .node-pulse {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: node-pulse 3s ease-in-out infinite;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Cosmos backdrop + binary overlay (merged in from the first project) */
+/* ------------------------------------------------------------------ */
+
+@keyframes cosmos-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.cosmos-fade-in {
+  animation: cosmos-fade-in 1.4s ease-out both;
+}
+
+/* Data streams (the binary rain, reworked: sparse, slow, head-lit).
+   One transform animation per stream; see components/effects/DataStreams.tsx. */
+.data-streams {
+  pointer-events: none;
+  overflow: hidden;
+}
+.data-streams-edge {
+  position: fixed;
+  inset: 0;
+  z-index: 5; /* above the fixed 3D sky (z-0), below page content (z-10) */
+  opacity: var(--stream-fade, 1);
+}
+.data-streams-section {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+}
+
+.data-stream {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-family: ui-monospace, "Courier New", monospace;
+  line-height: 1;
+  color: #35e0c9;
+  animation: stream-fall linear infinite;
+  will-change: transform;
+}
+.data-stream-head {
+  color: #dffff9;
+  text-shadow: 0 0 6px rgba(53, 224, 201, 0.9), 0 0 14px rgba(53, 224, 201, 0.5);
+}
+
+@keyframes stream-fall {
+  from {
+    transform: translateY(-110%);
+  }
+  to {
+    transform: translateY(115vh);
+  }
+}
+
+/* phones: a third of the lanes is plenty on a 390px screen */
+@media (max-width: 767px) {
+  .data-streams-edge {
+    opacity: calc(var(--stream-fade, 1) * 0.7);
+  }
+  .data-stream:not(:nth-child(3n + 1)) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-streams {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* HUD: section-change scan sweep                                      */
+/* ------------------------------------------------------------------ */
+.hud-sweep {
+  visibility: hidden;
+}
+.hud-sweep.hud-sweep-run {
+  visibility: visible;
+}
+.hud-sweep-line {
+  box-shadow: 0 0 18px 2px rgba(53, 224, 201, 0.7);
+  opacity: 0;
+}
+.hud-sweep-wash {
+  opacity: 0;
+}
+.hud-sweep-run .hud-sweep-line {
+  animation: hud-sweep-move 0.75s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.hud-sweep-run .hud-sweep-wash {
+  animation: hud-sweep-wash 0.75s ease-out both;
+}
+@keyframes hud-sweep-move {
+  0% {
+    transform: translateY(calc(var(--sweep-dir, 1) * -1 * 0px));
+    top: 0;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+@keyframes hud-sweep-wash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.hud-sweep[style*="--sweep-dir: -1"] .hud-sweep-line {
+  animation-name: hud-sweep-move-up;
+}
+@keyframes hud-sweep-move-up {
+  0% {
+    top: 100%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 0;
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud-sweep {
+    display: none;
+  }
+}
