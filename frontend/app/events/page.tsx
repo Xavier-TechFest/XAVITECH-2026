@@ -5,9 +5,9 @@ import CosmosBackdrop from "@/components/experience/CosmosBackdrop";
 import DataStreams from "@/components/effects/DataStreams";
 
 export const metadata = {
-  title: "Events Directory — YANTRA '26 | Xavier University Patna",
+  title: "Events Directory — XAVITECH '26 | Xavier University Patna",
   description:
-    "Explore 15 futuristic technology arenas, hackathons, coding duels, esports, and MUNs at Yantra 2026.",
+    "Explore 15 futuristic technology arenas, hackathons, coding duels, esports, and MUNs at XAVITECH 2026.",
 };
 
 export default function EventsPage() {
