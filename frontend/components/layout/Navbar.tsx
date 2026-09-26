@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "../../context/AuthContext";
 
 const links = [
   { label: "Home", href: "/" },
@@ -13,6 +14,7 @@ const links = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const { user, isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
     if (!open) return;
@@ -40,7 +42,7 @@ export default function Navbar() {
           href="/"
           className="font-display text-lg font-bold tracking-tight text-ink sm:text-xl transition-colors hover:text-circuit"
         >
-          Xavier University, Patna
+          XAVITECH <span className="text-marigold">2026</span>
         </Link>
 
         <ul className="hidden items-center gap-8 md:flex">
@@ -57,7 +59,41 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* 44x44px touch target */}
+        {/* User Auth CTA in Desktop View */}
+        <div className="hidden md:flex items-center gap-4">
+          {loading ? (
+            <div className="h-8 w-20 rounded-full bg-surface border border-line/50 animate-pulse" />
+          ) : isAuthenticated && user ? (
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 pl-3 py-1 pr-1.5 rounded-full bg-surface border border-line text-xs font-mono text-ink hover:border-circuit transition-colors group"
+            >
+              <span className="max-w-[100px] truncate text-muted group-hover:text-ink">
+                {user.name?.split(" ")[0] || "Profile"}
+              </span>
+              <div className="w-6 h-6 rounded-full bg-surface-raised border border-line flex items-center justify-center text-[10px] font-bold text-circuit overflow-hidden">
+                {user.profileImage ? (
+                  <img
+                    src={user.profileImage}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  (user.name || user.email || "U").charAt(0).toUpperCase()
+                )}
+              </div>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="text-xs font-mono font-medium px-4 py-1.5 rounded-full border border-line bg-surface text-ink hover:border-circuit hover:text-circuit transition-colors"
+            >
+              Sign In
+            </Link>
+          )}
+        </div>
+
+        {/* 44x44px mobile touch target */}
         <button
           type="button"
           aria-label={open ? "Close menu" : "Open menu"}
@@ -79,6 +115,7 @@ export default function Navbar() {
         </button>
       </nav>
 
+      {/* Mobile Drawer */}
       {open && (
         <div
           id="mobile-menu"
@@ -96,6 +133,25 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
+            <li className="pt-3 pb-2">
+              {isAuthenticated ? (
+                <Link
+                  href="/profile"
+                  onClick={() => setOpen(false)}
+                  className="flex h-11 w-full items-center justify-center rounded-xl bg-circuit text-bg font-body font-semibold text-sm"
+                >
+                  My Profile
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="flex h-11 w-full items-center justify-center rounded-xl bg-ink text-bg font-body font-semibold text-sm"
+                >
+                  Sign In with Google
+                </Link>
+              )}
+            </li>
           </ul>
         </div>
       )}

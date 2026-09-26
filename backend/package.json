@@ -1,0 +1,32 @@
+{
+  "name": "xavitech-2026-backend",
+  "version": "1.0.0",
+  "description": "Backend API service for XAVITECH-2026 Tech Fest",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "node src/database/migrate.js"
+  },
+  "keywords": [
+    "xavitech",
+    "techfest",
+    "express",
+    "supabase",
+    "postgresql"
+  ],
+  "author": "XAVITECH-2026 Team",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^14.5.0",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

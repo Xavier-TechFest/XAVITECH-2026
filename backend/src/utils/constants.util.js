@@ -1,0 +1,35 @@
+/**
+ * Global Constants for XAVITECH-2026 Backend
+ */
+
+export const REGISTRATION_STATUS = Object.freeze({
+  DRAFT: 'DRAFT',
+  PAYMENT_PENDING: 'PAYMENT_PENDING',
+  PAYMENT_SUCCESS: 'PAYMENT_SUCCESS',
+  CONFIRMED: 'CONFIRMED',
+  PAYMENT_FAILED: 'PAYMENT_FAILED',
+  CANCELLED: 'CANCELLED',
+});
+
+export const USER_ROLES = Object.freeze({
+  USER: 'USER',
+  ADMIN: 'ADMIN',
+  VOLUNTEER: 'VOLUNTEER',
+});
+
+export const EVENT_TYPE = Object.freeze({
+  INDIVIDUAL: 'INDIVIDUAL',
+  TEAM: 'TEAM',
+});
+
+export const CHECKIN_STATUS = Object.freeze({
+  PENDING: 'PENDING',
+  CHECKED_IN: 'CHECKED_IN',
+});
+
+export default {
+  REGISTRATION_STATUS,
+  USER_ROLES,
+  EVENT_TYPE,
+  CHECKIN_STATUS,
+};

@@ -18,3 +18,8 @@ backend/.env*.local
 # System files
 .DS_Store
 Thumbs.db
+
+# Secrets & Service Accounts
+*firebase-adminsdk*.json
+service-account*.json
+*.pem
