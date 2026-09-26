@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Unbounded, Manrope } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "../context/AuthContext";
 
 const unbounded = Unbounded({
   subsets: ["latin"],
@@ -25,8 +26,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // let the page draw under notches / rounded corners; components add
-  // env(safe-area-inset-*) padding where content would otherwise be clipped
   viewportFit: "cover",
   themeColor: "#07080B",
 };
@@ -38,7 +37,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${unbounded.variable} ${manrope.variable}`}>
-      <body className="font-body antialiased">{children}</body>
+      <body className="font-body antialiased">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
