@@ -1,16 +1,19 @@
 import { sendSuccess } from '../utils/response.util.js';
 
 /**
- * Auth Controller Placeholder
- * Handles Google Login via Firebase ID token exchange.
+ * Get current authenticated user session
+ * Requires: Firebase authenticate middleware
+ * Source: req.user (populated from verified Firebase ID token)
  */
-
-export const handleGoogleLogin = async (req, res, next) => {
+export const getMe = async (req, res, next) => {
   try {
-    return sendSuccess(res, 'Google login placeholder endpoint', {
+    return res.status(200).json({
+      success: true,
       user: {
-        id: 'placeholder-user-id',
-        email: 'user@example.com',
+        uid: req.user.uid,
+        email: req.user.email,
+        name: req.user.name,
+        picture: req.user.picture,
       },
     });
   } catch (error) {
@@ -18,17 +21,6 @@ export const handleGoogleLogin = async (req, res, next) => {
   }
 };
 
-export const getMe = async (req, res, next) => {
-  try {
-    return sendSuccess(res, 'Current user session placeholder endpoint', {
-      user: req.user || null,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export default {
-  handleGoogleLogin,
   getMe,
 };

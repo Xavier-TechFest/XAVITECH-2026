@@ -2,6 +2,7 @@ import app from './app.js';
 import config from './config/env.config.js';
 import logger from './utils/logger.util.js';
 import { testDbConnection } from './config/database.js';
+import { initializeFirebase } from './config/firebase.js';
 
 const PORT = config.port || 5000;
 
@@ -14,12 +15,20 @@ const server = app.listen(PORT, async () => {
   logger.info(`🌐 Allowed CORS: ${config.corsOrigins.join(', ')}`);
   logger.info(`====================================================`);
 
-  // Verify database connectivity in background
+  // Verify database connectivity
   const dbStatus = await testDbConnection();
   if (dbStatus.connected) {
     logger.info(`✅ ${dbStatus.message}`);
   } else {
     logger.warn(`⚠️  Database connection notice: ${dbStatus.message}`);
+  }
+
+  // Verify Firebase Admin initialization
+  const firebaseStatus = initializeFirebase();
+  if (firebaseStatus.initialized) {
+    logger.info(`✅ ${firebaseStatus.message}`);
+  } else {
+    logger.warn(`⚠️  Firebase Admin notice: ${firebaseStatus.message}`);
   }
 });
 

@@ -1,15 +1,14 @@
 import { Router } from 'express';
-import { handleGoogleLogin, getMe } from '../controllers/auth.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
-import { validate } from '../middleware/validate.middleware.js';
-import { validateLogin } from '../validators/auth.validator.js';
+import { getMe } from '../controllers/auth.controller.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
-// POST /api/auth/google -> Authenticate with Google / Firebase token
-router.post('/google', validate(validateLogin), handleGoogleLogin);
-
-// GET /api/auth/me -> Current authenticated user info
+/**
+ * Authenticated user profile verification endpoint
+ * GET /api/auth/me
+ * Headers required: Authorization: Bearer <Firebase ID Token>
+ */
 router.get('/me', authenticate, getMe);
 
 export default router;

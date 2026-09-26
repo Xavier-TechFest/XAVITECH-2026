@@ -8,6 +8,15 @@ const parseCorsOrigins = (rawOrigins) => {
   return rawOrigins.split(',').map((origin) => origin.trim()).filter(Boolean);
 };
 
+const formatPrivateKey = (key) => {
+  if (!key) return '';
+  let formatted = key.replace(/\\n/g, '\n');
+  if (formatted.startsWith('"') && formatted.endsWith('"')) {
+    formatted = formatted.slice(1, -1);
+  }
+  return formatted.trim();
+};
+
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT, 10) || 5000,
@@ -22,21 +31,21 @@ export const config = {
     databaseUrl: process.env.DATABASE_URL || '',
   },
 
-  // Future phase placeholders (Phase 2: Auth, Phase 3: Payment, Phase 4: Email)
+  // Firebase Admin (Phase 2 - Google Login Verification)
   firebase: {
     projectId: process.env.FIREBASE_PROJECT_ID || '',
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
-    privateKey: process.env.FIREBASE_PRIVATE_KEY
-      ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-      : '',
+    privateKey: formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
   },
 
+  // Brevo (Transactional Email Service - Phase 4)
   brevo: {
     apiKey: process.env.BREVO_API_KEY || '',
     senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@xavitech2026.com',
     senderName: process.env.BREVO_SENDER_NAME || 'XAVITECH 2026',
   },
 
+  // Payment Gateway (Phase 3)
   payment: {
     keyId: process.env.PAYMENT_GATEWAY_KEY_ID || '',
     keySecret: process.env.PAYMENT_GATEWAY_KEY_SECRET || '',
