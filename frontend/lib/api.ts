@@ -91,9 +91,98 @@ export async function updateUserProfile(
   return json.data;
 }
 
+export interface AdminProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  sessionId?: string | null;
+}
+
+/**
+ * Authenticate admin using email, password, and server-side secret key.
+ * Uses credentials: 'include' for HttpOnly cookie persistence.
+ */
+export async function adminLogin(payload: {
+  email: string;
+  password: string;
+  secretKey: string;
+}): Promise<{ admin: AdminProfile; token: string }> {
+  const response = await fetch(`${API_BASE_URL}/admin/auth/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  const json = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Invalid admin credentials.",
+      response.status,
+      json
+    );
+  }
+
+  return json.data;
+}
+
+/**
+ * Fetch authenticated admin profile from current session.
+ */
+export async function adminGetMe(): Promise<AdminProfile> {
+  const response = await fetch(`${API_BASE_URL}/admin/auth/me`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to fetch admin profile.",
+      response.status,
+      json
+    );
+  }
+
+  return json.data;
+}
+
+/**
+ * Log out current admin session.
+ */
+export async function adminLogout(): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/admin/auth/logout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const json = await response.json().catch(() => ({}));
+    throw new ApiError(
+      json.message || "Failed to logout admin session.",
+      response.status,
+      json
+    );
+  }
+}
+
 export const api = {
   fetchUserProfile,
   updateUserProfile,
+  adminLogin,
+  adminGetMe,
+  adminLogout,
 };
 
 export default api;

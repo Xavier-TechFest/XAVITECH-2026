@@ -57,6 +57,11 @@ export const config = {
     keySecret: process.env.PAYMENT_GATEWAY_KEY_SECRET || '',
     webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET || '',
   },
+
+  // Admin Authentication (Phase 6)
+  admin: {
+    secretKey: process.env.ADMIN_SECRET_KEY || '',
+  },
 };
 
 export default config;

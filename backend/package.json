@@ -8,9 +8,12 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "migrate": "node src/database/migrate.js",
+    "create-admin": "node src/scripts/createAdmin.js",
+    "update-admin": "node src/scripts/updateAdmin.js",
     "test": "node tests/test_phase4.js",
     "test:phase5": "node tests/test_phase5.js",
-    "test:all": "node tests/test_phase4.js && node tests/test_phase5.js"
+    "test:phase6": "node tests/test_phase6.js",
+    "test:all": "node tests/test_phase4.js && node tests/test_phase5.js && node tests/test_phase6.js"
   },
   "keywords": [
     "xavitech",
@@ -23,6 +26,8 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

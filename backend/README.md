@@ -138,6 +138,53 @@ Once started, the server listens on `http://localhost:5000` (or configured `PORT
 | `GET` | `/api/health` | Public | Service health verification |
 | `GET` | `/api/auth/me` | Bearer Token Required | Authenticates caller, synchronizes with PostgreSQL, and returns user profile |
 | `PATCH` | `/api/auth/profile` | Bearer Token Required | Updates safe profile fields (`name`, `phone`, `college_name`, `profile_image`) |
+| `POST` | `/api/admin/auth/login` | Public (Rate Limited) | Authenticate single admin with Email, Password & Secret Key; returns token & HttpOnly cookie |
+| `GET` | `/api/admin/auth/me` | Admin Session Required | Returns active admin profile and session metadata |
+| `POST` | `/api/admin/auth/logout` | Admin Session Required | Revokes the current session only; other simultaneous admin devices remain active |
+| `GET` | `/api/admin/stats` | Admin Session Required | High-level fest dashboard statistics |
+| `GET` | `/api/admin/registrations` | Admin Session Required | Full list of all fest registrations |
+| `POST` | `/api/admin/check-in` | Admin Session Required | Day-of-event QR code check-in verification |
+
+---
+
+## 🔑 Phase 6 — Admin Authentication & Multi-Session Architecture
+
+### Key Security & Architecture Decisions
+1. **Strictly ONE Admin Account**: Enforced at the database level using a partial unique index (`idx_users_single_admin` on `users(role) WHERE role = 'ADMIN'`).
+2. **Concurrent Multi-Device Sessions**: The single admin account can be logged in simultaneously across multiple devices (e.g. Ritesh's laptop, Coordinator's laptop, Admin desk). Each login generates an independent cryptographic token hashed with SHA-256 and stored in `admin_sessions`.
+3. **Independent Session Logout**: When one device logs out via `POST /api/admin/auth/logout`, only that device's session token is revoked. Other active admin sessions continue uninterrupted.
+4. **Three-Factor Credential Check**:
+   - Registered Admin Email
+   - Strong Password (hashed via `bcryptjs`, 12 salt rounds)
+   - Server-side `ADMIN_SECRET_KEY` (verified with `crypto.timingSafeEqual`)
+5. **Brute Force Protection**: In-memory rate limiting restricts failed login attempts per IP address.
+6. **Dual-Transport Auth**: Supports secure `HttpOnly` cookie (`xavitech_admin_session`) and `Authorization: Bearer <token>` fallback.
+
+### Admin CLI Management Commands
+Admin accounts cannot be registered publicly. Use the backend CLI commands:
+
+```bash
+# Create the initial admin account (fails if an admin already exists)
+npm run create-admin
+
+# Update admin credentials or coordinator details (without creating a second admin)
+npm run update-admin
+```
+
+### Running Automated Test Suites
+```bash
+# Run Phase 4 tests (Events & Individual Registrations)
+npm run test
+
+# Run Phase 5 tests (Teams & Team Management)
+npm run test:phase5
+
+# Run Phase 6 tests (Admin Auth & Multi-Session)
+npm run test:phase6
+
+# Run ALL automated tests (82 tests passing)
+npm run test:all
+```
 
 ### Example Responses
 
