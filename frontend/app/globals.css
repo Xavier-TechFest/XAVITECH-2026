@@ -433,3 +433,120 @@
     display: none;
   }
 }
+
+/* ========================================================
+   XAVITECH ADMIN PANEL — LIGHT THEME SPECIFICATION
+   ======================================================== */
+.admin-theme-light {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.admin-theme-light header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+}
+
+.admin-theme-light aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+.admin-theme-light [class*="bg-[#080b11]"] {
+  background-color: #f8fafc !important;
+}
+
+.admin-theme-light [class*="bg-[#0a0e17]"] {
+  background-color: #ffffff !important;
+}
+
+.admin-theme-light [class*="bg-[#0e131f]"] {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+.admin-theme-light [class*="bg-[#131929]"] {
+  background-color: #f1f5f9 !important;
+}
+
+.admin-theme-light [class*="border-neutral-800"],
+.admin-theme-light [class*="border-neutral-700"] {
+  border-color: #e2e8f0 !important;
+}
+
+.admin-theme-light [class*="text-white"] {
+  color: #0f172a !important;
+}
+
+.admin-theme-light [class*="text-neutral-200"],
+.admin-theme-light [class*="text-neutral-300"] {
+  color: #334155 !important;
+}
+
+.admin-theme-light [class*="text-neutral-400"] {
+  color: #64748b !important;
+}
+
+.admin-theme-light [class*="text-neutral-500"] {
+  color: #94a3b8 !important;
+}
+
+.admin-theme-light input,
+.admin-theme-light select {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.admin-theme-light input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.admin-theme-light [class*="bg-neutral-900"] {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.admin-theme-light [class*="bg-neutral-800"] {
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+.admin-theme-light [class*="bg-neutral-800"]:hover {
+  background-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.admin-theme-light tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+.admin-theme-light thead tr {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.admin-theme-light [class*="text-[#35e0c9]"] {
+  color: #0d9488 !important; /* accessible vibrant teal-600 */
+}
+
+.admin-theme-light [class*="bg-[#35e0c9]/10"],
+.admin-theme-light [class*="bg-[#35e0c9]/15"] {
+  background-color: #ccfbf1 !important; /* teal-100 */
+  border-color: #99f6e4 !important;
+  color: #0f766e !important;
+}
+
+.admin-theme-light [class*="border-[#35e0c9]"] {
+  border-color: #14b8a6 !important;
+}
+
+.admin-theme-light nav a:not([class*="bg-[#35e0c9]"]) {
+  color: #64748b !important;
+}
+
+.admin-theme-light nav a:not([class*="bg-[#35e0c9]"]):hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+

@@ -1,22 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  adminGetMe,
-  adminGetTeams,
-  adminGetEvents,
-  AdminProfile,
-  AdminTeamListItem,
-  PaginationMeta,
-} from "@/lib/api";
-import AdminHeader from "@/components/admin/AdminHeader";
+import { useAdmin } from "@/context/AdminContext";
+import { AdminTeamListItem, PaginationMeta } from "@/lib/api";
 
 export default function AdminTeamsPage() {
-  const router = useRouter();
-  const [admin, setAdmin] = useState<AdminProfile | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const { getTeams, getEvents } = useAdmin();
 
   // Search & Filter states
   const [search, setSearch] = useState("");
@@ -38,41 +28,23 @@ export default function AdminTeamsPage() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Verify Admin Session
+  // Load Events dropdown (cached)
   useEffect(() => {
     let isMounted = true;
-    async function checkAuth() {
-      try {
-        const profile = await adminGetMe();
-        if (isMounted) {
-          setAdmin(profile);
-          setIsLoadingAuth(false);
-        }
-      } catch (err) {
-        router.replace("/xavitech-superadmin");
-      }
-    }
-    checkAuth();
+    getEvents().then((evs) => {
+      if (isMounted) setEvents(evs);
+    });
     return () => {
       isMounted = false;
     };
-  }, [router]);
+  }, [getEvents]);
 
-  // Load Events dropdown
-  useEffect(() => {
-    async function loadEvents() {
-      const evs = await adminGetEvents();
-      setEvents(evs);
-    }
-    loadEvents();
-  }, []);
-
-  // Fetch Teams
+  // Fetch / Retrieve Teams from cache
   const fetchTeams = useCallback(async () => {
     setIsLoadingData(true);
     setErrorMsg(null);
     try {
-      const data = await adminGetTeams({
+      const data = await getTeams({
         page,
         limit,
         search: appliedSearch,
@@ -87,13 +59,11 @@ export default function AdminTeamsPage() {
     } finally {
       setIsLoadingData(false);
     }
-  }, [page, limit, appliedSearch, selectedEventId, selectedStatus]);
+  }, [getTeams, page, limit, appliedSearch, selectedEventId, selectedStatus]);
 
   useEffect(() => {
-    if (!isLoadingAuth) {
-      fetchTeams();
-    }
-  }, [isLoadingAuth, fetchTeams]);
+    fetchTeams();
+  }, [fetchTeams]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,25 +79,8 @@ export default function AdminTeamsPage() {
     setPage(1);
   };
 
-  if (isLoadingAuth) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-[#080b11] text-white">
-        <div className="flex items-center gap-3 text-sm text-neutral-400 font-mono">
-          <svg className="animate-spin h-5 w-5 text-[#35e0c9]" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <span>Verifying administrator privileges...</span>
-        </div>
-      </main>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#080b11] text-white flex flex-col">
-      <AdminHeader admin={admin} />
-
-      <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
+    <div className="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -368,7 +321,6 @@ export default function AdminTeamsPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
   );
 }

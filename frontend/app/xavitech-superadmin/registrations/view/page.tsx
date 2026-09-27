@@ -3,20 +3,15 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  adminGetMe,
-  adminGetRegistrationDetails,
-  AdminProfile,
-  AdminRegistrationDetail,
-} from "@/lib/api";
-import AdminHeader from "@/components/admin/AdminHeader";
+import { useAdmin } from "@/context/AdminContext";
+import { AdminRegistrationDetail } from "@/lib/api";
 
 function RegistrationDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const registrationId = searchParams.get("registrationId");
+  const { getRegistrationDetails } = useAdmin();
 
-  const [admin, setAdmin] = useState<AdminProfile | null>(null);
   const [registration, setRegistration] = useState<AdminRegistrationDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -32,13 +27,8 @@ function RegistrationDetailContent() {
       }
 
       try {
-        const [profile, regData] = await Promise.all([
-          adminGetMe(),
-          adminGetRegistrationDetails(registrationId),
-        ]);
-
+        const regData = await getRegistrationDetails(registrationId);
         if (isMounted) {
-          setAdmin(profile);
           setRegistration(regData);
           setIsLoading(false);
         }
@@ -57,52 +47,46 @@ function RegistrationDetailContent() {
     return () => {
       isMounted = false;
     };
-  }, [registrationId, router]);
+  }, [registrationId, getRegistrationDetails, router]);
 
   if (isLoading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#080b11] text-white">
-        <div className="flex items-center gap-3 text-sm text-neutral-400 font-mono">
+      <div className="py-24 flex items-center justify-center text-sm text-neutral-400 font-mono">
+        <div className="flex items-center gap-3">
           <svg className="animate-spin h-5 w-5 text-[#35e0c9]" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
           <span>Loading registration details...</span>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (errorMsg || !registration) {
     return (
-      <div className="min-h-screen bg-[#080b11] text-white flex flex-col">
-        <AdminHeader admin={admin} />
-        <main className="flex-1 p-8 max-w-4xl mx-auto flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold font-mono">Registration Not Found</h1>
-          <p className="text-sm text-neutral-400 mt-2 max-w-md">
-            {errorMsg || `The registration with identifier "${registrationId}" does not exist in the database.`}
-          </p>
-          <Link
-            href="/xavitech-superadmin/registrations"
-            className="mt-6 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-xs font-mono"
-          >
-            ← Return to Registrations List
-          </Link>
-        </main>
+      <div className="py-20 max-w-xl mx-auto flex flex-col items-center justify-center text-center">
+        <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4">
+          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold font-mono text-white">Registration Not Found</h1>
+        <p className="text-sm text-neutral-400 mt-2 max-w-md">
+          {errorMsg || `The registration with identifier "${registrationId}" does not exist in the database.`}
+        </p>
+        <Link
+          href="/xavitech-superadmin/registrations"
+          className="mt-6 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-xs font-mono"
+        >
+          ← Return to Registrations List
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#080b11] text-white flex flex-col">
-      <AdminHeader admin={admin} />
-
-      <main className="flex-1 p-4 sm:p-8 max-w-5xl w-full mx-auto">
+    <div className="p-4 sm:p-8 max-w-5xl w-full mx-auto space-y-6">
         {/* Navigation Breadcrumb */}
         <div className="mb-6 flex items-center justify-between">
           <Link
@@ -290,7 +274,6 @@ function RegistrationDetailContent() {
             </div>
           </div>
         )}
-      </main>
     </div>
   );
 }
@@ -299,15 +282,15 @@ export default function AdminRegistrationDetailPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen flex items-center justify-center bg-[#080b11] text-white">
-          <div className="flex items-center gap-3 text-sm text-neutral-400 font-mono">
+        <div className="py-24 flex items-center justify-center text-sm text-neutral-400 font-mono">
+          <div className="flex items-center gap-3">
             <svg className="animate-spin h-5 w-5 text-[#35e0c9]" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
             <span>Loading registration...</span>
           </div>
-        </main>
+        </div>
       }
     >
       <RegistrationDetailContent />
