@@ -30,7 +30,8 @@ export const RegistrationModel = {
       .select(`
         *,
         event:events(id, name, slug, category, registration_type, fee),
-        user:users(id, name, email, phone, college_name)
+        user:users(id, name, email, phone, college_name),
+        team:teams(id, team_name, status, members:team_members(*))
       `)
       .single();
 
@@ -63,7 +64,8 @@ export const RegistrationModel = {
       .select(`
         *,
         event:events(id, name, slug, category, registration_type, fee),
-        user:users(id, name, email, phone, college_name)
+        user:users(id, name, email, phone, college_name),
+        team:teams(id, team_name, status, members:team_members(*))
       `)
       .eq('id', id)
       .maybeSingle();
@@ -92,7 +94,8 @@ export const RegistrationModel = {
       .select(`
         *,
         event:events(id, name, slug, category, registration_type, fee),
-        user:users(id, name, email, phone, college_name)
+        user:users(id, name, email, phone, college_name),
+        team:teams(id, team_name, status, members:team_members(*))
       `)
       .eq('registration_id', registrationId)
       .maybeSingle();
@@ -120,7 +123,8 @@ export const RegistrationModel = {
       .from('registrations')
       .select(`
         *,
-        event:events(id, name, slug, category, registration_type, fee)
+        event:events(id, name, slug, category, registration_type, fee),
+        team:teams(id, team_name, status, members:team_members(*))
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });

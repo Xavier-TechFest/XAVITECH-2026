@@ -8,7 +8,9 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "migrate": "node src/database/migrate.js",
-    "test": "node tests/test_phase4.js"
+    "test": "node tests/test_phase4.js",
+    "test:phase5": "node tests/test_phase5.js",
+    "test:all": "node tests/test_phase4.js && node tests/test_phase5.js"
   },
   "keywords": [
     "xavitech",

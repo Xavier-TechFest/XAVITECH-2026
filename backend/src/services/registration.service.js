@@ -1,6 +1,8 @@
 import RegistrationModel from '../models/registration.model.js';
 import UserModel from '../models/user.model.js';
+import TeamModel from '../models/team.model.js';
 import eventService from './event.service.js';
+import teamService from './team.service.js';
 import userService from './user.service.js';
 import { generateRegistrationId } from '../utils/registrationId.js';
 import logger from '../utils/logger.util.js';
@@ -16,6 +18,7 @@ export const formatRegistrationResponse = (reg) => {
     registrationId: reg.registration_id,
     userId: reg.user_id,
     eventId: reg.event_id,
+    teamId: reg.team_id || null,
     registrationType: reg.registration_type,
     status: reg.status,
     createdAt: reg.created_at,
@@ -31,6 +34,19 @@ export const formatRegistrationResponse = (reg) => {
           registrationType: reg.event.registration_type,
           fee: Number(reg.event.fee || 0),
           currency: reg.event.currency || 'INR',
+        }
+      : undefined,
+    team: reg.team
+      ? {
+          id: reg.team.id,
+          teamName: reg.team.team_name,
+          status: reg.team.status,
+          members: (reg.team.members || []).map((m) => ({
+            id: m.id,
+            name: m.name,
+            memberOrder: m.member_order,
+          })),
+          teamSize: 1 + (reg.team.members?.length || 0),
         }
       : undefined,
     user: reg.user
@@ -122,7 +138,33 @@ export const registrationService = {
       throw error;
     }
 
-    // 4. Generate unique, non-sequential registration ID
+    // 4. Team Association & Validation for TEAM registrations
+    let teamIdToAssociate = null;
+    const requestedTeamId = (payload.team_id || payload.teamId || '').trim();
+
+    if (registrationType === 'TEAM') {
+      let teamValidation = null;
+      if (requestedTeamId) {
+        teamValidation = await teamService.validateTeamForRegistration(requestedTeamId, eventId, user.id);
+      } else {
+        // Find existing active team created by this leader for this event
+        const activeTeam = await TeamModel.findActiveTeamByLeaderAndEvent(user.id, eventId);
+        if (activeTeam) {
+          teamValidation = await teamService.validateTeamForRegistration(activeTeam.id, eventId, user.id);
+        }
+      }
+
+      if (teamValidation) {
+        if (!teamValidation.isValid) {
+          const error = new Error(teamValidation.message);
+          error.statusCode = teamValidation.statusCode || 400;
+          throw error;
+        }
+        teamIdToAssociate = teamValidation.team.id;
+      }
+    }
+
+    // 5. Generate unique, non-sequential registration ID
     let registrationId = generateRegistrationId();
     let collisionCheck = await RegistrationModel.getRegistrationByRegistrationId(registrationId);
     let attempts = 0;
@@ -133,17 +175,18 @@ export const registrationService = {
       attempts++;
     }
 
-    // 5. Create draft registration record in PostgreSQL
+    // 6. Create draft registration record in PostgreSQL
     const registrationRecord = await RegistrationModel.createRegistration({
       registration_id: registrationId,
       user_id: user.id,
       event_id: eventId,
+      team_id: teamIdToAssociate,
       registration_type: registrationType,
       status: 'DRAFT',
     });
 
     logger.info(
-      `Registration created: ${registrationId} for user ${user.id} (${user.email}) on event ${eventId} [${registrationType}]`
+      `Registration created: ${registrationId} for user ${user.id} (${user.email}) on event ${eventId} [${registrationType}]${teamIdToAssociate ? ' (Team: ' + teamIdToAssociate + ')' : ''}`
     );
 
     return formatRegistrationResponse(registrationRecord);

@@ -38,6 +38,14 @@ export const validateRegistrationCreate = (data) => {
     }
   }
 
+  // Validate teamId if provided
+  const teamId = data.team_id || data.teamId;
+  if (teamId !== undefined && teamId !== null) {
+    if (typeof teamId !== 'string' || !UUID_REGEX.test(teamId.trim())) {
+      errors.push('team_id must be a valid UUID');
+    }
+  }
+
   return {
     isValid: errors.length === 0,
     errors,
