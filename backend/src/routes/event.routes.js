@@ -1,12 +1,23 @@
 import { Router } from 'express';
-import { listEvents, getEventDetails } from '../controllers/event.controller.js';
+import {
+  listActiveEvents,
+  getEventById,
+  getEventBySlug,
+} from '../controllers/event.controller.js';
 
 const router = Router();
 
-// GET /api/events -> List all active events and categories
-router.get('/', listEvents);
+/**
+ * Public Event Endpoints
+ */
 
-// GET /api/events/:id -> Detailed information about an event
-router.get('/:id', getEventDetails);
+// GET /api/events -> Return active events where registration_open is true
+router.get('/', listActiveEvents);
+
+// GET /api/events/slug/:slug -> Return event details by slug if active
+router.get('/slug/:slug', getEventBySlug);
+
+// GET /api/events/:id -> Return event details by UUID if active
+router.get('/:id', getEventById);
 
 export default router;

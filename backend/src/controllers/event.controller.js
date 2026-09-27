@@ -1,34 +1,75 @@
-import { sendSuccess } from '../utils/response.util.js';
+import eventService from '../services/event.service.js';
+import { sendSuccess, sendError } from '../utils/response.util.js';
+import { isValidUUID } from '../validators/event.validator.js';
 
 /**
- * Event Controller Placeholder
- * Handles fetching event lists, details, rules, and capacities.
+ * Event Controller
+ * Handles public endpoints for querying active events and individual event details.
  */
 
-export const listEvents = async (req, res, next) => {
+/**
+ * GET /api/events
+ * Returns only active events where registration_open is true.
+ */
+export const listActiveEvents = async (req, res, next) => {
   try {
-    return sendSuccess(res, 'Events list placeholder endpoint', {
-      events: [],
-    });
+    const events = await eventService.getActiveEvents();
+    return sendSuccess(res, 'Active events retrieved successfully', events);
   } catch (error) {
     next(error);
   }
 };
 
-export const getEventDetails = async (req, res, next) => {
+/**
+ * GET /api/events/:id
+ * Returns event details for an active event by UUID.
+ */
+export const getEventById = async (req, res, next) => {
   try {
-    return sendSuccess(res, 'Event details placeholder endpoint', {
-      event: {
-        id: req.params.id,
-        title: 'Event Details Placeholder',
-      },
-    });
+    const { id } = req.params;
+
+    if (!isValidUUID(id)) {
+      return sendError(res, 'Invalid event ID format. Must be a valid UUID.', null, 400);
+    }
+
+    const event = await eventService.getEventById(id);
+
+    if (!event) {
+      return sendError(res, 'Event not found or is currently inactive', null, 404);
+    }
+
+    return sendSuccess(res, 'Event details retrieved successfully', event);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/events/slug/:slug
+ * Returns event details for an active event by its URL slug.
+ */
+export const getEventBySlug = async (req, res, next) => {
+  try {
+    const { slug } = req.params;
+
+    if (!slug || typeof slug !== 'string' || !slug.trim()) {
+      return sendError(res, 'Event slug is required', null, 400);
+    }
+
+    const event = await eventService.getEventBySlug(slug.trim().toLowerCase());
+
+    if (!event) {
+      return sendError(res, 'Event not found or is currently inactive', null, 404);
+    }
+
+    return sendSuccess(res, 'Event details retrieved successfully', event);
   } catch (error) {
     next(error);
   }
 };
 
 export default {
-  listEvents,
-  getEventDetails,
+  listActiveEvents,
+  getEventById,
+  getEventBySlug,
 };
