@@ -13,7 +13,8 @@
     "test": "node tests/test_phase4.js",
     "test:phase5": "node tests/test_phase5.js",
     "test:phase6": "node tests/test_phase6.js",
-    "test:all": "node tests/test_phase4.js && node tests/test_phase5.js && node tests/test_phase6.js"
+    "test:phase7": "node tests/test_phase7.js",
+    "test:all": "node tests/test_phase4.js && node tests/test_phase5.js && node tests/test_phase6.js && node tests/test_phase7.js"
   },
   "keywords": [
     "xavitech",

@@ -142,8 +142,12 @@ Once started, the server listens on `http://localhost:5000` (or configured `PORT
 | `GET` | `/api/admin/auth/me` | Admin Session Required | Returns active admin profile and session metadata |
 | `POST` | `/api/admin/auth/logout` | Admin Session Required | Revokes the current session only; other simultaneous admin devices remain active |
 | `GET` | `/api/admin/stats` | Admin Session Required | High-level fest dashboard statistics |
-| `GET` | `/api/admin/registrations` | Admin Session Required | Full list of all fest registrations |
-| `POST` | `/api/admin/check-in` | Admin Session Required | Day-of-event QR code check-in verification |
+| `GET` | `/api/admin/dashboard/stats` | Admin Session Required | Real-time festival metrics (registrations, participants, teams, active events) |
+| `GET` | `/api/admin/registrations` | Admin Session Required | Paginated, searchable, and filterable registration records |
+| `GET` | `/api/admin/registrations/:registrationId` | Admin Session Required | Full details for a registration (by UUID or registration code) |
+| `GET` | `/api/admin/teams` | Admin Session Required | Paginated, searchable, and filterable team rosters |
+| `GET` | `/api/admin/teams/:teamId` | Admin Session Required | Complete team squad profile with leader, members, and registration link |
+| `POST` | `/api/admin/check-in` | Admin Session Required | Day-of-event QR code check-in verification placeholder |
 
 ---
 
@@ -171,6 +175,26 @@ npm run create-admin
 npm run update-admin
 ```
 
+---
+
+## 📊 Phase 7 — Admin Registration & Team Management
+
+### Key Features
+1. **Live Overview Metrics (`GET /api/admin/dashboard/stats`)**:
+   - Strictly live database counts for `totalRegistrations`, `totalParticipants`, `totalTeams`, and `activeEvents`.
+   - Accurate participant count accounting for individual registrants plus `1 leader + team_members` without double-counting.
+2. **Server-Backed Registration Search & Filters (`GET /api/admin/registrations`)**:
+   - Search by Registration ID (e.g. `XVT-2026-XXXXXX`), participant/leader name, email, or team name.
+   - Filter by event UUID, registration format (`INDIVIDUAL`, `TEAM`), and status (`DRAFT`, `PAYMENT_PENDING`, `CONFIRMED`, `CANCELLED`).
+   - Range-based database pagination (`page`, `limit` with safe boundaries, returning total records and pages).
+3. **Registration Detail Inspection (`GET /api/admin/registrations/:registrationId`)**:
+   - Inspect full event parameters, participant contact/institution, and complete member rosters for team registrations.
+4. **Team Management & Detail Inspection (`GET /api/admin/teams`, `GET /api/admin/teams/:teamId`)**:
+   - Query teams with event, leader, member breakdown, and associated registration status.
+   - Team squad size computed strictly as `1 leader + memberCount`.
+5. **Admin Access Control**:
+   - Every administrative endpoint strictly guarded by `requireAdmin` middleware. Non-admin users are rejected with `403 Forbidden`, and unauthenticated requests with `401 Unauthorized`.
+
 ### Running Automated Test Suites
 ```bash
 # Run Phase 4 tests (Events & Individual Registrations)
@@ -182,7 +206,10 @@ npm run test:phase5
 # Run Phase 6 tests (Admin Auth & Multi-Session)
 npm run test:phase6
 
-# Run ALL automated tests (82 tests passing)
+# Run Phase 7 tests (Admin Registration & Team Management)
+npm run test:phase7
+
+# Run ALL automated tests across all phases (112 tests passing)
 npm run test:all
 ```
 

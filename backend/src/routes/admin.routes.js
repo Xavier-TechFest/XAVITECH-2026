@@ -4,7 +4,10 @@ import { requireAdmin } from '../middleware/adminAuth.middleware.js';
 import { adminLoginLimiter } from '../middleware/rateLimiter.middleware.js';
 import {
   getDashboardStats,
-  listAllRegistrations,
+  listRegistrations,
+  getRegistrationDetails,
+  listTeams,
+  getTeamDetails,
   verifyAndCheckIn,
 } from '../controllers/admin.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
@@ -26,16 +29,26 @@ router.get('/auth/me', requireAdmin, adminAuthController.getMe);
 router.post('/auth/logout', requireAdmin, adminAuthController.logout);
 
 // =============================================================================
-// Protected Admin Operations (Protected by requireAdmin)
+// Phase 7: Registration & Team Management Operations (Protected by requireAdmin)
 // =============================================================================
 
-// GET /api/admin/stats -> Overview metrics
+// GET /api/admin/stats & GET /api/admin/dashboard/stats -> Live festival overview metrics
 router.get('/stats', requireAdmin, getDashboardStats);
+router.get('/dashboard/stats', requireAdmin, getDashboardStats);
 
-// GET /api/admin/registrations -> All event registrations
-router.get('/registrations', requireAdmin, listAllRegistrations);
+// GET /api/admin/registrations -> Paginated, searchable, filterable registrations
+router.get('/registrations', requireAdmin, listRegistrations);
 
-// POST /api/admin/check-in -> Day-of-event QR code scan verification
+// GET /api/admin/registrations/:registrationId -> Complete registration details
+router.get('/registrations/:registrationId', requireAdmin, getRegistrationDetails);
+
+// GET /api/admin/teams -> Paginated, searchable, filterable teams
+router.get('/teams', requireAdmin, listTeams);
+
+// GET /api/admin/teams/:teamId -> Complete team details
+router.get('/teams/:teamId', requireAdmin, getTeamDetails);
+
+// POST /api/admin/check-in -> Day-of-event QR code scan verification placeholder
 router.post('/check-in', requireAdmin, validate(validateCheckIn), verifyAndCheckIn);
 
 export default router;

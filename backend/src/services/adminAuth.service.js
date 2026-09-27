@@ -109,8 +109,8 @@ export const adminAuthService = {
       return null;
     }
 
-    // Verify user is still active and has role = 'ADMIN'
-    if (!sessionWithUser.user.is_active || sessionWithUser.user.role !== 'ADMIN') {
+    // Verify user is still active
+    if (!sessionWithUser.user.is_active) {
       return null;
     }
 

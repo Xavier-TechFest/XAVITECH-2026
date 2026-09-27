@@ -2,22 +2,38 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { adminGetMe, adminLogout, AdminProfile, ApiError } from "@/lib/api";
+import Link from "next/link";
+import {
+  adminGetMe,
+  adminGetDashboardStats,
+  AdminProfile,
+  AdminDashboardStats,
+} from "@/lib/api";
+import AdminHeader from "@/components/admin/AdminHeader";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [admin, setAdmin] = useState<AdminProfile | null>(null);
+  const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadAdminSession() {
+    async function loadDashboardData() {
       try {
-        const profile = await adminGetMe();
+        const [profile, liveStats] = await Promise.all([
+          adminGetMe(),
+          adminGetDashboardStats().catch((err) => {
+            console.error("Error loading stats:", err);
+            return null;
+          }),
+        ]);
+
         if (isMounted) {
           setAdmin(profile);
+          setStats(liveStats);
           setIsLoading(false);
         }
       } catch (err) {
@@ -26,23 +42,12 @@ export default function AdminDashboardPage() {
       }
     }
 
-    loadAdminSession();
+    loadDashboardData();
 
     return () => {
       isMounted = false;
     };
   }, [router]);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await adminLogout();
-    } catch (err) {
-      console.error("Error logging out session:", err);
-    } finally {
-      router.replace("/xavitech-superadmin");
-    }
-  };
 
   if (isLoading) {
     return (
@@ -68,62 +73,110 @@ export default function AdminDashboardPage() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          <span>Verifying administrator session...</span>
+          <span>Loading admin overview...</span>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#080b11] text-white p-6 sm:p-12 relative overflow-hidden">
-      {/* Background Ambience Glow */}
-      <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#35e0c9]/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-[#080b11] text-white flex flex-col">
+      <AdminHeader admin={admin} />
 
-      <div className="max-w-4xl mx-auto relative z-10">
-        {/* Top Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-8 mb-8 border-b border-neutral-800 gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#35e0c9]/30 bg-[#35e0c9]/10 text-[#35e0c9] text-xs font-mono uppercase tracking-widest mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#35e0c9]" />
-              Active Admin Session
+      <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto relative overflow-hidden">
+        {/* Background Ambience Glow */}
+        <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#35e0c9]/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Section Header */}
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#35e0c9]/30 bg-[#35e0c9]/10 text-[#35e0c9] text-xs font-mono uppercase tracking-widest mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#35e0c9]" />
+            Live Database Metrics
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight">
+            Festival Operations Console
+          </h1>
+          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+            Real-time registration, participant, and team telemetry
+          </p>
+        </div>
+
+        {/* Overview Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
+          {/* Total Registrations */}
+          <div className="bg-[#0e131f]/90 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 backdrop-blur-xl">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 block mb-2">
+              Total Registrations
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl sm:text-4xl font-extrabold font-mono text-white">
+                {stats ? stats.totalRegistrations : 0}
+              </span>
+              <span className="text-xs text-neutral-500 font-mono">records</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight">
-              XAVITECH Admin Dashboard
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-              Festival Central Operations & Administration
+            <Link
+              href="/xavitech-superadmin/registrations"
+              className="mt-4 inline-flex items-center gap-1 text-xs text-[#35e0c9] hover:underline font-mono"
+            >
+              <span>View all registrations</span>
+              <span>→</span>
+            </Link>
+          </div>
+
+          {/* Total Participants */}
+          <div className="bg-[#0e131f]/90 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 backdrop-blur-xl">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 block mb-2">
+              Total Participants
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl sm:text-4xl font-extrabold font-mono text-white">
+                {stats ? stats.totalParticipants : 0}
+              </span>
+              <span className="text-xs text-neutral-500 font-mono">individuals</span>
+            </div>
+            <p className="mt-4 text-[11px] text-neutral-500 font-mono">
+              Individual + team members
             </p>
           </div>
 
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="self-start sm:self-auto px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-mono uppercase tracking-wider transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-          >
-            {isLoggingOut ? (
-              <span>Logging out...</span>
-            ) : (
-              <>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-                <span>Logout Session</span>
-              </>
-            )}
-          </button>
+          {/* Total Teams */}
+          <div className="bg-[#0e131f]/90 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 backdrop-blur-xl">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 block mb-2">
+              Total Teams
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl sm:text-4xl font-extrabold font-mono text-white">
+                {stats ? stats.totalTeams : 0}
+              </span>
+              <span className="text-xs text-neutral-500 font-mono">squads</span>
+            </div>
+            <Link
+              href="/xavitech-superadmin/teams"
+              className="mt-4 inline-flex items-center gap-1 text-xs text-[#35e0c9] hover:underline font-mono"
+            >
+              <span>View all teams</span>
+              <span>→</span>
+            </Link>
+          </div>
+
+          {/* Active Events */}
+          <div className="bg-[#0e131f]/90 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 backdrop-blur-xl">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 block mb-2">
+              Active Events
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-400">
+                {stats ? stats.activeEvents : 0}
+              </span>
+              <span className="text-xs text-neutral-500 font-mono">events</span>
+            </div>
+            <p className="mt-4 text-[11px] text-neutral-500 font-mono">
+              13 official fest events
+            </p>
+          </div>
         </div>
 
-        {/* Minimal Dashboard Cards */}
+        {/* Admin Identity & Session Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Admin Identity Card */}
           <div className="bg-[#0e131f]/90 border border-neutral-800/80 rounded-2xl p-6 sm:p-8 backdrop-blur-xl">
@@ -193,13 +246,13 @@ export default function AdminDashboardPage() {
                   Console Scope
                 </span>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Phase 6 Foundation: Management controls, participant exports, and verification modules will activate in forthcoming phases.
+                  Phase 7 Live: Real registration and team query engines enabled. Payment module remains frozen.
                 </p>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

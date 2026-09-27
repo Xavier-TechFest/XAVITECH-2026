@@ -177,12 +177,332 @@ export async function adminLogout(): Promise<void> {
   }
 }
 
+// =============================================================================
+// Phase 7: Admin Registration Management Types & Functions
+// =============================================================================
+
+export interface AdminDashboardStats {
+  totalRegistrations: number;
+  totalParticipants: number;
+  totalTeams: number;
+  activeEvents: number;
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  totalRecords: number;
+  totalPages: number;
+}
+
+export interface AdminRegistrationListItem {
+  id: string;
+  registrationId: string;
+  registrationType: "INDIVIDUAL" | "TEAM";
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  participantCount: number;
+  event: {
+    id: string;
+    name: string;
+    slug: string;
+    category?: string;
+    fee: number;
+  } | null;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    phone: string | null;
+    institution: string | null;
+  } | null;
+  team: {
+    id: string;
+    teamName: string;
+    status: string;
+    memberCount: number;
+    totalTeamSize: number;
+  } | null;
+}
+
+export interface AdminRegistrationDetail {
+  id: string;
+  registrationId: string;
+  registrationType: "INDIVIDUAL" | "TEAM";
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  totalParticipants: number;
+  event: {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    category: string | null;
+    registrationType: string;
+    minTeamSize: number | null;
+    maxTeamSize: number | null;
+    fee: number;
+    isActive: boolean;
+    registrationOpen: boolean;
+  } | null;
+  leader: {
+    id: string;
+    name: string | null;
+    email: string;
+    phone: string | null;
+    institution: string | null;
+    profileImage: string | null;
+    role: string;
+    isActive: boolean;
+    createdAt: string;
+  } | null;
+  team: {
+    id: string;
+    teamName: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    leader: {
+      id: string;
+      name: string | null;
+      email: string;
+      phone: string | null;
+      institution: string | null;
+    } | null;
+    members: Array<{
+      id: string;
+      name: string;
+      memberOrder: number;
+      createdAt: string;
+    }>;
+    memberCount: number;
+    totalTeamSize: number;
+  } | null;
+}
+
+export interface AdminTeamListItem {
+  id: string;
+  teamName: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  memberCount: number;
+  totalTeamSize: number;
+  event: {
+    id: string;
+    name: string;
+    slug: string;
+    fee: number;
+    minTeamSize: number | null;
+    maxTeamSize: number | null;
+  } | null;
+  leader: {
+    id: string;
+    name: string | null;
+    email: string;
+    phone: string | null;
+    institution: string | null;
+  } | null;
+  registration: {
+    id: string;
+    registrationId: string;
+    status: string;
+  } | null;
+}
+
+export interface AdminTeamDetail {
+  id: string;
+  teamName: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  totalTeamSize: number;
+  memberCount: number;
+  event: {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    category: string | null;
+    registrationType: string;
+    minTeamSize: number | null;
+    maxTeamSize: number | null;
+    fee: number;
+    isActive: boolean;
+    registrationOpen: boolean;
+  } | null;
+  leader: {
+    id: string;
+    name: string | null;
+    email: string;
+    phone: string | null;
+    institution: string | null;
+    profileImage: string | null;
+    role: string;
+    isActive: boolean;
+    createdAt: string;
+  } | null;
+  members: Array<{
+    id: string;
+    name: string;
+    memberOrder: number;
+    createdAt: string;
+  }>;
+  registration: {
+    id: string;
+    registrationId: string;
+    status: string;
+    registrationType: string;
+    createdAt: string;
+  } | null;
+}
+
+/**
+ * Fetch overview statistics for the admin dashboard.
+ */
+export async function adminGetDashboardStats(): Promise<AdminDashboardStats> {
+  const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to fetch dashboard stats", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * Fetch paginated, searchable, filterable registrations list.
+ */
+export async function adminGetRegistrations(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  eventId?: string;
+  registrationType?: string;
+  status?: string;
+}): Promise<{ registrations: AdminRegistrationListItem[]; pagination: PaginationMeta }> {
+  const url = new URL(`${API_BASE_URL}/admin/registrations`);
+  if (params?.page) url.searchParams.set("page", String(params.page));
+  if (params?.limit) url.searchParams.set("limit", String(params.limit));
+  if (params?.search) url.searchParams.set("search", params.search);
+  if (params?.eventId) url.searchParams.set("eventId", params.eventId);
+  if (params?.registrationType) url.searchParams.set("registrationType", params.registrationType);
+  if (params?.status) url.searchParams.set("status", params.status);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to fetch registrations", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * Fetch complete details for a specific registration.
+ */
+export async function adminGetRegistrationDetails(
+  registrationId: string
+): Promise<AdminRegistrationDetail> {
+  const response = await fetch(`${API_BASE_URL}/admin/registrations/${encodeURIComponent(registrationId)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Registration not found", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * Fetch paginated, searchable, filterable teams list.
+ */
+export async function adminGetTeams(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  eventId?: string;
+  status?: string;
+}): Promise<{ teams: AdminTeamListItem[]; pagination: PaginationMeta }> {
+  const url = new URL(`${API_BASE_URL}/admin/teams`);
+  if (params?.page) url.searchParams.set("page", String(params.page));
+  if (params?.limit) url.searchParams.set("limit", String(params.limit));
+  if (params?.search) url.searchParams.set("search", params.search);
+  if (params?.eventId) url.searchParams.set("eventId", params.eventId);
+  if (params?.status) url.searchParams.set("status", params.status);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to fetch teams", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * Fetch complete details for a specific team.
+ */
+export async function adminGetTeamDetails(teamId: string): Promise<AdminTeamDetail> {
+  const response = await fetch(`${API_BASE_URL}/admin/teams/${encodeURIComponent(teamId)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Team not found", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * Fetch all active events for admin dropdown filter selection.
+ */
+export async function adminGetEvents(): Promise<Array<{ id: string; name: string; slug: string; category?: string }>> {
+  const response = await fetch(`${API_BASE_URL}/events`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return [];
+  }
+  return json.data || [];
+}
+
 export const api = {
   fetchUserProfile,
   updateUserProfile,
   adminLogin,
   adminGetMe,
   adminLogout,
+  adminGetDashboardStats,
+  adminGetRegistrations,
+  adminGetRegistrationDetails,
+  adminGetTeams,
+  adminGetTeamDetails,
+  adminGetEvents,
 };
 
 export default api;
+
