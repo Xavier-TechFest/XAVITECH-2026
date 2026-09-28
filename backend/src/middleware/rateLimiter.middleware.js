@@ -58,5 +58,51 @@ class LoginRateLimiter {
 export { LoginRateLimiter };
 export const adminLoginLimiter = new LoginRateLimiter(15 * 60 * 1000, 10);
 export const trackLeaderLoginLimiter = new LoginRateLimiter(15 * 60 * 1000, 10);
+
+/**
+ * Standard request rate limiter to prevent spamming sensitive actions (e.g. forgot-password emails).
+ */
+export class RequestRateLimiter {
+  constructor(windowMs = 15 * 60 * 1000, maxRequests = 10, message = 'Too many requests. Please try again later.') {
+    this.windowMs = windowMs;
+    this.maxRequests = maxRequests;
+    this.message = message;
+    this.requests = new Map();
+  }
+
+  middleware() {
+    return (req, res, next) => {
+      const ip = req.ip || req.connection.remoteAddress || 'unknown-ip';
+      const now = Date.now();
+      const record = this.requests.get(ip);
+
+      if (record) {
+        if (now - record.firstRequest > this.windowMs) {
+          this.requests.set(ip, { count: 1, firstRequest: now });
+        } else if (record.count >= this.maxRequests) {
+          return sendError(res, this.message, null, 429);
+        } else {
+          record.count += 1;
+        }
+      } else {
+        this.requests.set(ip, { count: 1, firstRequest: now });
+      }
+
+      next();
+    };
+  }
+
+  reset() {
+    this.requests.clear();
+  }
+}
+
+export const trackLeaderForgotPasswordLimiter = new RequestRateLimiter(
+  15 * 60 * 1000,
+  10,
+  'Too many password reset requests. Please try again after 15 minutes.'
+);
+export const trackLeaderResetPasswordLimiter = new LoginRateLimiter(15 * 60 * 1000, 10);
+
 export default adminLoginLimiter;
 

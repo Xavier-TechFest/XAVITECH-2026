@@ -846,6 +846,50 @@ export async function trackLeaderGetEvents(): Promise<{
   return json.data;
 }
 
+export async function trackLeaderForgotPassword(
+  email: string
+): Promise<{ message: string }> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email }),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to process password recovery request",
+      response.status,
+      json
+    );
+  }
+  return json;
+}
+
+export async function trackLeaderResetPassword(
+  token: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<{ message: string }> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ token, newPassword, confirmPassword }),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Invalid or expired password reset link.",
+      response.status,
+      json
+    );
+  }
+  return json;
+}
+
 export const api = {
   fetchUserProfile,
   updateUserProfile,
@@ -871,9 +915,12 @@ export const api = {
   trackLeaderLogout,
   trackLeaderGetTrack,
   trackLeaderGetEvents,
+  trackLeaderForgotPassword,
+  trackLeaderResetPassword,
 };
 
 export default api;
+
 
 
 

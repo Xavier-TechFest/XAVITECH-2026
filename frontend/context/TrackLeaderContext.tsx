@@ -112,14 +112,17 @@ export function TrackLeaderProvider({
     if (loading) return;
 
     const isLogin = pathname === "/track-leader/login";
+    const isForgotPassword = pathname === "/track-leader/forgot-password";
+    const isResetPassword = pathname === "/track-leader/reset-password";
+    const isPublicRecovery = isLogin || isForgotPassword || isResetPassword;
     const isChangePassword = pathname === "/track-leader/change-password";
     const isPortalRoute = pathname.startsWith("/track-leader");
 
     if (!isPortalRoute) return;
 
     if (!trackLeader) {
-      // Unauthenticated: force to login page
-      if (!isLogin) {
+      // Unauthenticated: force to login page unless on recovery routes
+      if (!isPublicRecovery) {
         router.replace("/track-leader/login");
       }
     } else {
@@ -131,7 +134,7 @@ export function TrackLeaderProvider({
         }
       } else {
         // Password already changed: block login or change-password pages
-        if (isLogin || isChangePassword || pathname === "/track-leader") {
+        if (isPublicRecovery || isChangePassword || pathname === "/track-leader") {
           router.replace("/track-leader/dashboard");
         }
       }

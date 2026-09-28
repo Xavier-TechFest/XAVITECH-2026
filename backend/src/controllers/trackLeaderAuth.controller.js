@@ -189,7 +189,61 @@ export const trackLeaderAuthController = {
       next(error);
     }
   },
+
+  /**
+   * POST /api/track-leader/auth/forgot-password
+   * Request password recovery link. Always returns a generic anti-enumeration response.
+   */
+  forgotPassword: async (req, res, next) => {
+    try {
+      const { email } = req.body || {};
+      const result = await trackLeaderAuthService.requestPasswordReset(email);
+      return sendSuccess(res, result.message, null, 200);
+    } catch (error) {
+      logger.error('Error in forgot-password request:', error);
+      // Return safe generic response even on unexpected errors
+      return sendSuccess(
+        res,
+        'If a Track Leader account exists for this email, a password reset link has been sent.',
+        null,
+        200
+      );
+    }
+  },
+
+  /**
+   * POST /api/track-leader/auth/reset-password
+   * Set new password using a valid, single-use token.
+   */
+  resetPassword: async (req, res, next) => {
+    try {
+      const { token, newPassword, confirmPassword } = req.body || {};
+
+      if (!token) {
+        return sendError(res, 'Invalid or expired password reset link.', null, 400);
+      }
+
+      if (!newPassword || !confirmPassword) {
+        return sendError(res, 'Both new password and confirm password are required.', null, 400);
+      }
+
+      const result = await trackLeaderAuthService.resetPasswordWithToken({
+        token,
+        newPassword,
+        confirmPassword,
+      });
+
+      return sendSuccess(res, result.message, null, 200);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, null, error.statusCode);
+      }
+      logger.error('Error in reset-password submission:', error);
+      return sendError(res, 'Invalid or expired password reset link.', null, 400);
+    }
+  },
 };
 
 export default trackLeaderAuthController;
+
 

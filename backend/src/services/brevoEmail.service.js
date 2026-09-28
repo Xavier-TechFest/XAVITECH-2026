@@ -412,6 +412,91 @@ XAVITECH 2026 Team`;
       textContent,
     });
   },
+
+  /**
+   * Dispatches a self-service password recovery email with a single-use reset link.
+   *
+   * @param {Object} params
+   * @param {string} params.email
+   * @param {string} [params.name]
+   * @param {string} params.resetUrl
+   * @param {number} [params.expiresInMinutes=30]
+   * @returns {Promise<{ success: boolean, emailSent: boolean, messageId?: string, error?: string }>}
+   */
+  sendTrackLeaderPasswordResetEmail: async ({
+    email,
+    name = '',
+    resetUrl,
+    expiresInMinutes = 30,
+  }) => {
+    const leaderName = name ? name.trim() : email.split('@')[0];
+    const subject = 'XAVITECH 2026 — Reset Your Track Leader Password';
+
+    const textContent = `Hello ${leaderName},
+
+A password reset request was made for your XAVITECH 2026 Track Leader account.
+
+Click the link below to set a new password:
+${resetUrl}
+
+This link expires in ${expiresInMinutes} minutes and can only be used once.
+
+If you did not request this password reset, you can safely ignore this email.
+
+XAVITECH 2026 Operations Team`;
+
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #080b11; color: #f1f5f9; margin: 0; padding: 24px; }
+    .container { max-width: 580px; margin: 0 auto; background: #0c101a; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; }
+    .header { padding: 32px 32px 24px; background: linear-gradient(135deg, #07090f 0%, #0d1527 100%); border-bottom: 1px solid #1e293b; }
+    .badge { display: inline-block; font-family: monospace; font-size: 11px; font-weight: 700; color: #35e0c9; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+    .title { margin: 0; font-size: 22px; font-weight: 800; color: #ffffff; }
+    .body { padding: 32px; font-size: 14px; line-height: 1.6; color: #cbd5e1; }
+    .btn-container { text-align: center; margin: 32px 0; }
+    .btn { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #06b6d4 0%, #4f46e5 100%); color: #020617 !important; font-weight: 700; font-size: 14px; text-decoration: none; border-radius: 8px; }
+    .notice { margin-top: 24px; padding: 16px; background: #0f172a; border-left: 3px solid #35e0c9; border-radius: 4px; font-size: 12px; color: #94a3b8; }
+    .footer { padding: 24px 32px; background: #07090f; border-top: 1px solid #1e293b; font-size: 11px; color: #64748b; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="badge">XAVITECH 2026 // SECURITY</span>
+      <h1 class="title">Reset Your Track Leader Password</h1>
+    </div>
+    <div class="body">
+      <p>Hello <strong>${leaderName}</strong>,</p>
+      <p>A password reset request was made for your XAVITECH 2026 Track Leader account. Click the button below to set a new secure password:</p>
+
+      <div class="btn-container">
+        <a href="${resetUrl}" class="btn" target="_blank">Reset Password</a>
+      </div>
+
+      <div class="notice">
+        <strong>Important:</strong> This link expires in <strong>${expiresInMinutes} minutes</strong> and can only be used once.<br/><br/>
+        If you did not request this password reset, you can safely ignore this email. Your current password remains secure.
+      </div>
+    </div>
+    <div class="footer">
+      XAVITECH 2026 Technical Operations Team &bull; Do not reply directly to this automated email.
+    </div>
+  </div>
+</body>
+</html>`;
+
+    return sendTransactionalEmail({
+      toEmail: email,
+      toName: leaderName,
+      subject,
+      htmlContent,
+      textContent,
+    });
+  },
 };
 
 export default brevoEmailService;

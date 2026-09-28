@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import trackLeaderAuthController from '../controllers/trackLeaderAuth.controller.js';
 import { requireTrackLeader } from '../middleware/trackLeaderAuth.middleware.js';
-import { trackLeaderLoginLimiter } from '../middleware/rateLimiter.middleware.js';
+import {
+  trackLeaderLoginLimiter,
+  trackLeaderForgotPasswordLimiter,
+  trackLeaderResetPasswordLimiter,
+} from '../middleware/rateLimiter.middleware.js';
 
 const router = Router();
 
@@ -12,6 +16,20 @@ const router = Router();
 
 // POST /api/track-leader/auth/login -> Rate-limited Track Leader login
 router.post('/login', trackLeaderLoginLimiter.middleware(), trackLeaderAuthController.login);
+
+// POST /api/track-leader/auth/forgot-password -> Request password recovery link
+router.post(
+  '/forgot-password',
+  trackLeaderForgotPasswordLimiter.middleware(),
+  trackLeaderAuthController.forgotPassword
+);
+
+// POST /api/track-leader/auth/reset-password -> Reset password using valid token
+router.post(
+  '/reset-password',
+  trackLeaderResetPasswordLimiter.middleware(),
+  trackLeaderAuthController.resetPassword
+);
 
 // GET /api/track-leader/auth/me -> Session inspection (requireTrackLeader)
 router.get('/me', requireTrackLeader, trackLeaderAuthController.getMe);

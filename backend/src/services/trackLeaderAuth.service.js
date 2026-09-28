@@ -1,4 +1,7 @@
+import crypto from 'crypto';
 import TrackLeaderModel from '../models/trackLeader.model.js';
+import TrackLeaderPasswordResetModel from '../models/trackLeaderPasswordReset.model.js';
+import brevoEmailService, { getEmailConfig } from './brevoEmail.service.js';
 import config from '../config/env.config.js';
 import {
   hashPassword,
@@ -236,6 +239,142 @@ export const trackLeaderAuthService = {
     logger.info(`Track Leader password successfully changed for user: ${trackLeader.email}`);
 
     return updatedUser;
+  },
+
+  /**
+   * Request password recovery for Track Leader.
+   * Returns a generic anti-enumeration response in all cases (whether user exists or not).
+   *
+   * @param {string} email
+   * @returns {Promise<{ message: string, emailSent?: boolean }>}
+   */
+  requestPasswordReset: async (email) => {
+    const genericResponse = {
+      message: 'If a Track Leader account exists for this email, a password reset link has been sent.',
+    };
+
+    if (!email || typeof email !== 'string') {
+      return genericResponse;
+    }
+
+    const cleanEmail = String(email).toLowerCase().trim();
+    const trackLeader = await TrackLeaderModel.getTrackLeaderByEmail(cleanEmail);
+
+    // If user does not exist, is not TRACK_LEADER, or is inactive, return same generic response
+    if (
+      !trackLeader ||
+      trackLeader.role !== 'TRACK_LEADER' ||
+      !trackLeader.is_active
+    ) {
+      logger.info(`Password reset requested for non-existent or ineligible track leader: ${cleanEmail}`);
+      return genericResponse;
+    }
+
+    // Generate cryptographically secure random token (32 bytes = 64 hex chars)
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = hashSessionToken(rawToken);
+
+    // Reset token expires in 30 minutes
+    const EXPIRES_IN_MINUTES = 30;
+    const expiresAt = new Date(Date.now() + EXPIRES_IN_MINUTES * 60 * 1000).toISOString();
+
+    // Store in track_leader_password_resets (invalidates any older tokens for this user)
+    await TrackLeaderPasswordResetModel.createResetToken({
+      userId: trackLeader.id,
+      tokenHash,
+      expiresAt,
+    });
+
+    const emailConfig = getEmailConfig();
+    const resetUrl = `${emailConfig.frontendUrl}/track-leader/reset-password?token=${rawToken}`;
+
+    // Send email via Brevo
+    try {
+      await brevoEmailService.sendTrackLeaderPasswordResetEmail({
+        email: trackLeader.email,
+        name: trackLeader.name,
+        resetUrl,
+        expiresInMinutes: EXPIRES_IN_MINUTES,
+      });
+      logger.info(`Password reset email dispatched to track leader: ${trackLeader.email}`);
+    } catch (emailErr) {
+      logger.error(`Failed to send password reset email to ${trackLeader.email}:`, emailErr);
+    }
+
+    return genericResponse;
+  },
+
+  /**
+   * Complete password reset using a single-use token.
+   * Enforces token validation, non-expired, single-use, updates password_hash,
+   * sets must_change_password = false, marks token as used, and revokes all sessions.
+   *
+   * @param {Object} params
+   * @param {string} params.token - Raw reset token from URL
+   * @param {string} params.newPassword
+   * @param {string} params.confirmPassword
+   * @returns {Promise<{ success: boolean, message: string }>}
+   */
+  resetPasswordWithToken: async ({ token, newPassword, confirmPassword }) => {
+    const invalidTokenError = () => {
+      const err = new Error('Invalid or expired password reset link.');
+      err.statusCode = 400;
+      return err;
+    };
+
+    if (!token || typeof token !== 'string') {
+      throw invalidTokenError();
+    }
+
+    if (!newPassword || !confirmPassword) {
+      const err = new Error('Both new password and confirm password are required.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+      const err = new Error('New password must be at least 8 characters long.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (newPassword !== confirmPassword) {
+      const err = new Error('New password and confirmation do not match.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // 1. Look up token in database by SHA-256 hash
+    const tokenHash = hashSessionToken(token.trim());
+    const resetRecord = await TrackLeaderPasswordResetModel.getActiveResetByHash(tokenHash);
+
+    if (!resetRecord || !resetRecord.user) {
+      throw invalidTokenError();
+    }
+
+    // 2. Verify account is active and role is TRACK_LEADER
+    if (!resetRecord.user.is_active || resetRecord.user.role !== 'TRACK_LEADER') {
+      throw invalidTokenError();
+    }
+
+    // 3. Hash new password with bcrypt
+    const newPasswordHash = await hashPassword(newPassword);
+
+    // 4. Update user's password and reset must_change_password flag
+    await TrackLeaderModel.updatePassword(resetRecord.user_id, newPasswordHash);
+
+    // 5. Mark the reset token as used (single-use enforcement)
+    await TrackLeaderPasswordResetModel.markResetTokenUsed(resetRecord.id);
+
+    // 6. Invalidate all existing sessions for this Track Leader
+    await TrackLeaderModel.revokeAllSessions(resetRecord.user_id);
+
+    logger.info(`Track Leader password successfully reset using token for: ${resetRecord.user.email}`);
+
+    return {
+      success: true,
+      message: 'Password reset successfully. Please log in with your new password.',
+    };
   },
 };
 

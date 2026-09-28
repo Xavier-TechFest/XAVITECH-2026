@@ -15,10 +15,12 @@ function TrackLeaderPortalShell({ children }: { children: React.ReactNode }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // If on login or change-password page, render without the portal chrome
+  // If on auth or recovery page, render without the portal chrome
   const isAuthPage =
     pathname === "/track-leader/login" ||
-    pathname === "/track-leader/change-password";
+    pathname === "/track-leader/change-password" ||
+    pathname === "/track-leader/forgot-password" ||
+    pathname === "/track-leader/reset-password";
 
   if (isAuthPage) {
     return <>{children}</>;
