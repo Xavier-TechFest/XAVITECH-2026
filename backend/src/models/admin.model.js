@@ -34,7 +34,7 @@ export const AdminModel = {
     const { data, error } = await client
       .from('users')
       .select('*')
-      .eq('email', cleanEmail)
+      .ilike('email', cleanEmail)
       .eq('role', 'ADMIN')
       .maybeSingle();
 

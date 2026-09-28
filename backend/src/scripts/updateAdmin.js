@@ -89,6 +89,12 @@ export const runUpdateAdmin = async () => {
     // 3. Update the existing admin record
     const updatedAdmin = await AdminModel.updateAdminUser(existingAdmin.id, updates);
 
+    // If password was updated, revoke all existing active sessions
+    if (updates.password_hash) {
+      await AdminModel.revokeAllSessionsForAdmin(existingAdmin.id);
+      console.log('   All existing admin sessions have been revoked.');
+    }
+
     console.log('\n✅ SUCCESS: Admin account updated successfully!');
     console.log(`   ID:    ${updatedAdmin.id}`);
     console.log(`   Email: ${updatedAdmin.email}`);

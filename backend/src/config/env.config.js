@@ -65,6 +65,8 @@ export const config = {
   // Admin Authentication (Phase 6)
   admin: {
     secretKey: process.env.ADMIN_SECRET_KEY || '',
+    email: process.env.ADMIN_EMAIL || '',
+    password: process.env.ADMIN_PASSWORD || '',
   },
 };
 
