@@ -42,6 +42,7 @@ export const requireTrackLeader = async (req, res, next) => {
 
     // 5. Attach authenticated Track Leader user and session details to request
     req.user = validation.user;
+    req.trackLeader = validation.user;
     req.trackLeaderSession = validation.session;
 
     next();
@@ -50,6 +51,24 @@ export const requireTrackLeader = async (req, res, next) => {
   }
 };
 
+/**
+ * Middleware ensuring Track Leader has already completed the mandatory first-login password change.
+ * Blocks access to portal endpoints (e.g. tracks, events) until password is changed.
+ */
+export const requirePasswordChanged = (req, res, next) => {
+  if (req.user && req.user.must_change_password) {
+    return res.status(403).json({
+      success: false,
+      message: 'Password change required before accessing portal data.',
+      code: 'PASSWORD_CHANGE_REQUIRED',
+      error: { code: 'PASSWORD_CHANGE_REQUIRED' },
+    });
+  }
+  next();
+};
+
 export default {
   requireTrackLeader,
+  requirePasswordChanged,
 };
+

@@ -282,7 +282,64 @@ export const TrackLeaderModel = {
     if (error) throw error;
     return data?.length || 0;
   },
+
+  /**
+   * Revoke active sessions for a Track Leader EXCEPT the current session.
+   * Invoked upon password change to invalidate old sessions on other devices.
+   *
+   * @param {string} userId
+   * @param {string} currentSessionId
+   * @returns {Promise<number>} Number of sessions revoked
+   */
+  revokeOtherSessions: async (userId, currentSessionId) => {
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Database client is not available');
+
+    const now = new Date().toISOString();
+    let query = client
+      .from('track_leader_sessions')
+      .update({ revoked_at: now })
+      .eq('user_id', userId)
+      .is('revoked_at', null);
+
+    if (currentSessionId) {
+      query = query.neq('id', currentSessionId);
+    }
+
+    const { data, error } = await query.select('id');
+    if (error) throw error;
+    return data?.length || 0;
+  },
+
+  /**
+   * Update password hash and reset must_change_password flag for Track Leader.
+   *
+   * @param {string} userId
+   * @param {string} password_hash
+   * @returns {Promise<Object>}
+   */
+  updatePassword: async (userId, password_hash) => {
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Database client is not available');
+
+    const now = new Date().toISOString();
+    const { data, error } = await client
+      .from('users')
+      .update({
+        password_hash,
+        must_change_password: false,
+        updated_at: now,
+      })
+      .eq('id', userId)
+      .eq('role', 'TRACK_LEADER')
+      .select('id, email, name, role, is_active, must_change_password, updated_at')
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
 };
 
 export default TrackLeaderModel;
+
 

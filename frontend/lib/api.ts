@@ -706,6 +706,146 @@ export async function adminResetTrackLeaderCredentials(
   return json.data;
 }
 
+export interface TrackLeaderAssignedTrack {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  is_active: boolean;
+}
+
+export interface TrackLeaderProfile {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  is_active: boolean;
+  must_change_password: boolean;
+  sessionId?: string | null;
+  assignedTrack?: TrackLeaderAssignedTrack | null;
+  assignment?: {
+    id: string;
+    track_id: string;
+    is_active: boolean;
+  } | null;
+}
+
+export interface TrackLeaderEvent {
+  id: string;
+  title: string;
+  name?: string;
+  slug: string;
+  tagline?: string | null;
+  description?: string | null;
+  category?: string;
+  track_id: string;
+  is_active: boolean;
+  registration_open: boolean;
+  registration_type: "INDIVIDUAL" | "TEAM";
+  min_team_size: number;
+  max_team_size: number;
+  entry_fee: number;
+  prize_pool?: string | number | null;
+}
+
+export async function trackLeaderLogin(
+  email: string,
+  password: string
+): Promise<{ user: TrackLeaderProfile; token: string }> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, password }),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Invalid track leader credentials.", response.status, json);
+  }
+  return json.data;
+}
+
+export async function trackLeaderGetMe(): Promise<TrackLeaderProfile> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/auth/me`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Session invalid or expired", response.status, json);
+  }
+  return json.data?.user || json.data;
+}
+
+export async function trackLeaderChangePassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<{ user: Partial<TrackLeaderProfile> }> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/auth/password`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to change password", response.status, json);
+  }
+  return json.data;
+}
+
+export async function trackLeaderLogout(): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/auth/logout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to log out", response.status, json);
+  }
+}
+
+export async function trackLeaderGetTrack(): Promise<{
+  assigned: boolean;
+  track: TrackLeaderAssignedTrack | null;
+}> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/track`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to fetch track information", response.status, json);
+  }
+  return json.data;
+}
+
+export async function trackLeaderGetEvents(): Promise<{
+  track: TrackLeaderAssignedTrack | null;
+  events: TrackLeaderEvent[];
+  totalEvents: number;
+}> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/events`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to fetch track events", response.status, json);
+  }
+  return json.data;
+}
+
 export const api = {
   fetchUserProfile,
   updateUserProfile,
@@ -725,8 +865,15 @@ export const api = {
   adminUpdateTrackLeader,
   adminUpdateTrackLeaderStatus,
   adminResetTrackLeaderCredentials,
+  trackLeaderLogin,
+  trackLeaderGetMe,
+  trackLeaderChangePassword,
+  trackLeaderLogout,
+  trackLeaderGetTrack,
+  trackLeaderGetEvents,
 };
 
 export default api;
+
 
 

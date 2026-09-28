@@ -16,6 +16,9 @@ router.post('/login', trackLeaderLoginLimiter.middleware(), trackLeaderAuthContr
 // GET /api/track-leader/auth/me -> Session inspection (requireTrackLeader)
 router.get('/me', requireTrackLeader, trackLeaderAuthController.getMe);
 
+// PATCH /api/track-leader/auth/password -> First login or self-service password change
+router.patch('/password', requireTrackLeader, trackLeaderAuthController.changePassword);
+
 // POST /api/track-leader/auth/logout -> Invalidate current active session (requireTrackLeader)
 router.post('/logout', requireTrackLeader, trackLeaderAuthController.logout);
 

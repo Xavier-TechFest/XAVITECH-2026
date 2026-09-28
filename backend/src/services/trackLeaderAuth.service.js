@@ -1,6 +1,7 @@
 import TrackLeaderModel from '../models/trackLeader.model.js';
 import config from '../config/env.config.js';
 import {
+  hashPassword,
   comparePassword,
   generateSessionToken,
   hashSessionToken,
@@ -167,6 +168,76 @@ export const trackLeaderAuthService = {
     logger.info(`Track Leader session revoked: ${sessionId}`);
     return true;
   },
+
+  /**
+   * Change password for authenticated Track Leader.
+   * Enforces verification of current password, validation of new password (min 8 chars),
+   * updates password_hash, sets must_change_password = false, and revokes other sessions.
+   *
+   * @param {Object} params
+   * @param {string} params.userId
+   * @param {string} params.currentPassword
+   * @param {string} params.newPassword
+   * @param {string} [params.currentSessionId]
+   * @returns {Promise<Object>} Safe updated user profile
+   */
+  changePassword: async ({
+    userId,
+    currentPassword,
+    newPassword,
+    currentSessionId = null,
+  }) => {
+    if (!currentPassword || !newPassword) {
+      const err = new Error('Both current password and new password are required.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+      const err = new Error('New password must be at least 8 characters long.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (currentPassword === newPassword) {
+      const err = new Error('New password must be different from current password.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // 1. Look up Track Leader user
+    const trackLeader = await TrackLeaderModel.getTrackLeaderById(userId);
+    if (!trackLeader || trackLeader.role !== 'TRACK_LEADER' || !trackLeader.is_active) {
+      const err = new Error('Track leader account not found or inactive.');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    // 2. Verify current password
+    const isCurrentValid = await comparePassword(currentPassword, trackLeader.password_hash);
+    if (!isCurrentValid) {
+      logger.warn(`Failed track leader password change attempt: invalid current password for user ${userId}`);
+      const err = new Error('Current password is incorrect.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // 3. Hash new password
+    const newPasswordHash = await hashPassword(newPassword);
+
+    // 4. Update database record
+    const updatedUser = await TrackLeaderModel.updatePassword(userId, newPasswordHash);
+
+    // 5. Revoke other active sessions (keeping current session valid)
+    if (currentSessionId) {
+      await TrackLeaderModel.revokeOtherSessions(userId, currentSessionId);
+    }
+
+    logger.info(`Track Leader password successfully changed for user: ${trackLeader.email}`);
+
+    return updatedUser;
+  },
 };
 
 export default trackLeaderAuthService;
+
