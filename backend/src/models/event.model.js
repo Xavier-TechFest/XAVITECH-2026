@@ -23,7 +23,7 @@ export const EventModel = {
 
     let query = client
       .from('events')
-      .select('*')
+      .select('*, tracks(id, name, slug)')
       .eq('is_active', true);
 
     if (registrationOpenOnly) {
@@ -53,7 +53,7 @@ export const EventModel = {
 
     const { data, error } = await client
       .from('events')
-      .select('*')
+      .select('*, tracks(id, name, slug)')
       .eq('id', id)
       .maybeSingle();
 
@@ -78,7 +78,7 @@ export const EventModel = {
 
     const { data, error } = await client
       .from('events')
-      .select('*')
+      .select('*, tracks(id, name, slug)')
       .eq('slug', slug)
       .maybeSingle();
 

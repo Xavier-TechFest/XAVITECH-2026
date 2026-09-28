@@ -55,5 +55,8 @@ class LoginRateLimiter {
   }
 }
 
+export { LoginRateLimiter };
 export const adminLoginLimiter = new LoginRateLimiter(15 * 60 * 1000, 10);
+export const trackLeaderLoginLimiter = new LoginRateLimiter(15 * 60 * 1000, 10);
 export default adminLoginLimiter;
+

@@ -14,7 +14,7 @@ export const REGISTRATION_STATUS = Object.freeze({
 export const USER_ROLES = Object.freeze({
   USER: 'USER',
   ADMIN: 'ADMIN',
-  VOLUNTEER: 'VOLUNTEER',
+  TRACK_LEADER: 'TRACK_LEADER',
 });
 
 export const EVENT_TYPE = Object.freeze({

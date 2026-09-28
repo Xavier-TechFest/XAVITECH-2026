@@ -11,7 +11,14 @@ export const formatEventResponse = (event) => {
     slug: event.slug,
     description: event.description || '',
     category: event.category || null,
-    track: event.track || event.category || null,
+    track: event.tracks
+      ? {
+          id: event.tracks.id,
+          name: event.tracks.name,
+          slug: event.tracks.slug,
+        }
+      : (event.track || event.category || null),
+    trackId: event.track_id || (event.tracks ? event.tracks.id : null),
     eventType: event.event_type || null,
     registrationType: event.registration_type,
     minTeamSize: event.min_team_size,

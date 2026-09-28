@@ -3,7 +3,7 @@ import { sendError } from '../utils/response.util.js';
 /**
  * Role-based Authorization Middleware Placeholder
  *
- * Verifies if the authenticated user has one of the allowed roles (ADMIN, VOLUNTEER, etc.)
+ * Verifies if the authenticated user has one of the allowed roles (ADMIN, TRACK_LEADER, etc.)
  */
 
 export const authorizeRoles = (...allowedRoles) => {
