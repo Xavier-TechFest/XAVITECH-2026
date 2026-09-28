@@ -7,6 +7,7 @@ import {
   generateTemporaryPassword,
 } from '../utils/security.util.js';
 import logger from '../utils/logger.util.js';
+import brevoEmailService from './brevoEmail.service.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -215,6 +216,26 @@ export const adminTrackLeaderService = {
 
     logger.info(`Track Leader created by Admin: ${cleanEmail} -> Track: ${targetTrack.name}`);
 
+    // 7. Dispatch Welcome Email via Brevo (Backend only)
+    let emailSent = false;
+    let emailError = null;
+    try {
+      const emailResult = await brevoEmailService.sendTrackLeaderWelcomeEmail({
+        name: newUser.name,
+        email: newUser.email,
+        trackName: targetTrack.name,
+        temporaryPassword,
+      });
+      emailSent = Boolean(emailResult?.success);
+      if (!emailResult?.success && emailResult?.error) {
+        emailError = emailResult.error;
+      }
+    } catch (emailErr) {
+      logger.error(`Failed to send welcome email to track leader (${cleanEmail}): ${emailErr.message}`);
+      emailSent = false;
+      emailError = emailErr.message;
+    }
+
     return {
       user: {
         id: newUser.id,
@@ -232,6 +253,8 @@ export const adminTrackLeaderService = {
         slug: targetTrack.slug,
       },
       temporaryPassword,
+      emailSent,
+      ...(emailError ? { emailError } : {}),
     };
   },
 
@@ -489,9 +512,46 @@ export const adminTrackLeaderService = {
       `Credentials reset for Track Leader: ${user.email}. Revoked ${revokedCount} active session(s).`
     );
 
+    // 4. Determine assigned track name for email notification
+    let trackName = 'Assigned Track';
+    try {
+      const activeAssignment = await TrackLeaderAssignmentModel.getActiveAssignment(id);
+      if (activeAssignment?.track?.name) {
+        trackName = activeAssignment.track.name;
+      }
+    } catch (trackLookupErr) {
+      logger.warn(
+        `Could not determine track name for email notification (${user.email}): ${trackLookupErr.message}`
+      );
+    }
+
+    // 5. Dispatch Credential Reset Email via Brevo
+    let emailSent = false;
+    let emailError = null;
+    try {
+      const emailResult = await brevoEmailService.sendTrackLeaderCredentialResetEmail({
+        name: user.name,
+        email: user.email,
+        trackName,
+        temporaryPassword,
+      });
+      emailSent = Boolean(emailResult?.success);
+      if (!emailResult?.success && emailResult?.error) {
+        emailError = emailResult.error;
+      }
+    } catch (emailErr) {
+      logger.error(
+        `Failed to send credential reset email to track leader (${user.email}): ${emailErr.message}`
+      );
+      emailSent = false;
+      emailError = emailErr.message;
+    }
+
     return {
       user: updatedUser,
       temporaryPassword,
+      emailSent,
+      ...(emailError ? { emailError } : {}),
     };
   },
 };

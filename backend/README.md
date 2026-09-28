@@ -52,9 +52,14 @@ Before setting up the project, make sure you have the following installed:
    FIREBASE_PROJECT_ID=your_firebase_project_id
    FIREBASE_CLIENT_EMAIL=your_firebase_client_email
    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour_key_here\n-----END PRIVATE KEY-----\n"
-   ```
 
-*(Brevo and Payment Gateway variables will be populated during subsequent phases).*
+   # Brevo Transactional Email Service (Track Leader Credentials)
+   BREVO_API_KEY=xkeysib-your_brevo_api_key_here
+   BREVO_SENDER_EMAIL=noreply@xavitech2026.com
+   BREVO_SENDER_NAME="XAVITECH 2026"
+   FRONTEND_URL=http://localhost:3000
+   EMAIL_SEND_ENABLED=true
+   ```
 
 ---
 
@@ -259,6 +264,43 @@ Response:
     "isActive": true
   }
 }
+```
+
+---
+
+## ✉️ Track Leader Transactional Email System (Phase 8 — Part 4)
+
+XAVITECH-2026 uses Brevo's REST API v3 (`https://api.brevo.com/v3/smtp/email`) to dispatch secure transactional credentials to Track Leaders upon provisioning and credential resets.
+
+### Key Capabilities
+- **Automated Welcome Dispatch**: Triggered when an Admin creates a new Track Leader. Includes recipient name, assigned track, temporary password, login portal link (`${FRONTEND_URL}/track-leader/login`), and mandatory password update reminder.
+- **Credential Reset Dispatch**: Triggered when an Admin resets a Track Leader's credentials. Invalids all active sessions and delivers the new temporary password.
+- **Zero Plaintext Storage**: Plaintext temporary passwords exist strictly in memory during dispatch and are NEVER saved in PostgreSQL and NEVER logged to disk or console.
+- **Failure Resilience**: If Brevo is down or unconfigured, account provisioning and credential updates still succeed. The system returns `emailSent: false`, allowing the Admin UI to gracefully display fallback instructions.
+- **Testability**: Includes `setMockEmailTransport()` and `restoreEmailTransport()` hooks for deterministic testing without external API traffic.
+
+### Brevo Setup & Verification
+1. Obtain an API key from the [Brevo Platform](https://app.brevo.com/settings/keys/api) with transactional permissions.
+2. In the Brevo dashboard under **Senders & IP**, add and verify your sender email (e.g., `noreply@xavitech2026.com`) or domain.
+3. Configure the following variables in `.env`:
+   ```env
+   BREVO_API_KEY=xkeysib-your_brevo_api_key_here
+   BREVO_SENDER_EMAIL=noreply@xavitech2026.com
+   BREVO_SENDER_NAME="XAVITECH 2026"
+   FRONTEND_URL=http://localhost:3000
+   EMAIL_SEND_ENABLED=true
+   ```
+
+### Running Test Suites
+```bash
+# Run Phase 8 Part 4 tests (30 tests)
+npm run test:phase8:part4
+
+# Run all Phase 8 tests (Parts 1 - 4)
+npm run test:phase8
+
+# Run entire backend test regression suite
+npm run test:all
 ```
 
 ---

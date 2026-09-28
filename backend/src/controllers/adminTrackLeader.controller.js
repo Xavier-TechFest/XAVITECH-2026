@@ -43,13 +43,18 @@ export const adminTrackLeaderController = {
         trackId,
       });
 
+      const message = result.emailSent
+        ? 'Track leader created successfully and credentials emailed.'
+        : 'Track leader created successfully. (Email delivery skipped or unavailable)';
+
       return sendSuccess(
         res,
-        'Track leader created successfully',
+        message,
         {
           user: result.user,
           track: result.track,
           temporaryPassword: result.temporaryPassword,
+          emailSent: Boolean(result.emailSent),
         },
         201
       );
@@ -138,12 +143,17 @@ export const adminTrackLeaderController = {
       const { id } = req.params;
       const result = await adminTrackLeaderService.resetCredentials(id);
 
+      const message = result.emailSent
+        ? 'Credentials reset successfully and emailed to Track Leader.'
+        : 'Credentials reset successfully. (Email delivery skipped or unavailable)';
+
       return sendSuccess(
         res,
-        'Credentials reset successfully.',
+        message,
         {
           user: result.user,
           temporaryPassword: result.temporaryPassword,
+          emailSent: Boolean(result.emailSent),
         },
         200
       );

@@ -26,8 +26,9 @@ const formatPrivateKey = (key) => {
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT, 10) || 5000,
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
-  corsOrigins: parseCorsOrigins(process.env.CLIENT_URL),
+  clientUrl: process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000',
+  frontendUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000',
+  corsOrigins: parseCorsOrigins(process.env.CLIENT_URL || process.env.FRONTEND_URL),
 
   // PostgreSQL / Supabase
   supabase: {
@@ -44,12 +45,15 @@ export const config = {
     privateKey: formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
   },
 
-  // Brevo (Transactional Email Service - Phase 4)
+  // Brevo (Transactional Email Service - Phase 8 Part 4)
   brevo: {
     apiKey: process.env.BREVO_API_KEY || '',
     senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@xavitech2026.com',
     senderName: process.env.BREVO_SENDER_NAME || 'XAVITECH 2026',
+    frontendUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000',
+    sendEnabled: process.env.EMAIL_SEND_ENABLED === 'true' || Boolean(process.env.BREVO_API_KEY),
   },
+
 
   // Payment Gateway (Phase 3)
   payment: {

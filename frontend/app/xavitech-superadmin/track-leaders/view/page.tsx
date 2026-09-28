@@ -43,6 +43,7 @@ function TrackLeaderDetailContent() {
     email: string;
     temporaryPassword: string;
     trackName?: string;
+    emailSent?: boolean;
   } | null>(null);
   const [copiedPassword, setCopiedPassword] = useState(false);
 
@@ -153,6 +154,7 @@ function TrackLeaderDetailContent() {
           email: result.user.email,
           temporaryPassword: result.temporaryPassword,
           trackName: leader.track?.name,
+          emailSent: result.emailSent,
         });
         setCopiedPassword(false);
         setShowCredsDisplayModal(true);
@@ -668,9 +670,25 @@ function TrackLeaderDetailContent() {
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] font-mono text-amber-300 leading-relaxed">
-              <strong>Notice:</strong> This password is not stored in plaintext. In Phase 8 Part 4, this credential will be dispatched via email. Copy or communicate it now for immediate authentication.
-            </div>
+            {issuedCreds.emailSent ? (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-mono text-emerald-300 leading-relaxed flex items-start gap-2.5">
+                <svg className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <div>
+                  <strong className="text-emerald-400">Credentials Emailed:</strong> A transactional email containing these login credentials and login instructions has been dispatched to <span className="text-white font-bold">{issuedCreds.email}</span>.
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] font-mono text-amber-300 leading-relaxed flex items-start gap-2.5">
+                <svg className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <strong>Email Delivery Offline:</strong> Automated email delivery could not be sent (or Brevo API is unconfigured in development). Please copy and communicate the temporary password above directly to the Track Leader.
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end pt-2">
               <button

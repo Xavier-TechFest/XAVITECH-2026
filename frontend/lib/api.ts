@@ -555,6 +555,7 @@ export interface AdminTrackLeaderCreateResult {
     slug: string;
   };
   temporaryPassword?: string;
+  emailSent?: boolean;
 }
 
 export interface AdminTrackLeaderResetResult {
@@ -568,6 +569,7 @@ export interface AdminTrackLeaderResetResult {
     updated_at: string;
   };
   temporaryPassword: string;
+  emailSent?: boolean;
 }
 
 /**
