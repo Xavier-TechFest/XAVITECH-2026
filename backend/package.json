@@ -16,8 +16,9 @@
     "test:phase7": "node tests/test_phase7.js",
     "test:phase8:part1": "node tests/test_phase8_part1.js",
     "test:phase8:part2": "node tests/test_phase8_part2.js",
-    "test:phase8": "node tests/test_phase8_part1.js && node tests/test_phase8_part2.js",
-    "test:all": "node tests/test_phase4.js && node tests/test_phase5.js && node tests/test_phase6.js && node tests/test_phase7.js && node tests/test_phase8_part1.js && node tests/test_phase8_part2.js"
+    "test:phase8:part3": "node tests/test_phase8_part3.js",
+    "test:phase8": "node tests/test_phase8_part1.js && node tests/test_phase8_part2.js && node tests/test_phase8_part3.js",
+    "test:all": "node tests/test_phase4.js && node tests/test_phase5.js && node tests/test_phase6.js && node tests/test_phase7.js && node tests/test_phase8_part1.js && node tests/test_phase8_part2.js && node tests/test_phase8_part3.js"
   },
   "keywords": [
     "xavitech",

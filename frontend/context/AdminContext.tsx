@@ -19,12 +19,17 @@ import {
   adminGetTeams,
   adminGetTeamDetails,
   adminGetEvents,
+  adminGetTracks,
+  adminGetTrackLeaders,
+  adminGetTrackLeader,
   AdminProfile,
   AdminDashboardStats,
   AdminRegistrationListItem,
   AdminRegistrationDetail,
   AdminTeamListItem,
   AdminTeamDetail,
+  AdminTrackLeaderListItem,
+  AdminTrackLeaderDetail,
   PaginationMeta,
 } from "@/lib/api";
 
@@ -38,10 +43,16 @@ interface TeamsQueryResponse {
   pagination: PaginationMeta;
 }
 
+interface TrackLeadersQueryResponse {
+  trackLeaders: AdminTrackLeaderListItem[];
+  pagination: PaginationMeta;
+}
+
 interface AdminContextType {
   admin: AdminProfile | null;
   isLoadingAdmin: boolean;
   logout: () => Promise<void>;
+
 
   // Dashboard
   dashboardStats: AdminDashboardStats | null;
@@ -88,6 +99,30 @@ interface AdminContextType {
     forceRefresh?: boolean
   ) => Promise<AdminTeamDetail>;
 
+  // Tracks
+  tracks: Array<{ id: string; name: string; slug: string; is_active: boolean }> | null;
+  getTracks: () => Promise<Array<{ id: string; name: string; slug: string; is_active: boolean }>>;
+
+  // Track Leaders
+  getTrackLeaders: (
+    params?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      trackId?: string;
+      status?: string;
+    },
+    forceRefresh?: boolean
+  ) => Promise<TrackLeadersQueryResponse>;
+
+  // Track Leader Detail
+  getTrackLeaderDetails: (
+    trackLeaderId: string,
+    forceRefresh?: boolean
+  ) => Promise<AdminTrackLeaderDetail>;
+
+  clearTrackLeadersCache: () => void;
+
   // Sidebar Collapse State (pure UI state)
   isSidebarCollapsed: boolean;
   setIsSidebarCollapsed: (collapsed: boolean) => void;
@@ -98,6 +133,7 @@ interface AdminContextType {
   toggleTheme: () => void;
   setTheme: (theme: "dark" | "light") => void;
 }
+
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
@@ -119,6 +155,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const registrationDetailsCache = useRef<Record<string, AdminRegistrationDetail>>({});
   const teamsCache = useRef<Record<string, TeamsQueryResponse>>({});
   const teamDetailsCache = useRef<Record<string, AdminTeamDetail>>({});
+  const [tracks, setTracks] = useState<Array<{ id: string; name: string; slug: string; is_active: boolean }> | null>(null);
+  const trackLeadersCache = useRef<Record<string, TrackLeadersQueryResponse>>({});
+  const trackLeaderDetailsCache = useRef<Record<string, AdminTrackLeaderDetail>>({});
+
 
   // 3. Pure Client-Side Sidebar Collapse State
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -229,8 +269,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       registrationDetailsCache.current = {};
       teamsCache.current = {};
       teamDetailsCache.current = {};
+      trackLeadersCache.current = {};
+      trackLeaderDetailsCache.current = {};
+      setTracks(null);
       authCheckedRef.current = false;
       router.replace("/xavitech-superadmin");
+
     }
   }, [router]);
 
@@ -366,6 +410,78 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  // 11. Clear Track Leaders In-Memory Query Cache
+  const clearTrackLeadersCache = useCallback(() => {
+    trackLeadersCache.current = {};
+    trackLeaderDetailsCache.current = {};
+  }, []);
+
+  // 12. Cached Tracks Getter
+  const getTracks = useCallback(async (): Promise<
+    Array<{ id: string; name: string; slug: string; is_active: boolean }>
+  > => {
+    if (tracks && tracks.length > 0) {
+      return tracks;
+    }
+    try {
+      const data = await adminGetTracks();
+      setTracks(data);
+      return data;
+    } catch (err) {
+      console.error("Failed to load tracks:", err);
+      return [];
+    }
+  }, [tracks]);
+
+  // 13. Cached Track Leaders Query Getter
+  const getTrackLeaders = useCallback(
+    async (
+      params?: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        trackId?: string;
+        status?: string;
+      },
+      forceRefresh = false
+    ): Promise<TrackLeadersQueryResponse> => {
+      const cacheKey = JSON.stringify({
+        page: params?.page || 1,
+        limit: params?.limit || 15,
+        search: (params?.search || "").trim(),
+        trackId: params?.trackId || "",
+        status: params?.status || "",
+      });
+
+      if (!forceRefresh && trackLeadersCache.current[cacheKey]) {
+        return trackLeadersCache.current[cacheKey];
+      }
+
+      const result = await adminGetTrackLeaders(params);
+      trackLeadersCache.current[cacheKey] = result;
+      return result;
+    },
+    []
+  );
+
+  // 14. Cached Track Leader Details Getter
+  const getTrackLeaderDetails = useCallback(
+    async (
+      trackLeaderId: string,
+      forceRefresh = false
+    ): Promise<AdminTrackLeaderDetail> => {
+      const cleanId = (trackLeaderId || "").trim();
+      if (!forceRefresh && trackLeaderDetailsCache.current[cleanId]) {
+        return trackLeaderDetailsCache.current[cleanId];
+      }
+
+      const result = await adminGetTrackLeader(cleanId);
+      trackLeaderDetailsCache.current[cleanId] = result;
+      return result;
+    },
+    []
+  );
+
   const value: AdminContextType = {
     admin,
     isLoadingAdmin,
@@ -378,6 +494,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     getRegistrationDetails,
     getTeams,
     getTeamDetails,
+    tracks,
+    getTracks,
+    getTrackLeaders,
+    getTrackLeaderDetails,
+    clearTrackLeadersCache,
     isSidebarCollapsed,
     setIsSidebarCollapsed,
     toggleSidebar,
@@ -385,6 +506,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     toggleTheme,
     setTheme,
   };
+
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }

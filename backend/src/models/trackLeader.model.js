@@ -237,6 +237,52 @@ export const TrackLeaderModel = {
     if (error) throw error;
     return count || 0;
   },
+
+  /**
+   * Fetch active sessions list for a Track Leader (safe metadata only).
+   *
+   * @param {string} userId
+   * @returns {Promise<Array<Object>>}
+   */
+  getActiveSessionsForUser: async (userId) => {
+    const client = getSupabaseClient();
+    if (!client) return [];
+
+    const { data, error } = await client
+      .from('track_leader_sessions')
+      .select('id, user_agent, ip_address, expires_at, created_at, last_used_at')
+      .eq('user_id', userId)
+      .is('revoked_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Revoke ALL active sessions for a Track Leader.
+   * Invoked upon deactivation or credential reset.
+   *
+   * @param {string} userId
+   * @returns {Promise<number>} Number of sessions revoked
+   */
+  revokeAllSessions: async (userId) => {
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Database client is not available');
+
+    const now = new Date().toISOString();
+    const { data, error } = await client
+      .from('track_leader_sessions')
+      .update({ revoked_at: now })
+      .eq('user_id', userId)
+      .is('revoked_at', null)
+      .select('id');
+
+    if (error) throw error;
+    return data?.length || 0;
+  },
 };
 
 export default TrackLeaderModel;
+

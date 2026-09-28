@@ -56,10 +56,26 @@ export const verifySecretKey = (providedKey, expectedKey) => {
   return crypto.timingSafeEqual(bufProvided, bufExpected);
 };
 
+/**
+ * Generate a cryptographically secure random temporary password.
+ * Uses a character set without visually ambiguous characters (0/O, 1/l/I).
+ */
+export const generateTemporaryPassword = (length = 12) => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*';
+  const bytes = crypto.randomBytes(length);
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars[bytes[i] % chars.length];
+  }
+  return result;
+};
+
 export default {
   hashPassword,
   comparePassword,
   generateSessionToken,
   hashSessionToken,
   verifySecretKey,
+  generateTemporaryPassword,
 };
+

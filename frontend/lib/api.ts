@@ -490,6 +490,220 @@ export async function adminGetEvents(): Promise<Array<{ id: string; name: string
   return json.data || [];
 }
 
+/**
+ * Fetch all active tracks for admin dropdown selection.
+ */
+export async function adminGetTracks(): Promise<Array<{ id: string; name: string; slug: string; is_active: boolean }>> {
+  const response = await fetch(`${API_BASE_URL}/tracks`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return [];
+  }
+  return json.data || [];
+}
+
+export interface AdminTrackLeaderListItem {
+  id: string;
+  name: string | null;
+  email: string;
+  role: string;
+  is_active: boolean;
+  must_change_password: boolean;
+  track: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminTrackLeaderSession {
+  id: string;
+  userAgent: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string;
+}
+
+export interface AdminTrackLeaderDetail extends AdminTrackLeaderListItem {
+  activeSessionsCount: number;
+  sessions: AdminTrackLeaderSession[];
+}
+
+export interface AdminCreateTrackLeaderPayload {
+  name: string;
+  email: string;
+  trackId: string;
+}
+
+export interface AdminUpdateTrackLeaderPayload {
+  name?: string;
+  email?: string;
+  trackId?: string;
+}
+
+export interface AdminTrackLeaderCreateResult {
+  user: AdminTrackLeaderListItem;
+  track: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  temporaryPassword?: string;
+}
+
+export interface AdminTrackLeaderResetResult {
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    role: string;
+    is_active: boolean;
+    must_change_password: boolean;
+    updated_at: string;
+  };
+  temporaryPassword: string;
+}
+
+/**
+ * Fetch paginated, searchable, filterable track leaders list.
+ */
+export async function adminGetTrackLeaders(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  trackId?: string;
+  status?: string;
+}): Promise<{ trackLeaders: AdminTrackLeaderListItem[]; pagination: PaginationMeta }> {
+  const url = new URL(`${API_BASE_URL}/admin/track-leaders`);
+  if (params?.page) url.searchParams.set("page", String(params.page));
+  if (params?.limit) url.searchParams.set("limit", String(params.limit));
+  if (params?.search) url.searchParams.set("search", params.search);
+  if (params?.trackId) url.searchParams.set("trackId", params.trackId);
+  if (params?.status) url.searchParams.set("status", params.status);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to fetch track leaders", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * Fetch complete details for a specific track leader.
+ */
+export async function adminGetTrackLeader(id: string): Promise<AdminTrackLeaderDetail> {
+  const response = await fetch(`${API_BASE_URL}/admin/track-leaders/${encodeURIComponent(id)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Track leader not found", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * Create a new Track Leader with assigned track.
+ */
+export async function adminCreateTrackLeader(
+  payload: AdminCreateTrackLeaderPayload
+): Promise<AdminTrackLeaderCreateResult> {
+  const response = await fetch(`${API_BASE_URL}/admin/track-leaders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to create track leader", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * Update track leader name, email, and/or reassign track.
+ */
+export async function adminUpdateTrackLeader(
+  id: string,
+  payload: AdminUpdateTrackLeaderPayload
+): Promise<AdminTrackLeaderDetail> {
+  const response = await fetch(`${API_BASE_URL}/admin/track-leaders/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to update track leader", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * Activate or deactivate a track leader account.
+ */
+export async function adminUpdateTrackLeaderStatus(
+  id: string,
+  isActive: boolean
+): Promise<AdminTrackLeaderListItem> {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/track-leaders/${encodeURIComponent(id)}/status`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ is_active: isActive }),
+    }
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to update track leader status", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * Reissue / reset credentials for a track leader.
+ */
+export async function adminResetTrackLeaderCredentials(
+  id: string
+): Promise<AdminTrackLeaderResetResult> {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/track-leaders/${encodeURIComponent(id)}/reset-credentials`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    }
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to reset credentials", response.status, json);
+  }
+  return json.data;
+}
+
 export const api = {
   fetchUserProfile,
   updateUserProfile,
@@ -502,7 +716,15 @@ export const api = {
   adminGetTeams,
   adminGetTeamDetails,
   adminGetEvents,
+  adminGetTracks,
+  adminGetTrackLeaders,
+  adminGetTrackLeader,
+  adminCreateTrackLeader,
+  adminUpdateTrackLeader,
+  adminUpdateTrackLeaderStatus,
+  adminResetTrackLeaderCredentials,
 };
 
 export default api;
+
 

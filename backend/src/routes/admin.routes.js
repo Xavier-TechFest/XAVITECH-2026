@@ -12,8 +12,10 @@ import {
 } from '../controllers/admin.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import { validateCheckIn } from '../validators/admin.validator.js';
+import adminTrackLeaderRoutes from './adminTrackLeader.routes.js';
 
 const router = Router();
+
 
 // =============================================================================
 // Admin Authentication Endpoints (Dedicated Admin Auth)
@@ -51,4 +53,10 @@ router.get('/teams/:teamId', requireAdmin, getTeamDetails);
 // POST /api/admin/check-in -> Day-of-event QR code scan verification placeholder
 router.post('/check-in', requireAdmin, validate(validateCheckIn), verifyAndCheckIn);
 
+// =============================================================================
+// Phase 8: Track Leader Management Operations (Protected by requireAdmin)
+// =============================================================================
+router.use('/track-leaders', adminTrackLeaderRoutes);
+
 export default router;
+
