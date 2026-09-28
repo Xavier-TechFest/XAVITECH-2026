@@ -526,27 +526,101 @@
   border-color: #e2e8f0 !important;
 }
 
-.admin-theme-light [class*="text-[#35e0c9]"] {
-  color: #0d9488 !important; /* accessible vibrant teal-600 */
+/* Accessible deep teal accents for light mode */
+.admin-theme-light [class*="text-[#35e0c9]"],
+.admin-theme-light [class*="text-cyan-400"] {
+  color: #0f766e !important; /* accessible vibrant deep teal-700 */
 }
 
-.admin-theme-light [class*="bg-[#35e0c9]/10"],
-.admin-theme-light [class*="bg-[#35e0c9]/15"] {
-  background-color: #ccfbf1 !important; /* teal-100 */
-  border-color: #99f6e4 !important;
+/* Counters & numbers in light mode */
+.admin-theme-light [class*="text-3xl"][class*="text-[#35e0c9]"],
+.admin-theme-light [class*="text-4xl"][class*="text-[#35e0c9]"] {
   color: #0f766e !important;
 }
 
-.admin-theme-light [class*="border-[#35e0c9]"] {
+/* Accent badges & pills */
+.admin-theme-light [class*="bg-[#35e0c9]/10"],
+.admin-theme-light [class*="bg-[#35e0c9]/15"],
+.admin-theme-light [class*="bg-cyan-950"] {
+  background-color: #ccfbf1 !important; /* teal-100 */
+  border-color: #5eead4 !important; /* teal-300 */
+  color: #115e59 !important; /* teal-800 */
+}
+
+.admin-theme-light [class*="border-[#35e0c9]"],
+.admin-theme-light [class*="border-cyan-800"] {
   border-color: #14b8a6 !important;
 }
 
+/* Glowing dots in light mode */
+.admin-theme-light span[class*="bg-[#35e0c9]"].rounded-full,
+.admin-theme-light span[class*="bg-cyan-400"].rounded-full {
+  background-color: #0d9488 !important;
+  box-shadow: 0 0 6px rgba(13, 148, 136, 0.4) !important;
+}
+
+/* Status: Active & Registration Open badges in light mode */
+.admin-theme-light [class*="bg-emerald-950"],
+.admin-theme-light [class*="bg-emerald-900"] {
+  background-color: #ecfdf5 !important; /* emerald-50 */
+  border-color: #a7f3d0 !important; /* emerald-200 */
+  color: #065f46 !important; /* emerald-800 */
+}
+
+.admin-theme-light [class*="text-emerald-400"] {
+  color: #065f46 !important; /* emerald-800 */
+  font-weight: 700 !important;
+}
+
+.admin-theme-light [class*="border-emerald-800"] {
+  border-color: #a7f3d0 !important;
+}
+
+/* Inactive / Closed / Error badges in light mode */
+.admin-theme-light [class*="bg-rose-950"],
+.admin-theme-light [class*="bg-rose-900"] {
+  background-color: #fff1f2 !important; /* rose-50 */
+  border-color: #fecdd3 !important; /* rose-200 */
+  color: #9f1239 !important; /* rose-800 */
+}
+
+.admin-theme-light [class*="text-rose-400"],
+.admin-theme-light [class*="text-rose-300"] {
+  color: #9f1239 !important;
+}
+
+.admin-theme-light [class*="border-rose-800"],
+.admin-theme-light [class*="border-rose-900"] {
+  border-color: #fecdd3 !important;
+}
+
+/* Warning badges in light mode */
+.admin-theme-light [class*="bg-amber-950"],
+.admin-theme-light [class*="bg-amber-900"] {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+
+.admin-theme-light [class*="text-amber-400"] {
+  color: #92400e !important;
+}
+
+/* Sidebar navigation in light mode */
 .admin-theme-light nav a:not([class*="bg-[#35e0c9]"]) {
-  color: #64748b !important;
+  color: #334155 !important; /* slate-700 - dark, clear, readable */
 }
 
 .admin-theme-light nav a:not([class*="bg-[#35e0c9]"]):hover {
   background-color: #f1f5f9 !important;
   color: #0f172a !important;
+}
+
+.admin-theme-light nav a[class*="bg-[#35e0c9]"] {
+  background-color: #ccfbf1 !important;
+  border-color: #14b8a6 !important;
+  color: #0f766e !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(20, 184, 166, 0.15) !important;
 }
 

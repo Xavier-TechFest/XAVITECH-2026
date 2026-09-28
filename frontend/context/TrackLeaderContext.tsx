@@ -28,6 +28,11 @@ interface TrackLeaderContextType {
   changePassword: (curr: string, next: string) => Promise<void>;
   refreshProfile: () => Promise<TrackLeaderProfile | null>;
   refreshTrackAndEvents: () => Promise<void>;
+  isSidebarCollapsed: boolean;
+  toggleSidebar: () => void;
+  theme: "dark" | "light";
+  toggleTheme: () => void;
+  setTheme: (theme: "dark" | "light") => void;
 }
 
 const TrackLeaderContext = createContext<TrackLeaderContextType | undefined>(
@@ -48,6 +53,44 @@ export function TrackLeaderProvider({
   const [loading, setLoading] = useState(true);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [theme, setThemeState] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem("xavitech_tl_theme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        setThemeState(savedTheme);
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, []);
+
+  const setTheme = useCallback((newTheme: "dark" | "light") => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem("xavitech_tl_theme", newTheme);
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      try {
+        localStorage.setItem("xavitech_tl_theme", next);
+      } catch {
+        // Ignore
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarCollapsed((prev) => !prev);
+  }, []);
 
   // Fetch track and events if password change is complete
   const refreshTrackAndEvents = useCallback(async () => {
@@ -204,6 +247,11 @@ export function TrackLeaderProvider({
         changePassword,
         refreshProfile,
         refreshTrackAndEvents,
+        isSidebarCollapsed,
+        toggleSidebar,
+        theme,
+        toggleTheme,
+        setTheme,
       }}
     >
       {children}
