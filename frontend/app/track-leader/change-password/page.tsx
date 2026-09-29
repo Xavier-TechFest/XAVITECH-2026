@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useTrackLeader } from "@/context/TrackLeaderContext";
+import { AuthShell, AuthCard, AuthField, AuthButton, AuthAlert } from "@/components/auth";
 
 export default function TrackLeaderChangePasswordPage() {
   const { changePassword, trackLeader, logout } = useTrackLeader();
@@ -41,144 +42,124 @@ export default function TrackLeaderChangePasswordPage() {
     try {
       await changePassword(currentPassword, newPassword);
     } catch (err: any) {
-      setErrorMessage(err.message || "Failed to change password. Please verify current credentials.");
+      setErrorMessage(
+        err.message || "Failed to change password. Please verify current credentials."
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#080b11] text-slate-100 flex flex-col items-center justify-center p-4 sm:p-6 font-sans">
-      <div className="w-full max-w-md bg-[#0c101a] border border-slate-800/90 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/20 relative">
-        {/* Banner Alert for First Login */}
-        <div className="mb-6 p-4 rounded-xl bg-amber-950/30 border border-amber-800/50 text-amber-300">
-          <div className="flex items-center space-x-2 font-semibold text-xs uppercase tracking-wider mb-1">
-            <svg
-              className="w-4 h-4 text-amber-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+    <AuthShell portalType="track-leader">
+      <AuthCard
+        category="SECURITY // FIRST LOGIN"
+        badge="PASSWORD UPDATE"
+        title="Set Your New Password"
+        description="For security, you must replace your administrator-issued temporary password before accessing your track console."
+        footer={
+          <div className="flex items-center justify-between gap-3 text-xs font-space text-slate-500">
+            <span>Wrong account signed in?</span>
+            <button
+              type="button"
+              onClick={logout}
+              className="font-oxanium text-[10px] font-bold uppercase tracking-wider text-rose-300 hover:text-rose-200 transition-colors cursor-pointer"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            <span>Password Change Required</span>
+              Sign out instead
+            </button>
           </div>
-          <p className="text-xs text-amber-200/80 leading-relaxed">
-            You are logged in with an administrator-issued temporary password. Please create a new secure password to unlock your track console.
-          </p>
-        </div>
-
-        {/* User Identity Note */}
-        {trackLeader && (
-          <div className="mb-5 text-center">
-            <div className="text-xs text-slate-400">Account</div>
-            <div className="text-sm font-semibold text-slate-200 truncate">
-              {trackLeader.email}
+        }
+      >
+        <div className="space-y-5">
+          {/* Account Indicator Banner */}
+          {trackLeader?.email && (
+            <div className="flex items-center justify-between p-3 border border-white/10 bg-white/[0.02] font-space text-xs">
+              <span className="text-slate-400">Account:</span>
+              <span className="font-mono font-semibold text-circuit truncate max-w-[220px]">
+                {trackLeader.email}
+              </span>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Error Alert */}
-        {errorMessage && (
-          <div className="mb-5 p-3.5 rounded-lg bg-rose-950/40 border border-rose-900/60 text-xs text-rose-300 flex items-start space-x-2.5">
-            <svg
-              className="w-4 h-4 text-rose-400 shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>{errorMessage}</span>
-          </div>
-        )}
+          {/* Error Alert */}
+          {errorMessage && <AuthAlert type="error" message={errorMessage} />}
 
-        {/* Password Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">
-              Current / Temporary Password
-            </label>
-            <input
+          {/* Password Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <AuthField
+              id="current-password"
+              label="Current / Temporary Password"
               type="password"
-              autoComplete="current-password"
               required
+              autoComplete="current-password"
               disabled={isSubmitting}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="••••••••••••"
-              className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090f] border border-slate-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors disabled:opacity-50"
+              placeholder="Enter temporary password"
             />
-          </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">
-              New Password (min 8 characters)
-            </label>
-            <input
+            <AuthField
+              id="new-password"
+              label="New Password"
               type="password"
-              autoComplete="new-password"
               required
+              minLength={8}
+              autoComplete="new-password"
               disabled={isSubmitting}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="••••••••••••"
-              className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090f] border border-slate-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors disabled:opacity-50"
+              placeholder="Minimum 8 characters"
+              helperText="Must be at least 8 characters and different from temporary password."
             />
-          </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">
-              Confirm New Password
-            </label>
-            <input
+            <AuthField
+              id="confirm-password"
+              label="Confirm New Password"
               type="password"
-              autoComplete="new-password"
               required
+              minLength={8}
+              autoComplete="new-password"
               disabled={isSubmitting}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••••••"
-              className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090f] border border-slate-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors disabled:opacity-50"
+              placeholder="Re-enter new password"
             />
-          </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full mt-2 py-2.5 px-4 rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-semibold text-sm transition-all shadow-md shadow-cyan-950/40 flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-slate-950/40 border-t-slate-950 rounded-full animate-spin" />
-                <span>Updating Password...</span>
-              </>
-            ) : (
-              <span>Save New Password & Continue</span>
-            )}
-          </button>
-        </form>
+            {/* Checklist indicator */}
+            <div className="p-3 border border-white/[0.06] bg-white/[0.015] font-space text-[11px] text-slate-400 space-y-1">
+              <div className="flex items-center gap-2">
+                <span className={newPassword.length >= 8 ? "text-circuit" : "text-slate-600"}>
+                  {newPassword.length >= 8 ? "✓" : "○"}
+                </span>
+                <span>Minimum 8 characters length</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={
+                    confirmPassword && newPassword === confirmPassword
+                      ? "text-circuit"
+                      : "text-slate-600"
+                  }
+                >
+                  {confirmPassword && newPassword === confirmPassword ? "✓" : "○"}
+                </span>
+                <span>Both passwords match</span>
+              </div>
+            </div>
 
-        <div className="mt-6 pt-4 border-t border-slate-800 flex justify-center">
-          <button
-            type="button"
-            onClick={logout}
-            className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
-          >
-            Sign out instead
-          </button>
+            <div className="pt-2">
+              <AuthButton
+                type="submit"
+                disabled={isSubmitting}
+                loading={isSubmitting}
+                loadingText="Updating Password..."
+              >
+                Save New Password & Continue →
+              </AuthButton>
+            </div>
+          </form>
         </div>
-      </div>
-    </div>
+      </AuthCard>
+    </AuthShell>
   );
 }
