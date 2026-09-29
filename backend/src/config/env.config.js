@@ -9,9 +9,31 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
 
-const parseCorsOrigins = (rawOrigins) => {
-  if (!rawOrigins) return ['http://localhost:3000'];
-  return rawOrigins.split(',').map((origin) => origin.trim()).filter(Boolean);
+const normalizeOrigin = (origin) => {
+  if (!origin || typeof origin !== 'string') return '';
+  return origin.trim().replace(/\/+$/, '');
+};
+
+const parseCorsOrigins = (...inputs) => {
+  const defaultOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://xavitech-2026.vercel.app',
+  ];
+
+  const originsSet = new Set(defaultOrigins);
+
+  inputs.forEach((raw) => {
+    if (!raw || typeof raw !== 'string') return;
+    raw.split(',').forEach((item) => {
+      const normalized = normalizeOrigin(item);
+      if (normalized) {
+        originsSet.add(normalized);
+      }
+    });
+  });
+
+  return Array.from(originsSet);
 };
 
 const formatPrivateKey = (key) => {
@@ -26,9 +48,14 @@ const formatPrivateKey = (key) => {
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT, 10) || 5000,
-  clientUrl: process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000',
-  frontendUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000',
-  corsOrigins: parseCorsOrigins(process.env.CLIENT_URL || process.env.FRONTEND_URL),
+  clientUrl: normalizeOrigin(process.env.CLIENT_URL || process.env.FRONTEND_URL) || 'https://xavitech-2026.vercel.app',
+  frontendUrl: normalizeOrigin(process.env.FRONTEND_URL || process.env.CLIENT_URL) || 'https://xavitech-2026.vercel.app',
+  corsOrigins: parseCorsOrigins(
+    process.env.CLIENT_URL,
+    process.env.FRONTEND_URL,
+    process.env.CORS_ORIGINS,
+    process.env.CORS_ORIGIN
+  ),
 
   // PostgreSQL / Supabase
   supabase: {

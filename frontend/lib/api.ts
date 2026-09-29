@@ -2,8 +2,31 @@
  * API Client for XAVITECH-2026 Backend Services
  */
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+/**
+ * Resolves the standardized API base URL.
+ * Ensures the returned URL always ends with "/api" and has no trailing slash,
+ * gracefully handling environments where NEXT_PUBLIC_API_URL is configured
+ * either with or without the "/api" suffix, or with trailing slashes.
+ */
+function resolveApiBaseUrl(): string {
+  const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  let trimmed = rawUrl.trim().replace(/\/+$/, "");
+
+  // Fallback to default if empty
+  if (!trimmed) {
+    trimmed = "http://localhost:5000/api";
+  }
+
+  // If a relative path was passed (e.g. "/api"), resolve against browser origin
+  if (trimmed.startsWith("/") && typeof window !== "undefined" && window.location?.origin) {
+    trimmed = `${window.location.origin}${trimmed}`;
+  }
+
+  // Ensure path ends with /api
+  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export interface UserProfile {
   id: string;

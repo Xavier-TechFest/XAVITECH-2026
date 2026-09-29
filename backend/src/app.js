@@ -12,12 +12,33 @@ const app = express();
 // =============================================================================
 // CORS Configuration
 // =============================================================================
+const normalizeOrigin = (origin) => {
+  if (!origin || typeof origin !== 'string') return '';
+  return origin.trim().replace(/\/+$/, '').toLowerCase();
+};
+
 const corsOptions = {
   origin: (origin, callback) => {
     // Allow server-to-server, curl, Postman, and mobile requests with no origin
     if (!origin) return callback(null, true);
 
-    if (config.corsOrigins.includes(origin) || config.corsOrigins.includes('*')) {
+    const normalizedIncoming = normalizeOrigin(origin);
+
+    // If wildcard origin configured
+    if (config.corsOrigins.includes('*')) {
+      return callback(null, true);
+    }
+
+    // Direct match against normalized config origins
+    const isConfigured = config.corsOrigins.some(
+      (allowed) => normalizeOrigin(allowed) === normalizedIncoming
+    );
+
+    // Whitelist production Vercel app domain and Vercel preview deployments
+    const isVercelProduction = normalizedIncoming === 'https://xavitech-2026.vercel.app';
+    const isVercelPreview = /^https:\/\/xavitech-2026[a-z0-9-]*\.vercel\.app$/.test(normalizedIncoming);
+
+    if (isConfigured || isVercelProduction || isVercelPreview) {
       return callback(null, true);
     }
 
@@ -25,10 +46,12 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // =============================================================================
 // Body & Cookie Parsing Middlewares
@@ -56,6 +79,10 @@ app.get('/health', (req, res) => {
 // API Routes Aggregator (/api/*)
 // =============================================================================
 app.use('/api', apiRoutes);
+
+// Fallback compatibility mount: Also mount under root (/) so requests missing /api
+// (e.g. misconfigured clients calling /admin/* or /track-leader/*) are seamlessly handled
+app.use('/', apiRoutes);
 
 // =============================================================================
 // Error Handling Middlewares
