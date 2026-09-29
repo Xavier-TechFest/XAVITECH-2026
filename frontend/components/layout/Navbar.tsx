@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 
 const links = [
   { label: "Home", href: "/" },
   { label: "Tracks", href: "/tracks" },
-  { label: "Events", href: "/tracks" },
+  { label: "Events", href: "/events" },
   { label: "Schedule", href: "/#schedule" },
   { label: "About", href: "/#about" },
 ];
@@ -15,6 +16,7 @@ const links = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const { user, isAuthenticated, loading } = useAuth();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!open) return;
@@ -119,40 +121,58 @@ export default function Navbar() {
       {open && (
         <div
           id="mobile-menu"
-          className="max-h-[calc(100svh-4rem)] overflow-y-auto overscroll-contain border-t border-line/60 bg-bg pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pt-2 md:hidden"
+          className="relative max-h-[calc(100svh-4rem)] overflow-y-auto overscroll-contain border-t border-circuit/20 bg-[#050910] pb-[max(1.25rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-4 shadow-[0_24px_60px_rgba(0,0,0,.55)] md:hidden"
         >
-          <ul className="flex flex-col">
-            {links.map((link) => (
-              <li key={link.label} className="border-b border-line/40 last:border-0">
-                <Link
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="flex min-h-12 items-center text-base text-muted transition-colors hover:text-ink active:text-ink"
-                >
-                  {link.label}
-                </Link>
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-circuit/10 blur-3xl" />
+            <div className="absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-marigold/10 blur-3xl" />
+            <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: "linear-gradient(rgba(53,224,201,.7) 1px, transparent 1px), linear-gradient(to right, rgba(53,224,201,.7) 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+          </div>
+          <div className="relative mx-auto max-w-6xl">
+            <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <p className="font-oxanium text-[10px] font-bold uppercase tracking-[0.24em] text-circuit">Navigation system</p>
+                <p className="mt-1 font-space text-xs text-slate-400">Choose your destination</p>
+              </div>
+              <span className="flex items-center gap-2 border border-emerald-400/25 bg-emerald-400/[0.06] px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-widest text-emerald-300">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> Online
+              </span>
+            </div>
+            <ul className="flex flex-col gap-2">
+              {links.map((link, index) => {
+                const active = link.href === "/" ? pathname === "/" : link.href.startsWith("/#") ? false : pathname === link.href || pathname.startsWith(`${link.href}/`);
+                return (
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className={`group relative flex min-h-[58px] items-center justify-between overflow-hidden border px-4 transition-all duration-200 active:scale-[0.99] ${active ? "border-circuit/70 bg-circuit/[0.09] shadow-[inset_3px_0_0_#35e0c9,0_0_18px_rgba(53,224,201,.08)]" : "border-white/[0.09] bg-white/[0.025] hover:border-circuit/40 hover:bg-circuit/[0.05]"}`}
+                    >
+                      <span className="flex items-center gap-4">
+                        <span className={`font-mono text-[10px] tracking-widest ${active ? "text-circuit" : "text-slate-600 group-hover:text-circuit/80"}`}>{String(index + 1).padStart(2, "0")}</span>
+                        <span className={`font-oxanium text-sm font-bold uppercase tracking-[0.12em] ${active ? "text-white" : "text-slate-300 group-hover:text-white"}`}>{link.label}</span>
+                      </span>
+                      <span className={`text-lg transition-transform group-hover:translate-x-1 ${active ? "text-circuit" : "text-slate-600 group-hover:text-circuit"}`} aria-hidden="true">→</span>
+                    </Link>
+                  </li>
+                );
+              })}
+              <li className="pt-2">
+                {isAuthenticated ? (
+                  <Link href="/profile" onClick={() => setOpen(false)} className="flex h-12 w-full items-center justify-center gap-2 border border-circuit/70 bg-circuit font-oxanium text-xs font-black uppercase tracking-[0.16em] text-[#03100f] shadow-[0_0_22px_rgba(53,224,201,.2)] transition hover:brightness-110">
+                    My Profile <span aria-hidden="true">↗</span>
+                  </Link>
+                ) : (
+                  <Link href="/login" onClick={() => setOpen(false)} className="flex h-12 w-full items-center justify-center gap-2 bg-gradient-to-r from-marigold to-amber-300 font-oxanium text-xs font-black uppercase tracking-[0.16em] text-[#11100b] shadow-[0_0_22px_rgba(242,166,60,.2)] transition hover:brightness-110">
+                    Sign In with Google <span aria-hidden="true">↗</span>
+                  </Link>
+                )}
               </li>
-            ))}
-            <li className="pt-3 pb-2">
-              {isAuthenticated ? (
-                <Link
-                  href="/profile"
-                  onClick={() => setOpen(false)}
-                  className="flex h-11 w-full items-center justify-center rounded-xl bg-circuit text-bg font-body font-semibold text-sm"
-                >
-                  My Profile
-                </Link>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  className="flex h-11 w-full items-center justify-center rounded-xl bg-ink text-bg font-body font-semibold text-sm"
-                >
-                  Sign In with Google
-                </Link>
-              )}
-            </li>
-          </ul>
+            </ul>
+            <div className="mt-4 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.18em] text-slate-600">
+              <span>XAVITECH 2026</span><span>Menu // {String(links.length).padStart(2, "0")} links</span>
+            </div>
+          </div>
         </div>
       )}
     </header>

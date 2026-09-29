@@ -1,6 +1,12 @@
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables from .env file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from backend/.env regardless of execution cwd
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
 
 const parseCorsOrigins = (rawOrigins) => {
@@ -20,8 +26,9 @@ const formatPrivateKey = (key) => {
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT, 10) || 5000,
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
-  corsOrigins: parseCorsOrigins(process.env.CLIENT_URL),
+  clientUrl: process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000',
+  frontendUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000',
+  corsOrigins: parseCorsOrigins(process.env.CLIENT_URL || process.env.FRONTEND_URL),
 
   // PostgreSQL / Supabase
   supabase: {
@@ -38,18 +45,28 @@ export const config = {
     privateKey: formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
   },
 
-  // Brevo (Transactional Email Service - Phase 4)
+  // Brevo (Transactional Email Service - Phase 8 Part 4)
   brevo: {
     apiKey: process.env.BREVO_API_KEY || '',
     senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@xavitech2026.com',
     senderName: process.env.BREVO_SENDER_NAME || 'XAVITECH 2026',
+    frontendUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000',
+    sendEnabled: process.env.EMAIL_SEND_ENABLED === 'true' || Boolean(process.env.BREVO_API_KEY),
   },
+
 
   // Payment Gateway (Phase 3)
   payment: {
     keyId: process.env.PAYMENT_GATEWAY_KEY_ID || '',
     keySecret: process.env.PAYMENT_GATEWAY_KEY_SECRET || '',
     webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET || '',
+  },
+
+  // Admin Authentication (Phase 6)
+  admin: {
+    secretKey: process.env.ADMIN_SECRET_KEY || '',
+    email: process.env.ADMIN_EMAIL || '',
+    password: process.env.ADMIN_PASSWORD || '',
   },
 };
 

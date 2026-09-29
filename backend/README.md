@@ -52,9 +52,14 @@ Before setting up the project, make sure you have the following installed:
    FIREBASE_PROJECT_ID=your_firebase_project_id
    FIREBASE_CLIENT_EMAIL=your_firebase_client_email
    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour_key_here\n-----END PRIVATE KEY-----\n"
-   ```
 
-*(Brevo and Payment Gateway variables will be populated during subsequent phases).*
+   # Brevo Transactional Email Service (Track Leader Credentials)
+   BREVO_API_KEY=xkeysib-your_brevo_api_key_here
+   BREVO_SENDER_EMAIL=noreply@xavitech2026.com
+   BREVO_SENDER_NAME="XAVITECH 2026"
+   FRONTEND_URL=http://localhost:3000
+   EMAIL_SEND_ENABLED=true
+   ```
 
 ---
 
@@ -138,6 +143,80 @@ Once started, the server listens on `http://localhost:5000` (or configured `PORT
 | `GET` | `/api/health` | Public | Service health verification |
 | `GET` | `/api/auth/me` | Bearer Token Required | Authenticates caller, synchronizes with PostgreSQL, and returns user profile |
 | `PATCH` | `/api/auth/profile` | Bearer Token Required | Updates safe profile fields (`name`, `phone`, `college_name`, `profile_image`) |
+| `POST` | `/api/admin/auth/login` | Public (Rate Limited) | Authenticate single admin with Email, Password & Secret Key; returns token & HttpOnly cookie |
+| `GET` | `/api/admin/auth/me` | Admin Session Required | Returns active admin profile and session metadata |
+| `POST` | `/api/admin/auth/logout` | Admin Session Required | Revokes the current session only; other simultaneous admin devices remain active |
+| `GET` | `/api/admin/stats` | Admin Session Required | High-level fest dashboard statistics |
+| `GET` | `/api/admin/dashboard/stats` | Admin Session Required | Real-time festival metrics (registrations, participants, teams, active events) |
+| `GET` | `/api/admin/registrations` | Admin Session Required | Paginated, searchable, and filterable registration records |
+| `GET` | `/api/admin/registrations/:registrationId` | Admin Session Required | Full details for a registration (by UUID or registration code) |
+| `GET` | `/api/admin/teams` | Admin Session Required | Paginated, searchable, and filterable team rosters |
+| `GET` | `/api/admin/teams/:teamId` | Admin Session Required | Complete team squad profile with leader, members, and registration link |
+| `POST` | `/api/admin/check-in` | Admin Session Required | Day-of-event QR code check-in verification placeholder |
+
+---
+
+## 🔑 Phase 6 — Admin Authentication & Multi-Session Architecture
+
+### Key Security & Architecture Decisions
+1. **Strictly ONE Admin Account**: Enforced at the database level using a partial unique index (`idx_users_single_admin` on `users(role) WHERE role = 'ADMIN'`).
+2. **Concurrent Multi-Device Sessions**: The single admin account can be logged in simultaneously across multiple devices (e.g. Ritesh's laptop, Coordinator's laptop, Admin desk). Each login generates an independent cryptographic token hashed with SHA-256 and stored in `admin_sessions`.
+3. **Independent Session Logout**: When one device logs out via `POST /api/admin/auth/logout`, only that device's session token is revoked. Other active admin sessions continue uninterrupted.
+4. **Three-Factor Credential Check**:
+   - Registered Admin Email
+   - Strong Password (hashed via `bcryptjs`, 12 salt rounds)
+   - Server-side `ADMIN_SECRET_KEY` (verified with `crypto.timingSafeEqual`)
+5. **Brute Force Protection**: In-memory rate limiting restricts failed login attempts per IP address.
+6. **Dual-Transport Auth**: Supports secure `HttpOnly` cookie (`xavitech_admin_session`) and `Authorization: Bearer <token>` fallback.
+
+### Admin CLI Management Commands
+Admin accounts cannot be registered publicly. Use the backend CLI commands:
+
+```bash
+# Create the initial admin account (fails if an admin already exists)
+npm run create-admin
+
+# Update admin credentials or coordinator details (without creating a second admin)
+npm run update-admin
+```
+
+---
+
+## 📊 Phase 7 — Admin Registration & Team Management
+
+### Key Features
+1. **Live Overview Metrics (`GET /api/admin/dashboard/stats`)**:
+   - Strictly live database counts for `totalRegistrations`, `totalParticipants`, `totalTeams`, and `activeEvents`.
+   - Accurate participant count accounting for individual registrants plus `1 leader + team_members` without double-counting.
+2. **Server-Backed Registration Search & Filters (`GET /api/admin/registrations`)**:
+   - Search by Registration ID (e.g. `XVT-2026-XXXXXX`), participant/leader name, email, or team name.
+   - Filter by event UUID, registration format (`INDIVIDUAL`, `TEAM`), and status (`DRAFT`, `PAYMENT_PENDING`, `CONFIRMED`, `CANCELLED`).
+   - Range-based database pagination (`page`, `limit` with safe boundaries, returning total records and pages).
+3. **Registration Detail Inspection (`GET /api/admin/registrations/:registrationId`)**:
+   - Inspect full event parameters, participant contact/institution, and complete member rosters for team registrations.
+4. **Team Management & Detail Inspection (`GET /api/admin/teams`, `GET /api/admin/teams/:teamId`)**:
+   - Query teams with event, leader, member breakdown, and associated registration status.
+   - Team squad size computed strictly as `1 leader + memberCount`.
+5. **Admin Access Control**:
+   - Every administrative endpoint strictly guarded by `requireAdmin` middleware. Non-admin users are rejected with `403 Forbidden`, and unauthenticated requests with `401 Unauthorized`.
+
+### Running Automated Test Suites
+```bash
+# Run Phase 4 tests (Events & Individual Registrations)
+npm run test
+
+# Run Phase 5 tests (Teams & Team Management)
+npm run test:phase5
+
+# Run Phase 6 tests (Admin Auth & Multi-Session)
+npm run test:phase6
+
+# Run Phase 7 tests (Admin Registration & Team Management)
+npm run test:phase7
+
+# Run ALL automated tests across all phases (112 tests passing)
+npm run test:all
+```
 
 ### Example Responses
 
@@ -185,6 +264,43 @@ Response:
     "isActive": true
   }
 }
+```
+
+---
+
+## ✉️ Track Leader Transactional Email System (Phase 8 — Part 4)
+
+XAVITECH-2026 uses Brevo's REST API v3 (`https://api.brevo.com/v3/smtp/email`) to dispatch secure transactional credentials to Track Leaders upon provisioning and credential resets.
+
+### Key Capabilities
+- **Automated Welcome Dispatch**: Triggered when an Admin creates a new Track Leader. Includes recipient name, assigned track, temporary password, login portal link (`${FRONTEND_URL}/track-leader/login`), and mandatory password update reminder.
+- **Credential Reset Dispatch**: Triggered when an Admin resets a Track Leader's credentials. Invalids all active sessions and delivers the new temporary password.
+- **Zero Plaintext Storage**: Plaintext temporary passwords exist strictly in memory during dispatch and are NEVER saved in PostgreSQL and NEVER logged to disk or console.
+- **Failure Resilience**: If Brevo is down or unconfigured, account provisioning and credential updates still succeed. The system returns `emailSent: false`, allowing the Admin UI to gracefully display fallback instructions.
+- **Testability**: Includes `setMockEmailTransport()` and `restoreEmailTransport()` hooks for deterministic testing without external API traffic.
+
+### Brevo Setup & Verification
+1. Obtain an API key from the [Brevo Platform](https://app.brevo.com/settings/keys/api) with transactional permissions.
+2. In the Brevo dashboard under **Senders & IP**, add and verify your sender email (e.g., `noreply@xavitech2026.com`) or domain.
+3. Configure the following variables in `.env`:
+   ```env
+   BREVO_API_KEY=xkeysib-your_brevo_api_key_here
+   BREVO_SENDER_EMAIL=noreply@xavitech2026.com
+   BREVO_SENDER_NAME="XAVITECH 2026"
+   FRONTEND_URL=http://localhost:3000
+   EMAIL_SEND_ENABLED=true
+   ```
+
+### Running Test Suites
+```bash
+# Run Phase 8 Part 4 tests (30 tests)
+npm run test:phase8:part4
+
+# Run all Phase 8 tests (Parts 1 - 4)
+npm run test:phase8
+
+# Run entire backend test regression suite
+npm run test:all
 ```
 
 ---

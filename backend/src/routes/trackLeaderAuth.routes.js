@@ -1,0 +1,43 @@
+import { Router } from 'express';
+import trackLeaderAuthController from '../controllers/trackLeaderAuth.controller.js';
+import { requireTrackLeader } from '../middleware/trackLeaderAuth.middleware.js';
+import {
+  trackLeaderLoginLimiter,
+  trackLeaderForgotPasswordLimiter,
+  trackLeaderResetPasswordLimiter,
+} from '../middleware/rateLimiter.middleware.js';
+
+const router = Router();
+
+/**
+ * Track Leader Authentication Endpoints
+ * Base path: /api/track-leader/auth
+ */
+
+// POST /api/track-leader/auth/login -> Rate-limited Track Leader login
+router.post('/login', trackLeaderLoginLimiter.middleware(), trackLeaderAuthController.login);
+
+// POST /api/track-leader/auth/forgot-password -> Request password recovery link
+router.post(
+  '/forgot-password',
+  trackLeaderForgotPasswordLimiter.middleware(),
+  trackLeaderAuthController.forgotPassword
+);
+
+// POST /api/track-leader/auth/reset-password -> Reset password using valid token
+router.post(
+  '/reset-password',
+  trackLeaderResetPasswordLimiter.middleware(),
+  trackLeaderAuthController.resetPassword
+);
+
+// GET /api/track-leader/auth/me -> Session inspection (requireTrackLeader)
+router.get('/me', requireTrackLeader, trackLeaderAuthController.getMe);
+
+// PATCH /api/track-leader/auth/password -> First login or self-service password change
+router.patch('/password', requireTrackLeader, trackLeaderAuthController.changePassword);
+
+// POST /api/track-leader/auth/logout -> Invalidate current active session (requireTrackLeader)
+router.post('/logout', requireTrackLeader, trackLeaderAuthController.logout);
+
+export default router;

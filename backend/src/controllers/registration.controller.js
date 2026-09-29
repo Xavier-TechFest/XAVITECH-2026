@@ -1,58 +1,47 @@
+import registrationService from '../services/registration.service.js';
 import { sendSuccess } from '../utils/response.util.js';
-import { REGISTRATION_STATUS } from '../utils/constants.util.js';
 
 /**
- * Registration Controller Placeholder
- *
- * Implements endpoints for:
- * - Starting registration (DRAFT)
- * - Adding team members
- * - Reviewing registration summary before payment
- * - Fetching registration status
+ * Registration Controller
+ * Handles HTTP requests for creating draft registrations, viewing user's registrations,
+ * and viewing individual registration details.
  */
 
+/**
+ * POST /api/registrations
+ * Creates a new draft registration for the authenticated user.
+ */
 export const createRegistration = async (req, res, next) => {
   try {
-    return sendSuccess(res, 'Registration draft created placeholder endpoint', {
-      registrationId: 'placeholder-reg-id',
-      status: REGISTRATION_STATUS.DRAFT,
-      data: req.body,
-    }, 201);
+    const registration = await registrationService.createRegistration(req.user, req.body);
+    return sendSuccess(res, 'Registration created successfully', registration, 201);
   } catch (error) {
     next(error);
   }
 };
 
-export const addTeamMembers = async (req, res, next) => {
-  try {
-    return sendSuccess(res, 'Team members added placeholder endpoint', {
-      registrationId: req.params.id,
-      teamName: req.body.teamName,
-      members: req.body.members || [],
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getRegistrationById = async (req, res, next) => {
-  try {
-    return sendSuccess(res, 'Registration details placeholder endpoint', {
-      registration: {
-        id: req.params.id,
-        status: REGISTRATION_STATUS.DRAFT,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
+/**
+ * GET /api/registrations/my
+ * Returns all registrations belonging strictly to the authenticated user.
+ */
 export const listMyRegistrations = async (req, res, next) => {
   try {
-    return sendSuccess(res, 'User registrations list placeholder endpoint', {
-      registrations: [],
-    });
+    const registrations = await registrationService.getUserRegistrations(req.user);
+    return sendSuccess(res, 'User registrations retrieved successfully', registrations);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/registrations/:registrationId
+ * Returns registration details with strict ownership verification.
+ */
+export const getRegistrationById = async (req, res, next) => {
+  try {
+    const identifier = req.params.registrationId || req.params.id;
+    const registration = await registrationService.getRegistrationDetails(req.user, identifier);
+    return sendSuccess(res, 'Registration details retrieved successfully', registration);
   } catch (error) {
     next(error);
   }
@@ -60,7 +49,6 @@ export const listMyRegistrations = async (req, res, next) => {
 
 export default {
   createRegistration,
-  addTeamMembers,
-  getRegistrationById,
   listMyRegistrations,
+  getRegistrationById,
 };

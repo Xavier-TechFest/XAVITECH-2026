@@ -1,5 +1,3 @@
-/**
- * Re-export Firebase Authentication Middleware from auth.js
- * Ensures consistent import resolution across existing modules.
- */
-export { authenticate, auth, default } from './auth.js';
+import { authenticate, auth } from './auth.js';
+export { authenticate, auth, authenticate as requireAuth };
+export default authenticate;
