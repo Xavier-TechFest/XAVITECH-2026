@@ -91,6 +91,52 @@ export async function updateUserProfile(
   return json.data;
 }
 
+export interface ParticipantRegistration {
+  id: string;
+  registrationId?: string;
+  registration_id?: string;
+  eventId?: string;
+  event_id?: string;
+  eventSlug?: string;
+  event_slug?: string;
+  status?: string;
+  registrationType?: string;
+  registration_type?: string;
+  createdAt?: string;
+  created_at?: string;
+  event?: {
+    id?: string;
+    slug?: string;
+    name?: string;
+    title?: string;
+    trackName?: string;
+    track?: string;
+    date?: string;
+    venue?: string;
+    status?: string;
+  };
+}
+
+export async function fetchMyRegistrations(token: string): Promise<ParticipantRegistration[]> {
+  const response = await fetch(`${API_BASE_URL}/registrations/my`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to fetch registrations",
+      response.status,
+      json
+    );
+  }
+  return json.data || json || [];
+}
+
 export interface AdminProfile {
   id: string;
   name: string;
@@ -893,6 +939,7 @@ export async function trackLeaderResetPassword(
 export const api = {
   fetchUserProfile,
   updateUserProfile,
+  fetchMyRegistrations,
   adminLogin,
   adminGetMe,
   adminLogout,

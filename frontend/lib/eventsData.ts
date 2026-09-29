@@ -20,11 +20,13 @@ export interface EventItem {
   image: string;
   highlights: string[];
   rules: string[];
+  isFlagship?: boolean;
 }
 
 export interface TrackItem {
   id: string;
   num: string;
+  letter: string;
   name: string;
   subtitle: string;
   description: string;
@@ -36,6 +38,7 @@ export const TRACKS: TrackItem[] = [
   {
     id: "all",
     num: "00",
+    letter: "ALL",
     name: "ALL ARENAS",
     subtitle: "Complete Directory",
     description: "Browse the complete directory of 15 high-voltage arenas.",
@@ -45,6 +48,7 @@ export const TRACKS: TrackItem[] = [
   {
     id: "technical",
     num: "01",
+    letter: "A",
     name: "TECHNICAL & CODING",
     subtitle: "Software & Engineering",
     description: "Hackathons, speed coding, systems debugging, data modeling & full-stack web builds.",
@@ -54,6 +58,7 @@ export const TRACKS: TrackItem[] = [
   {
     id: "ideation",
     num: "02",
+    letter: "B",
     name: "KNOWLEDGE & IDEATION",
     subtitle: "AI & Cognitive Intelligence",
     description: "AI agent duels, tech history trivia, and academic research paper defense.",
@@ -63,6 +68,7 @@ export const TRACKS: TrackItem[] = [
   {
     id: "learning",
     num: "03",
+    letter: "C",
     name: "HANDS-ON LEARNING",
     subtitle: "Masterclasses & Workshops",
     description: "Masterclasses on low-latency systems, kernel hacking, and AI architectures.",
@@ -72,6 +78,7 @@ export const TRACKS: TrackItem[] = [
   {
     id: "adventure",
     num: "04",
+    letter: "D",
     name: "FUN & ADVENTURE",
     subtitle: "Robotics & Ciphers",
     description: "Cryptographic cipher scavenger hunts and high-octane robotic obstacle races.",
@@ -81,6 +88,7 @@ export const TRACKS: TrackItem[] = [
   {
     id: "gaming",
     num: "05",
+    letter: "E",
     name: "GAMING ARENA",
     subtitle: "Esports Tournaments",
     description: "High-stakes tactical BGMI esports tournaments across Erangel & Miramar.",
@@ -90,6 +98,7 @@ export const TRACKS: TrackItem[] = [
   {
     id: "mun",
     num: "06",
+    letter: "F",
     name: "GLOBAL AFFAIRS MUN",
     subtitle: "Diplomacy & AI Policy",
     description: "Simulated Model UN committee on autonomous weapons, AI sovereignty & cyberwarfare.",
@@ -99,6 +108,7 @@ export const TRACKS: TrackItem[] = [
   {
     id: "suggested",
     num: "07",
+    letter: "G",
     name: "SUGGESTED ARENAS",
     subtitle: "Experimental & Retro",
     description: "Experimental challenges including screenless blind coding and pure logic synthesis.",
