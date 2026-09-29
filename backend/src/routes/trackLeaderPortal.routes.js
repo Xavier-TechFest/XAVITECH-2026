@@ -23,6 +23,12 @@ router.get('/track', trackLeaderPortalController.getMyTrack);
 // GET /api/track-leader/events -> Get events for the assigned track
 router.get('/events', trackLeaderPortalController.getMyEvents);
 
+// GET /api/track-leader/registrations -> Get registrations strictly for the assigned track
+router.get('/registrations', trackLeaderPortalController.getMyRegistrations);
+
+// GET /api/track-leader/registrations/:registrationId -> Get registration details for event in assigned track
+router.get('/registrations/:registrationId', trackLeaderPortalController.getRegistrationDetails);
+
 // GET /api/track-leader/tracks/:trackId/events -> Track isolation verification endpoint
 router.get('/tracks/:trackId/events', trackLeaderPortalController.getTrackEventsWithId);
 

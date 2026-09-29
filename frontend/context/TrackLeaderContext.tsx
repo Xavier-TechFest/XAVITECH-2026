@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -13,6 +14,7 @@ import {
   TrackLeaderProfile,
   TrackLeaderAssignedTrack,
   TrackLeaderEvent,
+  AdminRegistrationListItem,
   ApiError,
 } from "@/lib/api";
 
@@ -23,6 +25,12 @@ interface TrackLeaderContextType {
   loading: boolean;
   isEventsLoading: boolean;
   error: string | null;
+  registrations: AdminRegistrationListItem[];
+  registrationsLoading: boolean;
+  registrationsRefreshing: boolean;
+  registrationsError: string | null;
+  registrationsLoaded: boolean;
+  refreshRegistrations: (forceRefresh?: boolean) => Promise<void>;
   login: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
   changePassword: (curr: string, next: string) => Promise<void>;
@@ -55,6 +63,73 @@ export function TrackLeaderProvider({
   const [error, setError] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [theme, setThemeState] = useState<"dark" | "light">("dark");
+
+  // Cached Registrations dataset scoped strictly to assigned track
+  const [registrations, setRegistrations] = useState<AdminRegistrationListItem[]>([]);
+  const [registrationsLoading, setRegistrationsLoading] = useState(false);
+  const [registrationsRefreshing, setRegistrationsRefreshing] = useState(false);
+  const [registrationsError, setRegistrationsError] = useState<string | null>(null);
+  const [registrationsLoaded, setRegistrationsLoaded] = useState(false);
+
+  const inFlightPromiseRef = useRef<Promise<void> | null>(null);
+  const registrationsLoadedRef = useRef(false);
+
+  // Fetch track registrations strictly scoped to assigned track (with deduplication and caching)
+  const refreshRegistrations = useCallback(async (forceRefresh = false): Promise<void> => {
+    // If not forced and we already have loaded the dataset, don't refetch
+    if (!forceRefresh && registrationsLoadedRef.current) {
+      return;
+    }
+
+    // If an identical request is already in flight, return that in-flight promise
+    if (inFlightPromiseRef.current) {
+      return inFlightPromiseRef.current;
+    }
+
+    const runFetch = async () => {
+      // If we already have loaded data, this is a background/subtle refresh
+      if (registrationsLoadedRef.current) {
+        setRegistrationsRefreshing(true);
+      } else {
+        setRegistrationsLoading(true);
+      }
+      setRegistrationsError(null);
+
+      try {
+        const firstPage = await api.trackLeaderGetRegistrations({ page: 1, limit: 100 });
+        let allRegs = [...(firstPage?.registrations || [])];
+
+        // If there are more pages, fetch all remaining in parallel
+        if (firstPage?.pagination && firstPage.pagination.totalPages > 1) {
+          const remainingPromises = [];
+          for (let p = 2; p <= firstPage.pagination.totalPages; p++) {
+            remainingPromises.push(api.trackLeaderGetRegistrations({ page: p, limit: 100 }));
+          }
+          const results = await Promise.all(remainingPromises);
+          for (const res of results) {
+            if (res?.registrations) {
+              allRegs = allRegs.concat(res.registrations);
+            }
+          }
+        }
+
+        setRegistrations(allRegs);
+        registrationsLoadedRef.current = true;
+        setRegistrationsLoaded(true);
+      } catch (err: any) {
+        console.error("Failed to load track leader registrations:", err);
+        const errorText = err.message || "Failed to load registrations for your assigned track.";
+        setRegistrationsError(errorText);
+      } finally {
+        setRegistrationsLoading(false);
+        setRegistrationsRefreshing(false);
+        inFlightPromiseRef.current = null;
+      }
+    };
+
+    inFlightPromiseRef.current = runFetch();
+    return inFlightPromiseRef.current;
+  }, []);
 
   useEffect(() => {
     try {
@@ -121,22 +196,29 @@ export function TrackLeaderProvider({
           setAssignedTrack(profile.assignedTrack);
         }
         if (!profile.must_change_password) {
-          refreshTrackAndEvents();
+          await refreshTrackAndEvents();
+          refreshRegistrations(false).catch(() => {});
         }
         return profile;
       } else {
         setTrackLeader(null);
         setAssignedTrack(null);
         setEvents([]);
+        setRegistrations([]);
+        registrationsLoadedRef.current = false;
+        setRegistrationsLoaded(false);
         return null;
       }
     } catch {
       setTrackLeader(null);
       setAssignedTrack(null);
       setEvents([]);
+      setRegistrations([]);
+      registrationsLoadedRef.current = false;
+      setRegistrationsLoaded(false);
       return null;
     }
-  }, [refreshTrackAndEvents]);
+  }, [refreshTrackAndEvents, refreshRegistrations]);
 
   useEffect(() => {
     let mounted = true;
@@ -196,6 +278,7 @@ export function TrackLeaderProvider({
         router.push("/track-leader/change-password");
       } else {
         await refreshTrackAndEvents();
+        refreshRegistrations(false).catch(() => {});
         router.push("/track-leader/dashboard");
       }
     } catch (err: any) {
@@ -212,6 +295,7 @@ export function TrackLeaderProvider({
       // Update local profile state
       setTrackLeader((prev) => (prev ? { ...prev, must_change_password: false } : null));
       await refreshTrackAndEvents();
+      refreshRegistrations(false).catch(() => {});
       router.push("/track-leader/dashboard");
     } catch (err: any) {
       const msg = err.message || "Failed to change password.";
@@ -229,6 +313,12 @@ export function TrackLeaderProvider({
       setTrackLeader(null);
       setAssignedTrack(null);
       setEvents([]);
+      setRegistrations([]);
+      registrationsLoadedRef.current = false;
+      setRegistrationsLoaded(false);
+      setRegistrationsLoading(false);
+      setRegistrationsRefreshing(false);
+      setRegistrationsError(null);
       router.replace("/track-leader/login");
     }
   };
@@ -242,6 +332,12 @@ export function TrackLeaderProvider({
         loading,
         isEventsLoading,
         error,
+        registrations,
+        registrationsLoading,
+        registrationsRefreshing,
+        registrationsError,
+        registrationsLoaded,
+        refreshRegistrations,
         login,
         logout,
         changePassword,

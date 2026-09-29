@@ -313,6 +313,7 @@ export const adminRegistrationService = {
         `
         id,
         registration_id,
+        event_id,
         registration_type,
         status,
         created_at,
@@ -364,6 +365,7 @@ export const adminRegistrationService = {
     return {
       id: reg.id,
       registrationId: reg.registration_id,
+      eventId: reg.event_id || reg.event?.id,
       registrationType: reg.registration_type,
       status: reg.status,
       createdAt: reg.created_at,
@@ -376,6 +378,8 @@ export const adminRegistrationService = {
             slug: reg.event.slug,
             description: reg.event.description,
             category: reg.event.category,
+            trackId: reg.event.track_id,
+            track_id: reg.event.track_id,
             registrationType: reg.event.registration_type,
             minTeamSize: reg.event.min_team_size,
             maxTeamSize: reg.event.max_team_size,

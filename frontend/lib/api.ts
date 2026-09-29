@@ -287,6 +287,8 @@ export interface AdminRegistrationDetail {
     slug: string;
     description: string | null;
     category: string | null;
+    trackId?: string;
+    track_id?: string;
     registrationType: string;
     minTeamSize: number | null;
     maxTeamSize: number | null;
@@ -802,7 +804,8 @@ export interface TrackLeaderEvent {
   registration_type: "INDIVIDUAL" | "TEAM";
   min_team_size: number;
   max_team_size: number;
-  entry_fee: number;
+  entry_fee?: number;
+  fee?: number;
   prize_pool?: string | number | null;
 }
 
@@ -948,6 +951,55 @@ export async function trackLeaderResetPassword(
   return json;
 }
 
+export async function trackLeaderGetRegistrations(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  eventId?: string;
+  registrationType?: string;
+  status?: string;
+}): Promise<{ registrations: AdminRegistrationListItem[]; pagination: PaginationMeta }> {
+  const url = new URL(`${API_BASE_URL}/track-leader/registrations`);
+  if (params?.page) url.searchParams.set("page", String(params.page));
+  if (params?.limit) url.searchParams.set("limit", String(params.limit));
+  if (params?.search) url.searchParams.set("search", params.search);
+  if (params?.eventId) url.searchParams.set("eventId", params.eventId);
+  if (params?.registrationType) url.searchParams.set("registrationType", params.registrationType);
+  if (params?.status) url.searchParams.set("status", params.status);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to fetch registrations", response.status, json);
+  }
+  return json.data;
+}
+
+export async function trackLeaderGetRegistrationDetails(
+  registrationId: string
+): Promise<AdminRegistrationDetail> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/registrations/${registrationId}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to fetch registration details",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
 export const api = {
   fetchUserProfile,
   updateUserProfile,
@@ -974,6 +1026,8 @@ export const api = {
   trackLeaderLogout,
   trackLeaderGetTrack,
   trackLeaderGetEvents,
+  trackLeaderGetRegistrations,
+  trackLeaderGetRegistrationDetails,
   trackLeaderForgotPassword,
   trackLeaderResetPassword,
 };

@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAdmin } from "@/context/AdminContext";
+import ModalPortal from "@/components/ui/ModalPortal";
 import {
   AdminTrackLeaderDetail,
   adminUpdateTrackLeader,
@@ -433,201 +434,251 @@ function TrackLeaderDetailContent() {
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl bg-[#0e131f] border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h2 className="text-base font-bold font-mono text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                Edit Track Leader
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowEditModal(false)}
-                className="text-neutral-400 hover:text-white text-lg font-mono cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
+        <ModalPortal onClose={() => setShowEditModal(false)}>
+          <div
+            className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Full-viewport backdrop overlay */}
+            <div
+              className="fixed inset-0 w-screen h-screen bg-black/80 backdrop-blur-sm transition-opacity"
+              aria-hidden="true"
+              onClick={() => setShowEditModal(false)}
+            />
 
-            {formError && (
-              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs font-mono text-red-400">
-                {formError}
-              </div>
-            )}
-
-            <form onSubmit={handleEditSubmit} className="space-y-4 font-mono text-xs">
-              <div>
-                <label className="block text-neutral-300 uppercase tracking-wider mb-1">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 bg-[#131929] border border-neutral-700 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:border-[#35e0c9]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-300 uppercase tracking-wider mb-1">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 bg-[#131929] border border-neutral-700 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:border-[#35e0c9]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-300 uppercase tracking-wider mb-1">
-                  Reassign Track *
-                </label>
-                <select
-                  value={formData.trackId}
-                  onChange={(e) => setFormData({ ...formData, trackId: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 bg-[#131929] border border-neutral-700 rounded-xl text-white focus:outline-none focus:border-[#35e0c9]"
+            <div className="relative z-10 w-full max-w-md rounded-2xl bg-[#0e131f] border border-neutral-800 p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                <h2 className="text-base font-bold font-mono text-white flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  Edit Track Leader
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="text-neutral-400 hover:text-white text-lg font-mono cursor-pointer"
                 >
-                  {tracks.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
+                  ✕
+                </button>
               </div>
+
+              {formError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs font-mono text-red-400">
+                  {formError}
+                </div>
+              )}
+
+              <form onSubmit={handleEditSubmit} className="space-y-4 font-mono text-xs">
+                <div>
+                  <label className="block text-neutral-300 uppercase tracking-wider mb-1">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 bg-[#131929] border border-neutral-700 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:border-[#35e0c9]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-neutral-300 uppercase tracking-wider mb-1">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 bg-[#131929] border border-neutral-700 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:border-[#35e0c9]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-neutral-300 uppercase tracking-wider mb-1">
+                    Reassign Track *
+                  </label>
+                  <select
+                    value={formData.trackId}
+                    onChange={(e) => setFormData({ ...formData, trackId: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 bg-[#131929] border border-neutral-700 rounded-xl text-white focus:outline-none focus:border-[#35e0c9]"
+                  >
+                    {tracks.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition cursor-pointer disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 rounded-xl bg-[#35e0c9] hover:bg-[#2bc4af] text-black font-bold uppercase tracking-wider transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isSubmitting ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* Deactivate / Reactivate Modal */}
+      {showStatusModal && (
+        <ModalPortal onClose={() => setShowStatusModal(false)}>
+          <div
+            className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Full-viewport backdrop overlay */}
+            <div
+              className="fixed inset-0 w-screen h-screen bg-black/80 backdrop-blur-sm transition-opacity"
+              aria-hidden="true"
+              onClick={() => setShowStatusModal(false)}
+            />
+
+            <div className="relative z-10 w-full max-w-sm rounded-2xl bg-[#0e131f] border border-neutral-800 p-6 shadow-2xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    leader.is_active
+                      ? "bg-red-500/10 border border-red-500/30 text-red-400"
+                      : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-base font-bold font-mono text-white">
+                    {leader.is_active ? "Deactivate Track Leader" : "Reactivate Track Leader"}
+                  </h2>
+                  <p className="text-xs text-neutral-400 mt-0.5">{leader.email}</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-neutral-400 font-mono leading-relaxed">
+                {leader.is_active
+                  ? "Deactivating will revoke all active sessions immediately and block login access."
+                  : "Reactivating will restore the ability to log in with existing credentials."}
+              </p>
 
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition cursor-pointer disabled:opacity-50"
+                  onClick={() => setShowStatusModal(false)}
+                  className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-mono transition cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
+                  type="button"
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-[#35e0c9] hover:bg-[#2bc4af] text-black font-bold uppercase tracking-wider transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  onClick={handleStatusToggleSubmit}
+                  className={`px-4 py-2 rounded-xl text-xs font-mono font-semibold uppercase tracking-wider transition cursor-pointer disabled:opacity-70 ${
+                    leader.is_active
+                      ? "bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40"
+                      : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40"
+                  }`}
                 >
-                  {isSubmitting ? "Saving..." : "Save Changes"}
+                  {isSubmitting
+                    ? "Updating..."
+                    : leader.is_active
+                    ? "Confirm Deactivate"
+                    : "Confirm Reactivate"}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Deactivate / Reactivate Modal */}
-      {showStatusModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-sm rounded-2xl bg-[#0e131f] border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                  leader.is_active
-                    ? "bg-red-500/10 border border-red-500/30 text-red-400"
-                    : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-base font-bold font-mono text-white">
-                  {leader.is_active ? "Deactivate Track Leader" : "Reactivate Track Leader"}
-                </h2>
-                <p className="text-xs text-neutral-400 mt-0.5">{leader.email}</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-neutral-400 font-mono leading-relaxed">
-              {leader.is_active
-                ? "Deactivating will revoke all active sessions immediately and block login access."
-                : "Reactivating will restore the ability to log in with existing credentials."}
-            </p>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => setShowStatusModal(false)}
-                className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-mono transition cursor-pointer disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={handleStatusToggleSubmit}
-                className={`px-4 py-2 rounded-xl text-xs font-mono font-semibold uppercase tracking-wider transition cursor-pointer disabled:opacity-70 ${
-                  leader.is_active
-                    ? "bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40"
-                    : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40"
-                }`}
-              >
-                {isSubmitting
-                  ? "Updating..."
-                  : leader.is_active
-                  ? "Confirm Deactivate"
-                  : "Confirm Reactivate"}
-              </button>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* Reset Modal */}
       {showResetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-sm rounded-2xl bg-[#0e131f] border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-base font-bold font-mono text-white">Reset Credentials</h2>
-                <p className="text-xs text-neutral-400 mt-0.5">{leader.email}</p>
-              </div>
-            </div>
+        <ModalPortal onClose={() => setShowResetModal(false)}>
+          <div
+            className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Full-viewport backdrop overlay */}
+            <div
+              className="fixed inset-0 w-screen h-screen bg-black/80 backdrop-blur-sm transition-opacity"
+              aria-hidden="true"
+              onClick={() => setShowResetModal(false)}
+            />
 
-            <p className="text-xs text-neutral-400 font-mono leading-relaxed">
-              This will generate a new secure temporary password, set <span className="text-white">must_change_password = true</span>, and revoke all existing sessions for this Track Leader.
-            </p>
+            <div className="relative z-10 w-full max-w-sm rounded-2xl bg-[#0e131f] border border-neutral-800 p-6 shadow-2xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-base font-bold font-mono text-white">Reset Credentials</h2>
+                  <p className="text-xs text-neutral-400 mt-0.5">{leader.email}</p>
+                </div>
+              </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => setShowResetModal(false)}
-                className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-mono transition cursor-pointer disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={handleResetSubmit}
-                className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 text-xs font-mono font-semibold uppercase tracking-wider transition cursor-pointer disabled:opacity-70 flex items-center gap-2"
-              >
-                {isSubmitting ? "Resetting..." : "Confirm Reset"}
-              </button>
+              <p className="text-xs text-neutral-400 font-mono leading-relaxed">
+                This will generate a new secure temporary password, set <span className="text-white">must_change_password = true</span>, and revoke all existing sessions for this Track Leader.
+              </p>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => setShowResetModal(false)}
+                  className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-mono transition cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={handleResetSubmit}
+                  className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 text-xs font-mono font-semibold uppercase tracking-wider transition cursor-pointer disabled:opacity-70 flex items-center gap-2"
+                >
+                  {isSubmitting ? "Resetting..." : "Confirm Reset"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* One-Time Credentials Display Modal */}
       {showCredsDisplayModal && issuedCreds && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl bg-[#0e131f] border border-emerald-500/40 p-6 shadow-2xl space-y-4">
+        <ModalPortal>
+          <div
+            className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Full-viewport backdrop overlay */}
+            <div
+              className="fixed inset-0 w-screen h-screen bg-black/80 backdrop-blur-sm transition-opacity"
+              aria-hidden="true"
+            />
+
+            <div className="relative z-10 w-full max-w-md rounded-2xl bg-[#0e131f] border border-emerald-500/40 p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -704,7 +755,8 @@ function TrackLeaderDetailContent() {
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
+    )}
     </div>
   );
 }
