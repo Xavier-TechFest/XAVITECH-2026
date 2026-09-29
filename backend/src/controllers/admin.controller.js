@@ -27,12 +27,13 @@ export const getDashboardStats = async (req, res, next) => {
  */
 export const listRegistrations = async (req, res, next) => {
   try {
-    const { page, limit, search, eventId, registrationType, status } = req.query;
+    const { page, limit, search, trackId, eventId, registrationType, status } = req.query;
 
     const result = await adminRegistrationService.listRegistrations({
       page,
       limit,
       search,
+      trackId,
       eventId,
       registrationType,
       status,

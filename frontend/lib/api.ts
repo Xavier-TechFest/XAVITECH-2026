@@ -255,6 +255,7 @@ export interface AdminRegistrationListItem {
     slug: string;
     category?: string;
     fee: number;
+    trackId?: string;
   } | null;
   user: {
     id: string;
@@ -429,6 +430,7 @@ export async function adminGetRegistrations(params?: {
   page?: number;
   limit?: number;
   search?: string;
+  trackId?: string;
   eventId?: string;
   registrationType?: string;
   status?: string;
@@ -437,6 +439,7 @@ export async function adminGetRegistrations(params?: {
   if (params?.page) url.searchParams.set("page", String(params.page));
   if (params?.limit) url.searchParams.set("limit", String(params.limit));
   if (params?.search) url.searchParams.set("search", params.search);
+  if (params?.trackId) url.searchParams.set("trackId", params.trackId);
   if (params?.eventId) url.searchParams.set("eventId", params.eventId);
   if (params?.registrationType) url.searchParams.set("registrationType", params.registrationType);
   if (params?.status) url.searchParams.set("status", params.status);
@@ -523,7 +526,16 @@ export async function adminGetTeamDetails(teamId: string): Promise<AdminTeamDeta
 /**
  * Fetch all active events for admin dropdown filter selection.
  */
-export async function adminGetEvents(): Promise<Array<{ id: string; name: string; slug: string; category?: string }>> {
+export async function adminGetEvents(): Promise<
+  Array<{
+    id: string;
+    name: string;
+    slug: string;
+    category?: string;
+    trackId?: string;
+    track?: { id: string; name: string; slug: string };
+  }>
+> {
   const response = await fetch(`${API_BASE_URL}/events`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },

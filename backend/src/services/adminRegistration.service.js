@@ -101,6 +101,7 @@ export const adminRegistrationService = {
     page = 1,
     limit = 20,
     search = '',
+    trackId = '',
     eventId = '',
     registrationType = '',
     status = '',
@@ -151,7 +152,7 @@ export const adminRegistrationService = {
         status,
         created_at,
         updated_at,
-        event:events(id, name, slug, category, registration_type, fee),
+        event:events(id, name, slug, category, registration_type, fee, track_id),
         user:users(id, name, email, phone, college_name),
         team:teams(id, team_name, status, members:team_members(id, name, member_order))
       `,
@@ -170,9 +171,43 @@ export const adminRegistrationService = {
       query = query.or(orClauses.join(','));
     }
 
-    // Apply event filter
+    // Apply event filter or track filter
     if (eventId && UUID_REGEX.test(eventId)) {
       query = query.eq('event_id', eventId);
+    } else if (trackId && typeof trackId === 'string' && trackId.trim()) {
+      const cleanTrackId = trackId.trim();
+      let targetTrackId = cleanTrackId;
+      if (!UUID_REGEX.test(cleanTrackId)) {
+        const { data: trackRow } = await client
+          .from('tracks')
+          .select('id')
+          .eq('slug', cleanTrackId.toLowerCase())
+          .maybeSingle();
+        if (trackRow) {
+          targetTrackId = trackRow.id;
+        }
+      }
+
+      if (UUID_REGEX.test(targetTrackId)) {
+        const { data: trackEvents } = await client
+          .from('events')
+          .select('id')
+          .eq('track_id', targetTrackId);
+
+        const trackEventIds = (trackEvents || []).map((e) => e.id);
+        if (trackEventIds.length === 0) {
+          return {
+            registrations: [],
+            pagination: {
+              page: pageNum,
+              limit: limitNum,
+              totalRecords: 0,
+              totalPages: 1,
+            },
+          };
+        }
+        query = query.in('event_id', trackEventIds);
+      }
     }
 
     // Apply registration type filter
@@ -219,6 +254,7 @@ export const adminRegistrationService = {
               slug: reg.event.slug,
               category: reg.event.category,
               fee: reg.event.fee,
+              trackId: reg.event.track_id,
             }
           : null,
         user: reg.user

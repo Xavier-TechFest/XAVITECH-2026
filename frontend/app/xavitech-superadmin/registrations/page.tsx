@@ -1,16 +1,25 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useAdmin } from "@/context/AdminContext";
 import { AdminRegistrationListItem, PaginationMeta } from "@/lib/api";
 
+const OFFICIAL_TRACK_ORDER = [
+  "flagship-innovation",
+  "coding-development",
+  "gaming-adventure",
+  "knowledge-leadership",
+  "creative-learning",
+];
+
 export default function AdminRegistrationsPage() {
-  const { getRegistrations, getEvents } = useAdmin();
+  const { getRegistrations, getEvents, getTracks } = useAdmin();
 
   // Filter & Search states
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
+  const [selectedTrackId, setSelectedTrackId] = useState("");
   const [selectedEventId, setSelectedEventId] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -25,22 +34,51 @@ export default function AdminRegistrationsPage() {
     totalRecords: 0,
     totalPages: 1,
   });
-  const [events, setEvents] = useState<Array<{ id: string; name: string }>>([]);
+  const [tracks, setTracks] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+  const [events, setEvents] = useState<
+    Array<{
+      id: string;
+      name: string;
+      slug: string;
+      trackId?: string;
+      track?: { id: string; name: string; slug: string };
+    }>
+  >([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Load Events dropdown (cached)
+  // Load Tracks and Events dropdowns (cached via AdminContext)
   useEffect(() => {
     let isMounted = true;
-    getEvents().then((evs) => {
-      if (isMounted) setEvents(evs);
+    Promise.all([getTracks(), getEvents()]).then(([trks, evs]) => {
+      if (isMounted) {
+        const sortedTracks = [...(trks || [])].sort((a, b) => {
+          const idxA = OFFICIAL_TRACK_ORDER.indexOf(a.slug);
+          const idxB = OFFICIAL_TRACK_ORDER.indexOf(b.slug);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          return a.name.localeCompare(b.name);
+        });
+        setTracks(sortedTracks);
+        setEvents(evs || []);
+      }
     });
     return () => {
       isMounted = false;
     };
-  }, [getEvents]);
+  }, [getTracks, getEvents]);
 
-  // Fetch / Retrieve Registrations from cache
+  // Cascading Event options based on selected Track
+  const availableEvents = useMemo(() => {
+    if (!selectedTrackId) return events;
+    return events.filter(
+      (ev) =>
+        ev.trackId === selectedTrackId ||
+        ev.track?.id === selectedTrackId ||
+        ev.track?.slug === selectedTrackId
+    );
+  }, [events, selectedTrackId]);
+
+  // Fetch / Retrieve Registrations with combined filters
   const fetchRegistrations = useCallback(async () => {
     setIsLoadingData(true);
     setErrorMsg(null);
@@ -49,6 +87,7 @@ export default function AdminRegistrationsPage() {
         page,
         limit,
         search: appliedSearch,
+        trackId: selectedTrackId,
         eventId: selectedEventId,
         registrationType: selectedType,
         status: selectedStatus,
@@ -61,7 +100,7 @@ export default function AdminRegistrationsPage() {
     } finally {
       setIsLoadingData(false);
     }
-  }, [page, limit, appliedSearch, selectedEventId, selectedType, selectedStatus, getRegistrations]);
+  }, [page, limit, appliedSearch, selectedTrackId, selectedEventId, selectedType, selectedStatus, getRegistrations]);
 
   useEffect(() => {
     fetchRegistrations();
@@ -73,9 +112,21 @@ export default function AdminRegistrationsPage() {
     setAppliedSearch(search.trim());
   };
 
+  const handleTrackChange = (newTrackId: string) => {
+    setSelectedTrackId(newTrackId);
+    setSelectedEventId(""); // Automatically reset selected event to All Events
+    setPage(1); // Reset pagination to page 1
+  };
+
+  const handleEventChange = (newEventId: string) => {
+    setSelectedEventId(newEventId);
+    setPage(1); // Reset pagination to page 1
+  };
+
   const handleClearFilters = () => {
     setSearch("");
     setAppliedSearch("");
+    setSelectedTrackId("");
     setSelectedEventId("");
     setSelectedType("");
     setSelectedStatus("");
@@ -123,7 +174,7 @@ export default function AdminRegistrationsPage() {
               >
                 Search
               </button>
-              {(appliedSearch || selectedEventId || selectedType || selectedStatus) && (
+              {(appliedSearch || selectedTrackId || selectedEventId || selectedType || selectedStatus) && (
                 <button
                   type="button"
                   onClick={handleClearFilters}
@@ -136,22 +187,38 @@ export default function AdminRegistrationsPage() {
           </div>
 
           {/* Filters Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-neutral-800/80">
-            {/* Event Filter */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-neutral-800/80">
+            {/* Filter by Track */}
+            <div>
+              <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1.5">
+                Filter by Track
+              </label>
+              <select
+                value={selectedTrackId}
+                onChange={(e) => handleTrackChange(e.target.value)}
+                className="w-full px-3 py-2 bg-[#131929] border border-neutral-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-[#35e0c9]"
+              >
+                <option value="">All Tracks ({tracks.length || 5})</option>
+                {tracks.map((trk) => (
+                  <option key={trk.id} value={trk.id}>
+                    {trk.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter by Event (Cascading based on Track) */}
             <div>
               <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1.5">
                 Filter by Event
               </label>
               <select
                 value={selectedEventId}
-                onChange={(e) => {
-                  setSelectedEventId(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => handleEventChange(e.target.value)}
                 className="w-full px-3 py-2 bg-[#131929] border border-neutral-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-[#35e0c9]"
               >
-                <option value="">All Events (13)</option>
-                {events.map((ev) => (
+                <option value="">All Events ({availableEvents.length})</option>
+                {availableEvents.map((ev) => (
                   <option key={ev.id} value={ev.id}>
                     {ev.name}
                   </option>
@@ -223,7 +290,7 @@ export default function AdminRegistrationsPage() {
                 <th className="py-3.5 px-4">Institution</th>
                 <th className="py-3.5 px-4">Team</th>
                 <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4">Registered Date</th>
+                <th className="py-3.5 px-4 text-[11px]">Registered Date</th>
                 <th className="py-3.5 px-4 text-right">Action</th>
               </tr>
             </thead>

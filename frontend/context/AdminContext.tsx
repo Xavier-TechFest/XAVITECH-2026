@@ -59,8 +59,24 @@ interface AdminContextType {
   getDashboardStats: (forceRefresh?: boolean) => Promise<AdminDashboardStats | null>;
 
   // Events
-  events: Array<{ id: string; name: string; slug: string; category?: string }> | null;
-  getEvents: () => Promise<Array<{ id: string; name: string; slug: string; category?: string }>>;
+  events: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    category?: string;
+    trackId?: string;
+    track?: { id: string; name: string; slug: string };
+  }> | null;
+  getEvents: () => Promise<
+    Array<{
+      id: string;
+      name: string;
+      slug: string;
+      category?: string;
+      trackId?: string;
+      track?: { id: string; name: string; slug: string };
+    }>
+  >;
 
   // Registrations
   getRegistrations: (
@@ -68,6 +84,7 @@ interface AdminContextType {
       page?: number;
       limit?: number;
       search?: string;
+      trackId?: string;
       eventId?: string;
       registrationType?: string;
       status?: string;
@@ -148,7 +165,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   // 2. In-Memory Data Caches
   const [dashboardStats, setDashboardStats] = useState<AdminDashboardStats | null>(null);
-  const [events, setEvents] = useState<Array<{ id: string; name: string; slug: string; category?: string }> | null>(null);
+  const [events, setEvents] = useState<Array<{
+    id: string;
+    name: string;
+    slug: string;
+    category?: string;
+    trackId?: string;
+    track?: { id: string; name: string; slug: string };
+  }> | null>(null);
 
   // Use refs for query caches so lookups are instantaneous without triggering layout re-renders
   const registrationsCache = useRef<Record<string, RegistrationsQueryResponse>>({});
@@ -298,7 +322,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   // 6. Cached Events Getter
   const getEvents = useCallback(async (): Promise<
-    Array<{ id: string; name: string; slug: string; category?: string }>
+    Array<{
+      id: string;
+      name: string;
+      slug: string;
+      category?: string;
+      trackId?: string;
+      track?: { id: string; name: string; slug: string };
+    }>
   > => {
     if (events && events.length > 0) {
       return events;
@@ -320,6 +351,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         page?: number;
         limit?: number;
         search?: string;
+        trackId?: string;
         eventId?: string;
         registrationType?: string;
         status?: string;
@@ -330,6 +362,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         page: params?.page || 1,
         limit: params?.limit || 15,
         search: (params?.search || "").trim(),
+        trackId: params?.trackId || "",
         eventId: params?.eventId || "",
         registrationType: params?.registrationType || "",
         status: params?.status || "",
