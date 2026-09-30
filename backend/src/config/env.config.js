@@ -27,7 +27,7 @@ const parseCorsOrigins = (...inputs) => {
     if (!raw || typeof raw !== 'string') return;
     raw.split(',').forEach((item) => {
       const normalized = normalizeOrigin(item);
-      if (normalized) {
+      if (normalized && normalized !== '*') {
         originsSet.add(normalized);
       }
     });

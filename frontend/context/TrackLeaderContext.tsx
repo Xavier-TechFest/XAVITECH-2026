@@ -201,6 +201,7 @@ export function TrackLeaderProvider({
         }
         return profile;
       } else {
+        api.clearTrackLeaderToken();
         setTrackLeader(null);
         setAssignedTrack(null);
         setEvents([]);
@@ -210,6 +211,7 @@ export function TrackLeaderProvider({
         return null;
       }
     } catch {
+      api.clearTrackLeaderToken();
       setTrackLeader(null);
       setAssignedTrack(null);
       setEvents([]);

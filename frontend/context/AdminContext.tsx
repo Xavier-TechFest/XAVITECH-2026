@@ -13,6 +13,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   adminGetMe,
   adminLogout,
+  clearAdminToken,
   adminGetDashboardStats,
   adminGetRegistrations,
   adminGetRegistrationDetails,
@@ -264,6 +265,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         if (isMounted) {
+          clearAdminToken();
           setAdmin(null);
           setIsLoadingAdmin(false);
           router.replace("/xavitech-superadmin");
@@ -285,6 +287,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Error during admin logout:", err);
     } finally {
+      clearAdminToken();
       // Clear in-memory cache
       setAdmin(null);
       setDashboardStats(null);

@@ -2,6 +2,7 @@ import trackLeaderAuthService, {
   TRACK_LEADER_COOKIE_NAME,
   getTrackLeaderCookieOptions,
 } from '../services/trackLeaderAuth.service.js';
+import config from '../config/env.config.js';
 import TrackLeaderAssignmentModel from '../models/trackLeaderAssignment.model.js';
 import { sendSuccess, sendError } from '../utils/response.util.js';
 import logger from '../utils/logger.util.js';
@@ -176,11 +177,18 @@ export const trackLeaderAuthController = {
         await trackLeaderAuthService.logoutSession(req.trackLeaderSession.id);
       }
 
+      const isProduction =
+        config.env === 'production' ||
+        process.env.NODE_ENV === 'production' ||
+        Boolean(process.env.RENDER) ||
+        Boolean(process.env.RENDER_SERVICE_ID);
+
       // Clear the session cookie
       res.clearCookie(TRACK_LEADER_COOKIE_NAME, {
         path: '/',
         httpOnly: true,
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
       });
 
       return sendSuccess(res, 'Logged out successfully from this session.', null, 200);

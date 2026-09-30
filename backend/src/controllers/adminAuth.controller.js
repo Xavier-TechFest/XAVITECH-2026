@@ -2,6 +2,7 @@ import adminAuthService, {
   ADMIN_COOKIE_NAME,
   getAdminCookieOptions,
 } from '../services/adminAuth.service.js';
+import config from '../config/env.config.js';
 import { sendSuccess, sendError } from '../utils/response.util.js';
 import logger from '../utils/logger.util.js';
 
@@ -81,11 +82,18 @@ export const adminAuthController = {
         await adminAuthService.logoutSession(req.adminSession.id);
       }
 
+      const isProduction =
+        config.env === 'production' ||
+        process.env.NODE_ENV === 'production' ||
+        Boolean(process.env.RENDER) ||
+        Boolean(process.env.RENDER_SERVICE_ID);
+
       // Clear the session cookie
       res.clearCookie(ADMIN_COOKIE_NAME, {
         path: '/',
         httpOnly: true,
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
       });
 
       return sendSuccess(res, 'Logged out successfully from this session.', null, 200);

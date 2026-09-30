@@ -14,13 +14,21 @@ const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 /**
  * Generates cookie configuration options for admin session.
  */
-export const getAdminCookieOptions = (expiresAt) => ({
-  httpOnly: true,
-  secure: config.env === 'production',
-  sameSite: 'lax',
-  path: '/',
-  expires: expiresAt,
-});
+export const getAdminCookieOptions = (expiresAt) => {
+  const isProduction =
+    config.env === 'production' ||
+    process.env.NODE_ENV === 'production' ||
+    Boolean(process.env.RENDER) ||
+    Boolean(process.env.RENDER_SERVICE_ID);
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    path: '/',
+    expires: expiresAt,
+  };
+};
 
 /**
  * Admin Authentication Service

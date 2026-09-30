@@ -24,9 +24,9 @@ const corsOptions = {
 
     const normalizedIncoming = normalizeOrigin(origin);
 
-    // If wildcard origin configured
-    if (config.corsOrigins.includes('*')) {
-      return callback(null, true);
+    // Disallow wildcard '*' when credentials are enabled (CORS specification compliance)
+    if (normalizedIncoming === '*') {
+      return callback(new Error('Wildcard origin is not permitted when credentials are enabled'));
     }
 
     // Direct match against normalized config origins
@@ -47,6 +47,7 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Set-Cookie'],
   optionsSuccessStatus: 200,
 };
 

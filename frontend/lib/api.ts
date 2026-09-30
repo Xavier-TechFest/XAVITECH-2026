@@ -28,6 +28,84 @@ function resolveApiBaseUrl(): string {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
+// =============================================================================
+// Session Token Management (LocalStorage with SSR Safety)
+// =============================================================================
+const ADMIN_TOKEN_KEY = "xavitech_admin_token";
+const TRACK_LEADER_TOKEN_KEY = "xavitech_track_leader_token";
+
+export function getAdminToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(ADMIN_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setAdminToken(token: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (token) {
+      localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+    }
+  } catch {}
+}
+
+export function clearAdminToken(): void {
+  setAdminToken(null);
+}
+
+export function getTrackLeaderToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(TRACK_LEADER_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setTrackLeaderToken(token: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (token) {
+      localStorage.setItem(TRACK_LEADER_TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(TRACK_LEADER_TOKEN_KEY);
+    }
+  } catch {}
+}
+
+export function clearTrackLeaderToken(): void {
+  setTrackLeaderToken(null);
+}
+
+export function getAdminHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...extraHeaders,
+  };
+  const token = getAdminToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+export function getTrackLeaderHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...extraHeaders,
+  };
+  const token = getTrackLeaderToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export interface UserProfile {
   id: string;
   firebaseUid: string;
@@ -196,6 +274,11 @@ export async function adminLogin(payload: {
     );
   }
 
+  // Persist session token for Authorization Bearer fallback in cross-origin environments
+  if (json.data?.token) {
+    setAdminToken(json.data.token);
+  }
+
   return json.data;
 }
 
@@ -205,9 +288,7 @@ export async function adminLogin(payload: {
 export async function adminGetMe(): Promise<AdminProfile> {
   const response = await fetch(`${API_BASE_URL}/admin/auth/me`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAdminHeaders(),
     credentials: "include",
   });
 
@@ -228,21 +309,23 @@ export async function adminGetMe(): Promise<AdminProfile> {
  * Log out current admin session.
  */
 export async function adminLogout(): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/admin/auth/logout`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/auth/logout`, {
+      method: "POST",
+      headers: getAdminHeaders(),
+      credentials: "include",
+    });
 
-  if (!response.ok) {
-    const json = await response.json().catch(() => ({}));
-    throw new ApiError(
-      json.message || "Failed to logout admin session.",
-      response.status,
-      json
-    );
+    if (!response.ok) {
+      const json = await response.json().catch(() => ({}));
+      throw new ApiError(
+        json.message || "Failed to logout admin session.",
+        response.status,
+        json
+      );
+    }
+  } finally {
+    clearAdminToken();
   }
 }
 
@@ -437,7 +520,7 @@ export interface AdminTeamDetail {
 export async function adminGetDashboardStats(): Promise<AdminDashboardStats> {
   const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     credentials: "include",
   });
 
@@ -471,7 +554,7 @@ export async function adminGetRegistrations(params?: {
 
   const response = await fetch(url.toString(), {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     credentials: "include",
   });
 
@@ -490,7 +573,7 @@ export async function adminGetRegistrationDetails(
 ): Promise<AdminRegistrationDetail> {
   const response = await fetch(`${API_BASE_URL}/admin/registrations/${encodeURIComponent(registrationId)}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     credentials: "include",
   });
 
@@ -520,7 +603,7 @@ export async function adminGetTeams(params?: {
 
   const response = await fetch(url.toString(), {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     credentials: "include",
   });
 
@@ -537,7 +620,7 @@ export async function adminGetTeams(params?: {
 export async function adminGetTeamDetails(teamId: string): Promise<AdminTeamDetail> {
   const response = await fetch(`${API_BASE_URL}/admin/teams/${encodeURIComponent(teamId)}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     credentials: "include",
   });
 
@@ -563,7 +646,8 @@ export async function adminGetEvents(): Promise<
 > {
   const response = await fetch(`${API_BASE_URL}/events`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
+    credentials: "include",
   });
 
   const json = await response.json().catch(() => ({}));
@@ -579,7 +663,8 @@ export async function adminGetEvents(): Promise<
 export async function adminGetTracks(): Promise<Array<{ id: string; name: string; slug: string; is_active: boolean }>> {
   const response = await fetch(`${API_BASE_URL}/tracks`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
+    credentials: "include",
   });
 
   const json = await response.json().catch(() => ({}));
@@ -674,7 +759,7 @@ export async function adminGetTrackLeaders(params?: {
 
   const response = await fetch(url.toString(), {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     credentials: "include",
   });
 
@@ -691,7 +776,7 @@ export async function adminGetTrackLeaders(params?: {
 export async function adminGetTrackLeader(id: string): Promise<AdminTrackLeaderDetail> {
   const response = await fetch(`${API_BASE_URL}/admin/track-leaders/${encodeURIComponent(id)}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     credentials: "include",
   });
 
@@ -710,7 +795,7 @@ export async function adminCreateTrackLeader(
 ): Promise<AdminTrackLeaderCreateResult> {
   const response = await fetch(`${API_BASE_URL}/admin/track-leaders`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     credentials: "include",
     body: JSON.stringify(payload),
   });
@@ -731,7 +816,7 @@ export async function adminUpdateTrackLeader(
 ): Promise<AdminTrackLeaderDetail> {
   const response = await fetch(`${API_BASE_URL}/admin/track-leaders/${encodeURIComponent(id)}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: getAdminHeaders(),
     credentials: "include",
     body: JSON.stringify(payload),
   });
@@ -754,7 +839,7 @@ export async function adminUpdateTrackLeaderStatus(
     `${API_BASE_URL}/admin/track-leaders/${encodeURIComponent(id)}/status`,
     {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: getAdminHeaders(),
       credentials: "include",
       body: JSON.stringify({ is_active: isActive }),
     }
@@ -777,7 +862,7 @@ export async function adminResetTrackLeaderCredentials(
     `${API_BASE_URL}/admin/track-leaders/${encodeURIComponent(id)}/reset-credentials`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAdminHeaders(),
       credentials: "include",
     }
   );
@@ -847,13 +932,19 @@ export async function trackLeaderLogin(
   if (!response.ok) {
     throw new ApiError(json.message || "Invalid track leader credentials.", response.status, json);
   }
+
+  // Persist session token for Authorization Bearer fallback in cross-origin environments
+  if (json.data?.token) {
+    setTrackLeaderToken(json.data.token);
+  }
+
   return json.data;
 }
 
 export async function trackLeaderGetMe(): Promise<TrackLeaderProfile> {
   const response = await fetch(`${API_BASE_URL}/track-leader/auth/me`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getTrackLeaderHeaders(),
     credentials: "include",
   });
 
@@ -870,7 +961,7 @@ export async function trackLeaderChangePassword(
 ): Promise<{ user: Partial<TrackLeaderProfile> }> {
   const response = await fetch(`${API_BASE_URL}/track-leader/auth/password`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: getTrackLeaderHeaders(),
     credentials: "include",
     body: JSON.stringify({ currentPassword, newPassword }),
   });
@@ -883,15 +974,19 @@ export async function trackLeaderChangePassword(
 }
 
 export async function trackLeaderLogout(): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/track-leader/auth/logout`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/track-leader/auth/logout`, {
+      method: "POST",
+      headers: getTrackLeaderHeaders(),
+      credentials: "include",
+    });
 
-  const json = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new ApiError(json.message || "Failed to log out", response.status, json);
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new ApiError(json.message || "Failed to log out", response.status, json);
+    }
+  } finally {
+    clearTrackLeaderToken();
   }
 }
 
@@ -901,7 +996,7 @@ export async function trackLeaderGetTrack(): Promise<{
 }> {
   const response = await fetch(`${API_BASE_URL}/track-leader/track`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getTrackLeaderHeaders(),
     credentials: "include",
   });
 
@@ -919,7 +1014,7 @@ export async function trackLeaderGetEvents(): Promise<{
 }> {
   const response = await fetch(`${API_BASE_URL}/track-leader/events`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getTrackLeaderHeaders(),
     credentials: "include",
   });
 
@@ -948,7 +1043,7 @@ export async function trackLeaderForgotPassword(
       json
     );
   }
-  return json;
+  return json.data;
 }
 
 export async function trackLeaderResetPassword(
@@ -992,7 +1087,7 @@ export async function trackLeaderGetRegistrations(params?: {
 
   const response = await fetch(url.toString(), {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getTrackLeaderHeaders(),
     credentials: "include",
   });
 
@@ -1008,7 +1103,7 @@ export async function trackLeaderGetRegistrationDetails(
 ): Promise<AdminRegistrationDetail> {
   const response = await fetch(`${API_BASE_URL}/track-leader/registrations/${registrationId}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: getTrackLeaderHeaders(),
     credentials: "include",
   });
 
@@ -1043,6 +1138,10 @@ export const api = {
   adminUpdateTrackLeader,
   adminUpdateTrackLeaderStatus,
   adminResetTrackLeaderCredentials,
+  getAdminToken,
+  setAdminToken,
+  clearAdminToken,
+  getAdminHeaders,
   trackLeaderLogin,
   trackLeaderGetMe,
   trackLeaderChangePassword,
@@ -1053,6 +1152,10 @@ export const api = {
   trackLeaderGetRegistrationDetails,
   trackLeaderForgotPassword,
   trackLeaderResetPassword,
+  getTrackLeaderToken,
+  setTrackLeaderToken,
+  clearTrackLeaderToken,
+  getTrackLeaderHeaders,
 };
 
 export default api;
