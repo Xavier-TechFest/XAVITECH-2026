@@ -25,14 +25,20 @@ export default function TrackLeaderForgotPasswordPage() {
 
     try {
       const res = await trackLeaderForgotPassword(cleanEmail);
-      setSuccessMessage(
-        res.message ||
-          "If a Track Leader account exists for this email, a password reset link has been dispatched."
-      );
+      const safeSuccess =
+        (res && typeof res.message === "string" && res.message) ||
+        (res && typeof res.data?.message === "string" && res.data.message) ||
+        "If a Track Leader account exists for this email, a password reset link has been dispatched.";
+      setSuccessMessage(safeSuccess);
     } catch (err: any) {
-      setErrorMessage(
-        err.message || "Unable to process password recovery request. Please try again."
-      );
+      const fallbackMsg = "Unable to process password recovery request. Please try again.";
+      const safeError =
+        (err && typeof err.message === "string" && err.message) ||
+        (err?.data && typeof err.data.message === "string" && err.data.message) ||
+        (err?.data?.error && typeof err.data.error.message === "string" && err.data.error.message) ||
+        (err?.data && typeof err.data.error === "string" && err.data.error) ||
+        fallbackMsg;
+      setErrorMessage(safeError);
     } finally {
       setIsSubmitting(false);
     }

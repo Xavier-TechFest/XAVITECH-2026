@@ -206,16 +206,13 @@ export const trackLeaderAuthController = {
     try {
       const { email } = req.body || {};
       const result = await trackLeaderAuthService.requestPasswordReset(email);
-      return sendSuccess(res, result.message, null, 200);
+      return sendSuccess(res, result.message, { message: result.message }, 200);
     } catch (error) {
       logger.error('Error in forgot-password request:', error);
       // Return safe generic response even on unexpected errors
-      return sendSuccess(
-        res,
-        'If a Track Leader account exists for this email, a password reset link has been sent.',
-        null,
-        200
-      );
+      const safeMsg =
+        'If a Track Leader account exists for this email, a password reset link has been sent.';
+      return sendSuccess(res, safeMsg, { message: safeMsg }, 200);
     }
   },
 

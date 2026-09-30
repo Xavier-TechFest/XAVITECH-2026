@@ -1027,7 +1027,7 @@ export async function trackLeaderGetEvents(): Promise<{
 
 export async function trackLeaderForgotPassword(
   email: string
-): Promise<{ message: string }> {
+): Promise<{ success?: boolean; message: string; data?: any }> {
   const response = await fetch(`${API_BASE_URL}/track-leader/auth/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1037,20 +1037,32 @@ export async function trackLeaderForgotPassword(
 
   const json = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(
-      json.message || "Failed to process password recovery request",
-      response.status,
-      json
-    );
+    const errorMsg =
+      (typeof json?.message === "string" && json.message) ||
+      (typeof json?.error?.message === "string" && json.error.message) ||
+      (Array.isArray(json?.error) ? json.error.join(", ") : null) ||
+      (typeof json?.error === "string" && json.error) ||
+      "Failed to process password recovery request";
+    throw new ApiError(errorMsg, response.status, json);
   }
-  return json.data;
+
+  const successMessage =
+    (typeof json?.message === "string" && json.message) ||
+    (typeof json?.data?.message === "string" && json.data.message) ||
+    "If a Track Leader account exists for this email, a password reset link has been dispatched.";
+
+  return {
+    success: true,
+    message: successMessage,
+    data: json?.data || { message: successMessage },
+  };
 }
 
 export async function trackLeaderResetPassword(
   token: string,
   newPassword: string,
   confirmPassword: string
-): Promise<{ message: string }> {
+): Promise<{ success?: boolean; message: string; data?: any }> {
   const response = await fetch(`${API_BASE_URL}/track-leader/auth/reset-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1060,13 +1072,25 @@ export async function trackLeaderResetPassword(
 
   const json = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(
-      json.message || "Invalid or expired password reset link.",
-      response.status,
-      json
-    );
+    const errorMsg =
+      (typeof json?.message === "string" && json.message) ||
+      (typeof json?.error?.message === "string" && json.error.message) ||
+      (Array.isArray(json?.error) ? json.error.join(", ") : null) ||
+      (typeof json?.error === "string" && json.error) ||
+      "Invalid or expired password reset link.";
+    throw new ApiError(errorMsg, response.status, json);
   }
-  return json;
+
+  const successMessage =
+    (typeof json?.message === "string" && json.message) ||
+    (typeof json?.data?.message === "string" && json.data.message) ||
+    "Password reset successfully completed.";
+
+  return {
+    success: true,
+    message: successMessage,
+    data: json?.data || { message: successMessage },
+  };
 }
 
 export async function trackLeaderGetRegistrations(params?: {

@@ -42,9 +42,14 @@ function ResetPasswordForm() {
       await trackLeaderResetPassword(token, newPassword, confirmPassword);
       setSuccess(true);
     } catch (err: any) {
-      setErrorMessage(
-        err.message || "Failed to reset password. The link may be expired or already used."
-      );
+      const fallbackMsg = "Failed to reset password. The link may be expired or already used.";
+      const safeError =
+        (err && typeof err.message === "string" && err.message) ||
+        (err?.data && typeof err.data.message === "string" && err.data.message) ||
+        (err?.data?.error && typeof err.data.error.message === "string" && err.data.error.message) ||
+        (err?.data && typeof err.data.error === "string" && err.data.error) ||
+        fallbackMsg;
+      setErrorMessage(safeError);
     } finally {
       setIsSubmitting(false);
     }
