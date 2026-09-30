@@ -14,12 +14,14 @@ function TrackLeaderPortalShell({ children }: { children: React.ReactNode }) {
   const { isSidebarCollapsed, theme } = useTrackLeader();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // If on auth or recovery page, render without the portal chrome
+  // If on root route, auth or recovery page, render without the portal chrome
+  const normalizedPath = pathname?.replace(/\/$/, "") || "";
   const isAuthPage =
-    pathname === "/track-leader/login" ||
-    pathname === "/track-leader/change-password" ||
-    pathname === "/track-leader/forgot-password" ||
-    pathname === "/track-leader/reset-password";
+    normalizedPath === "/track-leader" ||
+    normalizedPath === "/track-leader/login" ||
+    normalizedPath === "/track-leader/change-password" ||
+    normalizedPath === "/track-leader/forgot-password" ||
+    normalizedPath === "/track-leader/reset-password";
 
   if (isAuthPage) {
     return <>{children}</>;

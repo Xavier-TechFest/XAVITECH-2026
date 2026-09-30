@@ -238,12 +238,13 @@ export function TrackLeaderProvider({
   useEffect(() => {
     if (loading) return;
 
-    const isLogin = pathname === "/track-leader/login";
-    const isForgotPassword = pathname === "/track-leader/forgot-password";
-    const isResetPassword = pathname === "/track-leader/reset-password";
+    const normalizedPath = pathname?.replace(/\/$/, "") || "";
+    const isLogin = normalizedPath === "/track-leader/login";
+    const isForgotPassword = normalizedPath === "/track-leader/forgot-password";
+    const isResetPassword = normalizedPath === "/track-leader/reset-password";
     const isPublicRecovery = isLogin || isForgotPassword || isResetPassword;
-    const isChangePassword = pathname === "/track-leader/change-password";
-    const isPortalRoute = pathname.startsWith("/track-leader");
+    const isChangePassword = normalizedPath === "/track-leader/change-password";
+    const isPortalRoute = normalizedPath.startsWith("/track-leader");
 
     if (!isPortalRoute) return;
 
@@ -261,7 +262,7 @@ export function TrackLeaderProvider({
         }
       } else {
         // Password already changed: block login or change-password pages
-        if (isPublicRecovery || isChangePassword || pathname === "/track-leader") {
+        if (isPublicRecovery || isChangePassword || normalizedPath === "/track-leader") {
           router.replace("/track-leader/dashboard");
         }
       }

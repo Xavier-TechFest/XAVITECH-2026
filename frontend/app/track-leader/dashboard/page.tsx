@@ -19,7 +19,7 @@ export default function TrackLeaderDashboardPage() {
 
   const isLight = theme === "light";
 
-  if (loading) {
+  if (loading || !trackLeader) {
     return (
       <div className="flex-1 flex items-center justify-center p-12 min-h-[50vh]">
         <div className="w-8 h-8 rounded-full border-2 border-[#35e0c9]/20 border-t-[#35e0c9] animate-spin" />

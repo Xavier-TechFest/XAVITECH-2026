@@ -12,6 +12,8 @@ import {
 
 export default function TrackLeaderRegistrationsPage() {
   const {
+    trackLeader,
+    loading,
     assignedTrack,
     events,
     theme,
@@ -156,6 +158,14 @@ export default function TrackLeaderRegistrationsPage() {
     setInspectDetail(null);
     setInspectError(null);
   };
+
+  if (loading || !trackLeader) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-12 min-h-[50vh]">
+        <div className="w-8 h-8 rounded-full border-2 border-[#35e0c9]/20 border-t-[#35e0c9] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
