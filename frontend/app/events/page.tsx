@@ -1,6 +1,6 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import EventsDirectory from "@/components/sections/EventsDirectory";
+import EventsShowcase from "@/components/sections/EventsShowcase";
 import CosmosBackdrop from "@/components/experience/CosmosBackdrop";
 import DataStreams from "@/components/effects/DataStreams";
 
@@ -19,7 +19,7 @@ export default function EventsPage() {
 
       <div className="relative z-10">
         <main>
-          <EventsDirectory />
+          <EventsShowcase />
         </main>
         <Footer />
       </div>

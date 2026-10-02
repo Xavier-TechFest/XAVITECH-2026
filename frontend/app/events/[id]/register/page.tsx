@@ -19,10 +19,10 @@ export function generateStaticParams() {
 
 export function generateMetadata({ params }: RegisterPageProps) {
   const event = EVENTS.find((e) => e.id === params.id);
-  if (!event) return { title: "Event Registration — YANTRA '26" };
+  if (!event) return { title: "Event Registration — XAVITECH '26" };
 
   return {
-    title: `Register for ${event.name} — YANTRA '26`,
+    title: `Register for ${event.name} — XAVITECH '26`,
     description: `Official registration form for ${event.name} at Xavier University Patna.`,
   };
 }
