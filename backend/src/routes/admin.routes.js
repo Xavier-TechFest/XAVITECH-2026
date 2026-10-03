@@ -9,6 +9,8 @@ import {
   listTeams,
   getTeamDetails,
   verifyAndCheckIn,
+  exportRegistrations,
+  exportRegistrationsPreview,
 } from '../controllers/admin.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import { validateCheckIn } from '../validators/admin.validator.js';
@@ -37,6 +39,12 @@ router.post('/auth/logout', requireAdmin, adminAuthController.logout);
 // GET /api/admin/stats & GET /api/admin/dashboard/stats -> Live festival overview metrics
 router.get('/stats', requireAdmin, getDashboardStats);
 router.get('/dashboard/stats', requireAdmin, getDashboardStats);
+
+// POST /api/admin/registrations/export -> Dynamic export of registrations (Excel/CSV)
+router.post('/registrations/export', requireAdmin, exportRegistrations);
+
+// POST /api/admin/registrations/export/preview -> Pre-download count and column preview
+router.post('/registrations/export/preview', requireAdmin, exportRegistrationsPreview);
 
 // GET /api/admin/registrations -> Paginated, searchable, filterable registrations
 router.get('/registrations', requireAdmin, listRegistrations);

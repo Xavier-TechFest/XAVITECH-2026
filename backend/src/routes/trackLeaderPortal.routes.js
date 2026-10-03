@@ -23,6 +23,12 @@ router.get('/track', trackLeaderPortalController.getMyTrack);
 // GET /api/track-leader/events -> Get events for the assigned track
 router.get('/events', trackLeaderPortalController.getMyEvents);
 
+// POST /api/track-leader/registrations/export -> Dynamic export strictly for assigned track
+router.post('/registrations/export', trackLeaderPortalController.exportRegistrations);
+
+// POST /api/track-leader/registrations/export/preview -> Pre-download preview strictly for assigned track
+router.post('/registrations/export/preview', trackLeaderPortalController.exportRegistrationsPreview);
+
 // GET /api/track-leader/registrations -> Get registrations strictly for the assigned track
 router.get('/registrations', trackLeaderPortalController.getMyRegistrations);
 
