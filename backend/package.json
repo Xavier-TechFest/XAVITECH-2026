@@ -22,8 +22,8 @@
     "test:track-leader-recovery": "node tests/test_track_leader_password_recovery.js",
     "test:phase8": "node tests/test_phase8_part1.js && node tests/test_phase8_part2.js && node tests/test_phase8_part3.js && node tests/test_phase8_part4.js && node tests/test_phase8_part5.js && node tests/test_track_leader_password_recovery.js",
     "test:admin-auth-regression": "node tests/test_admin_auth_regression.js",
-    "test:routes-cors": "node tests/test_auth_routes_and_cors.js",
-    "test:all": "node tests/test_phase4.js && node tests/test_phase5.js && node tests/test_phase6.js && node tests/test_phase7.js && node tests/test_phase8_part1.js && node tests/test_phase8_part2.js && node tests/test_phase8_part3.js && node tests/test_phase8_part4.js && node tests/test_phase8_part5.js && node tests/test_track_leader_password_recovery.js && node tests/test_admin_auth_regression.js && node tests/test_auth_routes_and_cors.js"
+    "test:export": "node tests/test_dynamic_export.js",
+    "test:all": "node tests/test_phase4.js && node tests/test_phase5.js && node tests/test_phase6.js && node tests/test_phase7.js && node tests/test_phase8_part1.js && node tests/test_phase8_part2.js && node tests/test_phase8_part3.js && node tests/test_phase8_part4.js && node tests/test_phase8_part5.js && node tests/test_track_leader_password_recovery.js && node tests/test_admin_auth_regression.js && node tests/test_auth_routes_and_cors.js && node tests/test_dynamic_export.js"
   },
   "keywords": [
     "xavitech",
@@ -42,7 +42,8 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "firebase-admin": "^14.5.0",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"

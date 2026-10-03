@@ -1142,6 +1142,194 @@ export async function trackLeaderGetRegistrationDetails(
   return json.data;
 }
 
+// =============================================================================
+// Phase 9: Dynamic Export System Types & Methods
+// =============================================================================
+
+export type ExportFormat = "xlsx" | "csv";
+export type ExportScope = "all" | "filtered" | "track" | "event" | "my_track";
+
+export interface ExportFilterParams {
+  search?: string;
+  trackId?: string;
+  eventId?: string;
+  registrationType?: string;
+  status?: string;
+}
+
+export interface ExportRequestPayload {
+  format: ExportFormat;
+  scope: ExportScope;
+  filters?: ExportFilterParams;
+  fields?: string[];
+  trackId?: string;
+  eventId?: string;
+}
+
+export interface ExportPreviewResponse {
+  totalRecords: number;
+  scope: string;
+  trackName: string;
+  eventName: string;
+  selectedFieldsCount: number;
+  format: ExportFormat;
+  filename: string;
+  columns: string[];
+  fields: string[];
+}
+
+export interface ExportFieldOption {
+  key: string;
+  label: string;
+  category: string;
+  description?: string;
+  default: boolean;
+  disabled?: boolean;
+  disabledReason?: string;
+}
+
+export const EXPORT_FIELD_OPTIONS: ExportFieldOption[] = [
+  // PARTICIPANT DETAILS
+  { key: "registrationId", label: "Registration ID", category: "PARTICIPANT DETAILS", default: true },
+  { key: "participantName", label: "Name", category: "PARTICIPANT DETAILS", default: true },
+  { key: "email", label: "Email", category: "PARTICIPANT DETAILS", default: true },
+  { key: "phone", label: "Phone", category: "PARTICIPANT DETAILS", default: true },
+  { key: "institution", label: "Institution", category: "PARTICIPANT DETAILS", default: true },
+
+  // EVENT DETAILS
+  { key: "eventName", label: "Event Name", category: "EVENT DETAILS", default: true },
+  { key: "trackName", label: "Track", category: "EVENT DETAILS", default: true },
+  { key: "participationType", label: "Participation Type", category: "EVENT DETAILS", default: true },
+  { key: "status", label: "Registration Status", category: "EVENT DETAILS", default: true },
+  { key: "registeredDate", label: "Registration Date", category: "EVENT DETAILS", default: true },
+  { key: "eventFee", label: "Fee", category: "EVENT DETAILS", default: false },
+
+  // TEAM DETAILS
+  { key: "teamName", label: "Team Name", category: "TEAM DETAILS", default: true },
+  { key: "teamLeader", label: "Team Leader", category: "TEAM DETAILS", default: false },
+  { key: "teamSize", label: "Team Size", category: "TEAM DETAILS", default: true },
+  { key: "teamMembers", label: "Team Members", category: "TEAM DETAILS", default: true },
+
+  // PAYMENT DETAILS
+  { key: "paymentStatus", label: "Payment Status", category: "PAYMENT DETAILS", default: false },
+];
+
+/**
+ * Trigger in-browser file download from a Blob.
+ */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+/**
+ * POST /api/admin/registrations/export/preview
+ */
+export async function adminExportRegistrationsPreview(
+  payload: ExportRequestPayload
+): Promise<ExportPreviewResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/registrations/export/preview`, {
+    method: "POST",
+    headers: getAdminHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to generate export preview", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * POST /api/admin/registrations/export
+ */
+export async function adminExportRegistrations(
+  payload: ExportRequestPayload
+): Promise<{ blob: Blob; filename: string }> {
+  const response = await fetch(`${API_BASE_URL}/admin/registrations/export`, {
+    method: "POST",
+    headers: getAdminHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const json = await response.json().catch(() => ({}));
+    throw new ApiError(json.message || "Failed to download export file", response.status, json);
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition");
+  let filename = `XAVITECH-2026-Registrations.${payload.format === "csv" ? "csv" : "xlsx"}`;
+  if (disposition) {
+    const match = disposition.match(/filename\*?=['"]?(?:UTF-\d['"]*)?([^;\r\n"']*)['"]?/i);
+    if (match && match[1]) {
+      filename = decodeURIComponent(match[1]);
+    }
+  }
+
+  return { blob, filename };
+}
+
+/**
+ * POST /api/track-leader/registrations/export/preview
+ */
+export async function trackLeaderExportRegistrationsPreview(
+  payload: ExportRequestPayload
+): Promise<ExportPreviewResponse> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/registrations/export/preview`, {
+    method: "POST",
+    headers: getTrackLeaderHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to generate export preview", response.status, json);
+  }
+  return json.data;
+}
+
+/**
+ * POST /api/track-leader/registrations/export
+ */
+export async function trackLeaderExportRegistrations(
+  payload: ExportRequestPayload
+): Promise<{ blob: Blob; filename: string }> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/registrations/export`, {
+    method: "POST",
+    headers: getTrackLeaderHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const json = await response.json().catch(() => ({}));
+    throw new ApiError(json.message || "Failed to download export file", response.status, json);
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition");
+  let filename = `XAVITECH-2026-Track-Export.${payload.format === "csv" ? "csv" : "xlsx"}`;
+  if (disposition) {
+    const match = disposition.match(/filename\*?=['"]?(?:UTF-\d['"]*)?([^;\r\n"']*)['"]?/i);
+    if (match && match[1]) {
+      filename = decodeURIComponent(match[1]);
+    }
+  }
+
+  return { blob, filename };
+}
+
 export const api = {
   fetchUserProfile,
   updateUserProfile,
@@ -1162,6 +1350,8 @@ export const api = {
   adminUpdateTrackLeader,
   adminUpdateTrackLeaderStatus,
   adminResetTrackLeaderCredentials,
+  adminExportRegistrationsPreview,
+  adminExportRegistrations,
   getAdminToken,
   setAdminToken,
   clearAdminToken,
@@ -1176,6 +1366,9 @@ export const api = {
   trackLeaderGetRegistrationDetails,
   trackLeaderForgotPassword,
   trackLeaderResetPassword,
+  trackLeaderExportRegistrationsPreview,
+  trackLeaderExportRegistrations,
+  downloadBlob,
   getTrackLeaderToken,
   setTrackLeaderToken,
   clearTrackLeaderToken,

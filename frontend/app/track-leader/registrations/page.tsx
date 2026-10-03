@@ -9,6 +9,7 @@ import {
   AdminRegistrationListItem,
   AdminRegistrationDetail,
 } from "@/lib/api";
+import ExportModal from "@/components/export/ExportModal";
 
 export default function TrackLeaderRegistrationsPage() {
   const {
@@ -25,6 +26,9 @@ export default function TrackLeaderRegistrationsPage() {
     refreshRegistrations,
   } = useTrackLeader();
   const isLight = theme === "light";
+
+  // Export Modal state
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   // Filter & Search states (pure client-side)
   const [search, setSearch] = useState("");
@@ -240,6 +244,22 @@ export default function TrackLeaderRegistrationsPage() {
               />
             </svg>
             <span>{registrationsRefreshing ? "Refreshing..." : "Refresh"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setExportModalOpen(true)}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-mono uppercase tracking-wider font-bold transition-all cursor-pointer shadow-sm ${
+              isLight
+                ? "bg-teal-50 hover:bg-teal-100 border-teal-300 text-teal-800 shadow-teal-100"
+                : "bg-[#35e0c9]/10 hover:bg-[#35e0c9]/20 border-[#35e0c9]/40 hover:border-[#35e0c9] text-[#35e0c9] shadow-[#35e0c9]/10"
+            }`}
+            title="Configure and Export Track Registrations"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Export</span>
           </button>
 
           <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center">
@@ -1242,6 +1262,22 @@ export default function TrackLeaderRegistrationsPage() {
         </div>
       </ModalPortal>
     )}
+
+      {/* Dynamic Export Modal strictly for assigned track */}
+      <ExportModal
+        isOpen={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        role="track-leader"
+        theme={theme}
+        activeFilters={{
+          search: appliedSearch,
+          eventId: selectedEventId,
+          registrationType: selectedType,
+          status: selectedStatus,
+        }}
+        assignedTrack={assignedTrack}
+        events={events}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import TrackLeaderAssignmentModel from '../models/trackLeaderAssignment.model.js
 import TrackModel from '../models/track.model.js';
 import adminRegistrationService from '../services/adminRegistration.service.js';
 import { getSupabaseClient } from '../config/database.js';
+import exportService from '../services/export.service.js';
 import { sendSuccess, sendError } from '../utils/response.util.js';
 import logger from '../utils/logger.util.js';
 
@@ -256,6 +257,141 @@ export const trackLeaderPortalController = {
       return sendSuccess(res, 'Registration details retrieved successfully', registration, 200);
     } catch (error) {
       logger.error('Error fetching track leader registration details:', error);
+      next(error);
+    }
+  },
+
+  /**
+   * POST /api/track-leader/registrations/export/preview
+   * Generate export preview strictly scoped to the authenticated Track Leader's assigned track.
+   */
+  exportRegistrationsPreview: async (req, res, next) => {
+    try {
+      const activeAssignment = await TrackLeaderAssignmentModel.getActiveAssignment(req.user.id);
+      if (!activeAssignment || !activeAssignment.track_id) {
+        return sendError(res, 'Access denied. You currently have no active track assigned.', null, 403);
+      }
+
+      const { format = 'xlsx', scope = 'my_track', filters = {}, fields = null } = req.body || {};
+
+      if (format && !['xlsx', 'csv'].includes(format.toLowerCase())) {
+        return sendError(res, 'Invalid export format. Supported formats: xlsx, csv', null, 400);
+      }
+
+      // Defend against client-supplied track override attempts
+      const suppliedTrackId = req.body?.trackId || filters.trackId;
+      if (suppliedTrackId && suppliedTrackId !== activeAssignment.track_id) {
+        return sendError(res, 'Access denied. You can only export registrations for your assigned track.', null, 403);
+      }
+
+      // Verify requested event strictly belongs to assigned track
+      const requestedEventId = req.body?.eventId || filters.eventId;
+      if (requestedEventId) {
+        const events = await TrackModel.findEventsByTrackId(activeAssignment.track_id);
+        const validEventIds = (events || []).map((e) => e.id);
+        if (!validEventIds.includes(requestedEventId)) {
+          return sendError(res, 'Access denied. Event does not belong to your assigned track.', null, 403);
+        }
+      }
+
+      // Enforce Track Leader constraints
+      const effectiveScope = scope === 'all' ? 'my_track' : scope;
+      const effectiveFilters = {
+        ...filters,
+        trackId: activeAssignment.track_id,
+        ...(requestedEventId ? { eventId: requestedEventId } : {}),
+      };
+
+      const preview = await exportService.getExportPreview({
+        scope: effectiveScope,
+        filters: effectiveFilters,
+        fields,
+        format: (format || 'xlsx').toLowerCase(),
+        trackIdConstraint: activeAssignment.track_id,
+        assignedTrack: activeAssignment.track,
+      });
+
+      return sendSuccess(res, 'Track export preview generated successfully', preview, 200);
+    } catch (error) {
+      if (error.statusCode === 400) {
+        return sendError(res, error.message, null, 400);
+      }
+      logger.error('Error generating track leader export preview:', error);
+      next(error);
+    }
+  },
+
+  /**
+   * POST /api/track-leader/registrations/export
+   * Dynamic export endpoint strictly isolated to the authenticated Track Leader's assigned track.
+   */
+  exportRegistrations: async (req, res, next) => {
+    try {
+      const activeAssignment = await TrackLeaderAssignmentModel.getActiveAssignment(req.user.id);
+      if (!activeAssignment || !activeAssignment.track_id) {
+        return sendError(res, 'Access denied. You currently have no active track assigned.', null, 403);
+      }
+
+      const { format = 'xlsx', scope = 'my_track', filters = {}, fields = null, preview = false } = req.body || {};
+
+      if (format && !['xlsx', 'csv'].includes(format.toLowerCase())) {
+        return sendError(res, 'Invalid export format. Supported formats: xlsx, csv', null, 400);
+      }
+
+      // Defend against client-supplied track override attempts
+      const suppliedTrackId = req.body?.trackId || filters.trackId;
+      if (suppliedTrackId && suppliedTrackId !== activeAssignment.track_id) {
+        return sendError(res, 'Access denied. You can only export registrations for your assigned track.', null, 403);
+      }
+
+      // Verify requested event strictly belongs to assigned track
+      const requestedEventId = req.body?.eventId || filters.eventId;
+      if (requestedEventId) {
+        const events = await TrackModel.findEventsByTrackId(activeAssignment.track_id);
+        const validEventIds = (events || []).map((e) => e.id);
+        if (!validEventIds.includes(requestedEventId)) {
+          return sendError(res, 'Access denied. Event does not belong to your assigned track.', null, 403);
+        }
+      }
+
+      // Enforce Track Leader constraints
+      const effectiveScope = scope === 'all' ? 'my_track' : scope;
+      const effectiveFilters = {
+        ...filters,
+        trackId: activeAssignment.track_id,
+        ...(requestedEventId ? { eventId: requestedEventId } : {}),
+      };
+
+      if (preview) {
+        const previewData = await exportService.getExportPreview({
+          scope: effectiveScope,
+          filters: effectiveFilters,
+          fields,
+          format: (format || 'xlsx').toLowerCase(),
+          trackIdConstraint: activeAssignment.track_id,
+          assignedTrack: activeAssignment.track,
+        });
+        return sendSuccess(res, 'Track export preview generated successfully', previewData, 200);
+      }
+
+      const { buffer, filename, contentType } = await exportService.generateExport({
+        scope: effectiveScope,
+        filters: effectiveFilters,
+        fields,
+        format: (format || 'xlsx').toLowerCase(),
+        trackIdConstraint: activeAssignment.track_id,
+        assignedTrack: activeAssignment.track,
+      });
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+      return res.status(200).send(buffer);
+    } catch (error) {
+      if (error.statusCode === 400) {
+        return sendError(res, error.message, null, 400);
+      }
+      logger.error('Error exporting track leader registrations:', error);
       next(error);
     }
   },

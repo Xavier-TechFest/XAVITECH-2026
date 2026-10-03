@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useAdmin } from "@/context/AdminContext";
 import { AdminRegistrationListItem, PaginationMeta } from "@/lib/api";
+import ExportModal from "@/components/export/ExportModal";
 
 const OFFICIAL_TRACK_ORDER = [
   "flagship-innovation",
@@ -15,6 +16,9 @@ const OFFICIAL_TRACK_ORDER = [
 
 export default function AdminRegistrationsPage() {
   const { getRegistrations, getEvents, getTracks } = useAdmin();
+
+  // Export Modal state
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   // Filter & Search states
   const [search, setSearch] = useState("");
@@ -146,9 +150,23 @@ export default function AdminRegistrationsPage() {
           </p>
         </div>
 
-        <div className="text-right">
-          <span className="text-xs font-mono text-neutral-400 block">Total Database Records</span>
-          <span className="text-lg font-bold font-mono text-[#35e0c9]">{pagination.totalRecords}</span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setExportModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#35e0c9]/10 hover:bg-[#35e0c9]/20 border border-[#35e0c9]/40 hover:border-[#35e0c9] text-[#35e0c9] font-mono text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer shadow-md shadow-[#35e0c9]/10"
+            title="Configure and Export Registrations"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Export</span>
+          </button>
+
+          <div className="text-right">
+            <span className="text-xs font-mono text-neutral-400 block">Total Database Records</span>
+            <span className="text-lg font-bold font-mono text-[#35e0c9]">{pagination.totalRecords}</span>
+          </div>
         </div>
       </div>
 
@@ -415,6 +433,22 @@ export default function AdminRegistrationsPage() {
           </div>
         </div>
       </div>
+
+      {/* Dynamic Export Configuration Modal */}
+      <ExportModal
+        isOpen={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        role="admin"
+        activeFilters={{
+          search: appliedSearch,
+          trackId: selectedTrackId,
+          eventId: selectedEventId,
+          registrationType: selectedType,
+          status: selectedStatus,
+        }}
+        tracks={tracks}
+        events={events}
+      />
     </div>
   );
 }
