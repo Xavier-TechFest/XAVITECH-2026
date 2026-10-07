@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export const EVENT_DATE = new Date("2026-10-30T09:00:00");
+export const EVENT_DATE = new Date("2026-10-31T09:00:00");
 
 function getRemaining() {
   const diff = Math.max(0, EVENT_DATE.getTime() - Date.now());
@@ -38,7 +38,7 @@ export default function Countdown() {
     <div className="flex gap-5 sm:gap-6" role="timer" aria-live="off">
       {units.map(([label, value]) => (
         <div key={label} className="flex flex-col items-center">
-          <span className="font-display text-xl font-semibold tabular-nums text-ink min-[380px]:text-2xl sm:text-3xl">
+          <span className="font-accent text-xl font-bold tabular-nums text-ink min-[380px]:text-2xl sm:text-3xl">
             {String(value).padStart(2, "0")}
           </span>
           <span className="mt-1 text-xs text-muted">{label}</span>

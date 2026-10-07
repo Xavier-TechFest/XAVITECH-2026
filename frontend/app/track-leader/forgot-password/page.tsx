@@ -49,6 +49,11 @@ export default function TrackLeaderForgotPasswordPage() {
       portalType="track-leader"
       backHref="/track-leader/login"
       backLabel="Back to Login"
+      technicalMeta={[
+        { label: "RECOVERY", value: "CRYPTO RESET TOKEN" },
+        { label: "EXPIRY", value: "30 MINUTES STRICT" },
+        { label: "SECURITY", value: "ACCOUNT ENUMERATION SAFE" },
+      ]}
     >
       <AuthCard
         category="RECOVERY // CREDENTIALS"
@@ -56,8 +61,8 @@ export default function TrackLeaderForgotPasswordPage() {
         title="Forgot Password?"
         description="Enter your registered Track Leader email address and we will dispatch a secure recovery link."
         footer={
-          <div className="flex items-center justify-between gap-3 text-xs font-space text-slate-500">
-            <span>Remembered your password?</span>
+          <div className="flex items-center justify-between gap-3 text-xs font-body text-slate-500">
+            <span>Remembered your credentials?</span>
             <Link
               href="/track-leader/login"
               className="font-oxanium text-[10px] font-bold uppercase tracking-wider text-circuit hover:text-cyan-200 transition-colors"
@@ -74,10 +79,10 @@ export default function TrackLeaderForgotPasswordPage() {
               message={successMessage}
             />
 
-            <div className="p-4 border border-white/10 bg-white/[0.02] font-space text-xs text-slate-400 space-y-2">
+            <div className="p-4 border border-white/10 bg-white/[0.02] font-body text-xs text-slate-400 space-y-2">
               <p className="font-semibold text-slate-200">Security Guidance:</p>
               <ul className="list-disc list-inside space-y-1 text-slate-400 text-[11px]">
-                <li>Please check both your inbox and spam folder.</li>
+                <li>Please inspect both your inbox and spam folder.</li>
                 <li>The recovery link remains active for exactly 30 minutes.</li>
                 <li>Single-use cryptographic token security is enforced.</li>
               </ul>
@@ -85,7 +90,7 @@ export default function TrackLeaderForgotPasswordPage() {
 
             <Link
               href="/track-leader/login"
-              className="min-h-[48px] w-full flex items-center justify-center gap-2 border border-circuit/60 bg-circuit px-5 font-space text-sm font-semibold text-[#04100f] transition-all duration-200 hover:bg-cyan-200 hover:shadow-lg hover:shadow-circuit/20"
+              className="min-h-12 w-full flex items-center justify-center gap-2 border border-circuit/60 bg-circuit px-5 font-body text-sm font-semibold text-[#04100f] transition-all duration-200 hover:bg-cyan-200 hover:shadow-lg hover:shadow-circuit/20"
             >
               Return to Login →
             </Link>

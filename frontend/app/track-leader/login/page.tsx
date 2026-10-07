@@ -33,14 +33,23 @@ export default function TrackLeaderLoginPage() {
   };
 
   return (
-    <AuthShell portalType="track-leader" backHref="/" backLabel="Back to Festival">
+    <AuthShell
+      portalType="track-leader"
+      backHref="/"
+      backLabel="Back to Festival"
+      technicalMeta={[
+        { label: "ACCESS LEVEL", value: "TRACK COORDINATOR" },
+        { label: "ISOLATION", value: "ROLE & TRACK STRICT" },
+        { label: "GATEWAY", value: "XVT-TL-CONSOLE-02" },
+      ]}
+    >
       <AuthCard
         category="TRACK OPERATIONS // AUTH"
         badge="COORDINATOR ROLE"
         title="Track Leader Login"
         description="Access your assigned track management console and registration roster."
         footer={
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-space text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-body text-slate-500">
             <span>Temporary credentials issued by admin?</span>
             <Link
               href="/track-leader/forgot-password"
@@ -66,6 +75,7 @@ export default function TrackLeaderLoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="leader@xavitech.org"
+            helperText="The email address assigned to your track coordinator account."
           />
 
           {/* Password with Visibility Toggle */}
@@ -84,7 +94,7 @@ export default function TrackLeaderLoginPage() {
             <div className="flex justify-end mt-1.5">
               <Link
                 href="/track-leader/forgot-password"
-                className="font-space text-xs text-slate-400 hover:text-circuit transition-colors"
+                className="font-body text-xs text-slate-400 hover:text-circuit transition-colors"
               >
                 Forgot password?
               </Link>

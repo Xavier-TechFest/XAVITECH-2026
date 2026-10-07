@@ -29,12 +29,12 @@ export default function EventsList() {
         
         {/* HEADER ROW */}
         <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 font-oxanium text-xs font-bold text-slate-500 uppercase tracking-widest border-b border-white/5">
-          <div className="col-span-4 lg:col-span-5">Arena</div>
-          <div className="col-span-3 lg:col-span-2">Track</div>
-          <div className="col-span-2">Date</div>
-          <div className="col-span-1">Team</div>
-          <div className="col-span-1">Prize</div>
-          <div className="col-span-1 text-right">Action</div>
+          <div className="col-span-4 lg:col-span-4">Event</div>
+          <div className="col-span-3 lg:col-span-3">Track</div>
+          <div className="col-span-2 lg:col-span-2">Date</div>
+          <div className="col-span-1 lg:col-span-1">Participation</div>
+          <div className="col-span-1 lg:col-span-1">Prize Pool</div>
+          <div className="col-span-1 lg:col-span-1 text-right">Action</div>
         </div>
 
         {/* ROWS */}
@@ -59,7 +59,7 @@ export default function EventsList() {
                   <div className="flex flex-col md:grid md:grid-cols-12 gap-4 px-4 md:px-6 py-5 items-start md:items-center">
                     
                     {/* EVENT NAME & IMAGE REVEAL */}
-                    <div className="col-span-4 lg:col-span-5 flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
+                    <div className="col-span-4 lg:col-span-4 flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
                       {/* Mobile Image (always visible) / Desktop Image (hover reveal) */}
                       <div 
                         className={`overflow-hidden rounded-md transition-all duration-500 ease-out flex-shrink-0
@@ -90,13 +90,13 @@ export default function EventsList() {
                     </div>
 
                     {/* TRACK */}
-                    <div className="col-span-3 lg:col-span-2 flex items-center gap-2 font-oxanium text-xs font-bold text-slate-300 uppercase tracking-widest w-full justify-between md:justify-start">
+                    <div className="col-span-3 lg:col-span-3 flex items-center gap-2 font-oxanium text-xs font-bold text-slate-300 uppercase tracking-widest w-full justify-between md:justify-start">
                       <span className="md:hidden text-slate-500">Track:</span>
                       <span 
-                        className="px-2 py-1 rounded-sm border bg-white/5 whitespace-nowrap"
-                        style={{ borderColor: `${event.accentColor}30`, color: event.accentColor }}
+                        className="px-2.5 py-1 rounded-sm border bg-white/5 whitespace-nowrap text-xs font-bold"
+                        style={{ borderColor: `${event.accentColor}40`, color: event.accentColor }}
                       >
-                        {event.trackName.replace("TECHNICAL & CODING", "TECH & CODE")}
+                        {event.badge.toUpperCase()}
                       </span>
                     </div>
 
@@ -106,16 +106,16 @@ export default function EventsList() {
                       {event.date}
                     </div>
 
-                    {/* TEAM */}
+                    {/* PARTICIPATION */}
                     <div className="col-span-1 font-space text-sm text-slate-400 flex justify-between md:block w-full">
-                      <span className="md:hidden font-oxanium text-xs text-slate-500 uppercase">Team:</span>
-                      {event.team}
+                      <span className="md:hidden font-oxanium text-xs text-slate-500 uppercase">Participation:</span>
+                      {event.team === "TBA" ? "TBA" : event.team}
                     </div>
 
                     {/* PRIZE */}
                     <div className="col-span-1 font-oxanium text-base font-bold text-marigold flex justify-between md:block w-full">
-                      <span className="md:hidden text-xs text-slate-500 uppercase">Prize:</span>
-                      {event.prize}
+                      <span className="md:hidden text-xs text-slate-500 uppercase">Prize Pool:</span>
+                      {event.prize === "TBA" ? "To Be Announced" : event.prize}
                     </div>
 
                     {/* ACTION (Desktop) */}

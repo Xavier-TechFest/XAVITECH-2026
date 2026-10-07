@@ -67,8 +67,14 @@ export default function Hero() {
     let rafId = 0;
 
     // Ambient constellation dots
+    // Touch devices: half the dots and ~30fps. The O(n^2) link pass and the
+    // per-frame canvas clear are the hero's real cost, and a phone gains
+    // nothing visible from 60fps on a slow drift.
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    let heroVisible = true;
+    let lastTick = 0;
     const DOT_COUNT = Math.min(
-      55,
+      coarse ? 26 : 55,
       Math.max(18, Math.floor((window.innerWidth * window.innerHeight) / 26000))
     );
 
@@ -92,6 +98,7 @@ export default function Hero() {
       color: string;
     };
     const sparks: Spark[] = [];
+    let lastSparkAt = 0;
 
     // Click / tap the sky to fire: bolts from the two bottom turrets, then an impact burst
     type Bolt = { sx: number; sy: number; tx: number; ty: number; u: number };
@@ -131,6 +138,23 @@ export default function Hero() {
 
       tilt.x = (pointer.x / width - 0.5) * 2;
       tilt.y = (pointer.y / height - 0.5) * 2;
+
+      if (!reduceMotion) {
+        const now = performance.now();
+        if (now - lastSparkAt > 40) {
+          lastSparkAt = now;
+          sparks.push({
+            x: pointer.x,
+            y: pointer.y,
+            vx: (Math.random() - 0.5) * 0.35,
+            vy: -0.25 - Math.random() * 0.35,
+            life: 1,
+            r: Math.random() * 1.6 + 1.2,
+            color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)],
+          });
+          if (sparks.length > 90) sparks.shift();
+        }
+      }
     }
 
     function onPointerLeave() {
@@ -171,6 +195,21 @@ export default function Hero() {
     }
 
     function frame() {
+      // Off-screen or backgrounded: stop the loop entirely (restarted by the
+      // IntersectionObserver / visibilitychange below) instead of burning
+      // frames on a canvas nobody can see for the rest of the page.
+      if (!reduceMotion && (!heroVisible || document.hidden)) {
+        rafId = 0;
+        return;
+      }
+      if (coarse && !reduceMotion) {
+        const t = performance.now();
+        if (t - lastTick < 33) {
+          rafId = requestAnimationFrame(frame);
+          return;
+        }
+        lastTick = t;
+      }
       ctx.clearRect(0, 0, width, height);
 
       // ambient constellation
@@ -328,6 +367,17 @@ export default function Hero() {
       if (reduceMotion) frame();
     });
     resizeObserver.observe(hero);
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      heroVisible = entry.isIntersecting;
+      if (heroVisible && !rafId && !reduceMotion) rafId = requestAnimationFrame(frame);
+    });
+    visibilityObserver.observe(hero);
+    const onVisibility = () => {
+      if (!document.hidden && heroVisible && !rafId && !reduceMotion) {
+        rafId = requestAnimationFrame(frame);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
     hero.addEventListener("pointermove", onPointerMove);
     hero.addEventListener("pointerdown", onPointerDown);
     hero.addEventListener("pointerleave", onPointerLeave);
@@ -335,6 +385,8 @@ export default function Hero() {
     return () => {
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
+      visibilityObserver.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
       hero.removeEventListener("pointermove", onPointerMove);
       hero.removeEventListener("pointerdown", onPointerDown);
       hero.removeEventListener("pointerleave", onPointerLeave);
@@ -425,36 +477,55 @@ export default function Hero() {
       />
 
       <div ref={contentRef} className="relative z-10 mx-auto w-full max-w-6xl px-6 will-change-[transform,opacity]">
-        <div className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-circuit/30 bg-circuit/10 px-4 py-2 text-[10px] font-medium uppercase tracking-[0.14em] text-circuit shadow-[0_0_24px_rgba(53,224,201,0.08)] backdrop-blur-sm sm:px-5 sm:py-2.5 sm:text-xs sm:tracking-[0.18em]">
-          <span className="h-1.5 w-1.5 rounded-full bg-circuit shadow-[0_0_8px_rgba(53,224,201,0.9)]" />
-          <span>Explore</span>
-          <span className="text-marigold">×</span>
-          <span className="text-ink">Create</span>
-          <span className="text-marigold">×</span>
-          <span>INNOVATE</span>
+        <div className="relative inline-flex items-center">
+          {/* Soft futuristic glow strip behind the tagline */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-x-10 inset-y-[-8px] rounded-full bg-gradient-to-r from-transparent via-cyan-400/25 to-transparent blur-xl"
+          />
+
+          <div className="relative flex w-fit max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-3xl border border-cyan-300/20 bg-black/25 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-sm sm:rounded-full sm:px-4 sm:text-xs sm:tracking-[0.18em]">
+            <span className="h-1.5 w-1.5 rounded-full bg-circuit shadow-[0_0_10px_rgba(53,224,201,0.9)]" />
+            Explore <span className="text-marigold">×</span> Create{" "}
+            <span className="text-marigold">×</span> Transcend
+          </div>
         </div>
 
         <h1
           ref={wordmarkRef}
-          className="mt-6 max-w-full font-display text-[clamp(1.8rem,9vw,8rem)] font-extrabold leading-[0.95] tracking-tight text-ink will-change-transform sm:leading-[0.88]"
+          className="mt-6 max-w-full will-change-transform"
           style={{ transformStyle: "preserve-3d" }}
         >
-          <span className="bg-gradient-to-r from-circuit via-ink to-marigold bg-clip-text text-transparent">
-            XAVITECH
-          </span>
+          {/* Official logo. Intrinsic 2146x733 (≈2.93:1) — width/height set so
+              the layout doesn't shift while it loads. */}
+          <img
+            src="/xavitech-logo.webp"
+            alt="XAVITECH"
+            width={2146}
+            height={733}
+            fetchPriority="high"
+            className="h-auto w-[min(92vw,760px)] drop-shadow-[0_0_44px_rgba(53,224,201,0.22)] sm:w-[min(70vw,900px)]"
+          />
         </h1>
+        
+        <div className="flex flex-col items-center text-center">
+        {/* the hero's three-line structure: name+year / tagline (pill above) / host */}
+        <p className="mt-4 font-accent text-xs font-bold uppercase tracking-[0.32em] text-ink/90 sm:mt-5 sm:text-sm">
+          2026 <span className="mx-2 text-marigold">•</span> A Xavier Tech Fest
+        </p>
 
         <p className="mt-5 max-w-prose text-base text-muted sm:mt-6 sm:text-xl">
           A day-long technology festival on the campus of Xavier University —
           infusing innovation and technology into the air.
         </p>
-
+        </div>
+        
         <div className="mt-8 flex flex-wrap items-center gap-x-10 gap-y-7 sm:mt-10 sm:gap-y-8">
           <a
             href="#events"
             className="group relative w-full overflow-hidden rounded-full bg-marigold px-7 py-3.5 text-center text-sm font-semibold text-bg transition-transform duration-300 hover:-translate-y-0.5 sm:w-auto sm:py-3"
           >
-            <span className="relative z-10">INSPECT</span>
+            <span className="relative z-10">EXPLORE EVENTS</span>
             <span className="absolute inset-0 -z-0 translate-x-[-105%] bg-gradient-to-r from-signal to-marigold transition-transform duration-500 group-hover:translate-x-0" />
           </a>
 

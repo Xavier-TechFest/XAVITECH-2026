@@ -51,15 +51,22 @@ export default function TrackLeaderChangePasswordPage() {
   };
 
   return (
-    <AuthShell portalType="track-leader">
+    <AuthShell
+      portalType="track-leader"
+      technicalMeta={[
+        { label: "ACCESS LEVEL", value: "TRACK COORDINATOR" },
+        { label: "SECURITY", value: "PASSWORD REVISION" },
+        { label: "STATUS", value: "MANDATORY INITIAL UPDATE" },
+      ]}
+    >
       <AuthCard
         category="SECURITY // FIRST LOGIN"
         badge="PASSWORD UPDATE"
         title="Set Your New Password"
         description="For security, you must replace your administrator-issued temporary password before accessing your track console."
         footer={
-          <div className="flex items-center justify-between gap-3 text-xs font-space text-slate-500">
-            <span>Wrong account signed in?</span>
+          <div className="flex items-center justify-between gap-3 text-xs font-body text-slate-500">
+            <span>Wrong coordinator account?</span>
             <button
               type="button"
               onClick={logout}
@@ -73,7 +80,7 @@ export default function TrackLeaderChangePasswordPage() {
         <div className="space-y-5">
           {/* Account Indicator Banner */}
           {trackLeader?.email && (
-            <div className="flex items-center justify-between p-3 border border-white/10 bg-white/[0.02] font-space text-xs">
+            <div className="flex items-center justify-between p-3 border border-white/10 bg-white/[0.02] font-body text-xs">
               <span className="text-slate-400">Account:</span>
               <span className="font-mono font-semibold text-circuit truncate max-w-[220px]">
                 {trackLeader.email}
@@ -125,8 +132,8 @@ export default function TrackLeaderChangePasswordPage() {
               placeholder="Re-enter new password"
             />
 
-            {/* Checklist indicator */}
-            <div className="p-3 border border-white/[0.06] bg-white/[0.015] font-space text-[11px] text-slate-400 space-y-1">
+            {/* Password Criteria Indicator */}
+            <div className="p-3 border border-white/[0.06] bg-white/[0.015] font-body text-[11px] text-slate-400 space-y-1.5">
               <div className="flex items-center gap-2">
                 <span className={newPassword.length >= 8 ? "text-circuit" : "text-slate-600"}>
                   {newPassword.length >= 8 ? "✓" : "○"}

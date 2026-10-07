@@ -7,13 +7,14 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import EventsMap from "./EventsMap";
 import EventsList from "./EventsList";
+import ImageCropEditor, { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
 
 export default function EventsShowcase() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   // Group of featured events or all events for the carousel
-  const carouselEvents = EVENTS.slice(0, 10); // Let's use first 10 for the carousel
+  const carouselEvents = EVENTS;
 
   useEffect(() => {
     if (!isAutoPlaying) return;
@@ -36,6 +37,9 @@ export default function EventsShowcase() {
   const currentEvent = carouselEvents[currentIndex];
   const nextEvent = carouselEvents[(currentIndex + 1) % carouselEvents.length];
   const prevEvent = carouselEvents[(currentIndex - 1 + carouselEvents.length) % carouselEvents.length];
+  const imageCrop = useImageCrop(currentEvent, "carousel");
+  const nextCrop = useImageCrop(nextEvent, "carousel");
+  const prevCrop = useImageCrop(prevEvent, "carousel");
   const currentAccent = currentEvent.id === "crucible"
     ? "#ff6848"
     : currentEvent.id === "web-craft"
@@ -78,10 +82,11 @@ export default function EventsShowcase() {
                 <img 
                   src={currentEvent.image} 
                   alt={currentEvent.name}
-                  className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-700 group-hover:scale-105 ease-out"
+                  className="w-full h-full object-cover opacity-80 group-hover:opacity-95 transition-all duration-700 group-hover:scale-105 ease-out"
+                  style={cropStyle(imageCrop)}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#040810] via-[#040810]/40 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#040810]/90 via-[#040810]/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#040810] via-[#040810]/30 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#040810]/80 via-[#040810]/25 to-transparent" />
               </div>
               
               {/* TECHNICAL CORNER BRACKETS */}
@@ -139,15 +144,15 @@ export default function EventsShowcase() {
                     <span className="text-white/40 uppercase tracking-widest text-[10px] mb-1">Date</span>
                     <span className="font-bold text-white">{currentEvent.date}</span>
                   </div>
-                  <div className="w-px h-8 bg-white/10 hidden md:block" />
+                  {currentEvent.team !== "TBA" && <><div className="w-px h-8 bg-white/10 hidden md:block" />
                   <div className="flex flex-col">
-                    <span className="text-white/40 uppercase tracking-widest text-[10px] mb-1">Team</span>
+                    <span className="text-white/40 uppercase tracking-widest text-[10px] mb-1">{currentEvent.team === "Individual" ? "Participation Type" : "Team Size"}</span>
                     <span className="font-bold text-white">{currentEvent.team}</span>
-                  </div>
+                  </div></>}
                   <div className="w-px h-8 bg-white/10 hidden md:block" />
                   <div className="flex flex-col">
                     <span className="text-white/40 uppercase tracking-widest text-[10px] mb-1">Prize Pool</span>
-                    <span className="font-bold text-marigold text-lg">{currentEvent.prize}</span>
+                    <span className="font-bold text-marigold text-lg">{currentEvent.prize === "TBA" ? "To Be Announced" : currentEvent.prize}</span>
                   </div>
                 </motion.div>
 
@@ -163,7 +168,7 @@ export default function EventsShowcase() {
                     className="cyber-btn-clip px-8 py-3.5 font-oxanium text-sm font-black text-black uppercase tracking-widest hover:brightness-110 transition-all"
                     style={{ backgroundColor: currentAccent, boxShadow: `0 0 20px ${currentAccent}66` }}
                   >
-                    Register Now →
+                    Registration →
                   </Link>
                   <Link 
                     href={`/events/${currentEvent.id}`}
@@ -185,19 +190,19 @@ export default function EventsShowcase() {
 
           {/* NEXT / PREV PARTIALS FOR DEPTH (Desktop Only) */}
           <div className="absolute -right-32 top-1/2 -translate-y-1/2 w-64 h-[60%] rounded-2xl overflow-hidden hidden xl:block opacity-30 blur-[2px] transition-all duration-500 hover:opacity-50 hover:blur-none cursor-pointer border border-white/10" onClick={handleNext}>
-            <img src={nextEvent.image} alt="Next" className="w-full h-full object-cover" />
+            <img src={nextEvent.image} alt="Next" className="w-full h-full object-cover" style={cropStyle(nextCrop)} />
             <div className="absolute inset-0 bg-black/50" />
             <div className="absolute bottom-4 left-4 font-space text-white uppercase font-bold">{nextEvent.name}</div>
           </div>
           <div className="absolute -left-32 top-1/2 -translate-y-1/2 w-64 h-[60%] rounded-2xl overflow-hidden hidden xl:block opacity-30 blur-[2px] transition-all duration-500 hover:opacity-50 hover:blur-none cursor-pointer border border-white/10" onClick={handlePrev}>
-            <img src={prevEvent.image} alt="Prev" className="w-full h-full object-cover" />
+            <img src={prevEvent.image} alt="Prev" className="w-full h-full object-cover" style={cropStyle(prevCrop)} />
             <div className="absolute inset-0 bg-black/50" />
             <div className="absolute bottom-4 left-4 font-space text-white uppercase font-bold">{prevEvent.name}</div>
           </div>
 
         </div>
 
-        {/* CAROUSEL NAVIGATION (01 / 15 + ARROWS) */}
+        {/* CAROUSEL NAVIGATION */}
         <div className="flex items-center justify-between w-full mt-6 md:mt-8 px-2">
           <div className="flex items-center gap-4">
             <button 
@@ -243,7 +248,7 @@ export default function EventsShowcase() {
         </div>
         <div className="relative z-10 text-center flex flex-col items-center">
           <h2 className="font-space text-4xl md:text-6xl font-black text-white uppercase tracking-tight mb-4">
-            <span className="text-cyan-400">15</span> EVENTS. <span className="text-amber-400">5</span> TRACKS. <span className="text-emerald-400">1</span> TECH FEST.
+            <span className="text-cyan-400">13</span> EVENTS. <span className="text-amber-400">5</span> TRACKS. <span className="text-emerald-400">1</span> TECH FEST.
           </h2>
           <p className="font-oxanium text-sm md:text-base text-slate-400 uppercase tracking-widest mb-8">
             The ultimate technological crucible awaits.
@@ -257,6 +262,7 @@ export default function EventsShowcase() {
         </div>
       </div>
 
+      <ImageCropEditor />
     </div>
   );
 }

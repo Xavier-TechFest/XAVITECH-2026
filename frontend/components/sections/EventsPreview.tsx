@@ -1,101 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { getFanTransform } from "@/lib/fan";
 import { EventsBackdrop } from "./Backdrops";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { firePulse } from "@/lib/pulse";
+import { EVENTS } from "@/lib/eventsData";
 
-const events = [
-  {
-    name: "Hackathon",
-    track: "HACKATHON",
-    status: "Registration open",
-    format: "Team of 4",
-  },
-  {
-    name: "Debugging Challenge",
-    track: "CODING AND DEVELOPMENT",
-    status: "Registration open",
-    format: "Team of 2",
-  },
-  {
-    name: "Web Development",
-    track: "CODING AND DEVELOPMENT",
-    status: "Registration open",
-    format: "Team of 3",
-  },
-  {
-    name: "Data Analytics Challenge",
-    track: "CODING AND DEVELOPMENT",
-    status: "Opens soon",
-    format: "Team of 2",
-  },
-  {
-    name: "Code Sprint",
-    track: "CODING AND DEVELOPMENT",
-    status: "Registration open",
-    format: "Team of 2",
-  },
-  {
-    name: "Gaming",
-    track: "GAMING AND ADVENTURE",
-    status: "Registration open",
-    format: "Team of 5",
-  },
-  {
-    name: "Tech Treasure Hunt",
-    track: "GAMING AND ADVENTURE",
-    status: "Registration open",
-    format: "Team of 2",
-  },
-  {
-    name: "Death Race",
-    track: "GAMING AND ADVENTURE",
-    status: "Opens soon",
-    format: "Team of 2",
-  },
-  {
-    name: "Tech Quiz",
-    track: "CENTRAL EVENTS",
-    status: "Registration open",
-    format: "Team of 2",
-  },
-  {
-    name: "AI Prompt Battle",
-    track: "CENTRAL EVENTS",
-    status: "Registration open",
-    format: "Team of 2",
-  },
-  {
-    name: "MUN",
-    track: "CENTRAL EVENTS",
-    status: "Registration open",
-    format: "Team of 2",
-  },
-  {
-    name: "Ideathon",
-    track: "CENTRAL EVENTS",
-    status: "Registration open",
-    format: "Team of 2",
-  },
-  {
-    name: "Workshop",
-    track: "KNOWLEDGE",
-    status: "Registration open",
-    format: "Individual",
-  },
-];
+const trackLabels: Record<string, string> = {
+  "track-a": "HACKATHON", "track-b": "CODING & DEVELOPMENT", "track-c": "GAMING & ADVENTURE",
+  "track-d": "STAGE & CENTRAL EVENTS", "track-e": "WORKSHOPS & KNOWLEDGE",
+};
+const events = EVENTS.map((event) => ({
+  id: event.id,
+  name: event.name,
+  track: trackLabels[event.trackId],
+  status: event.registrationConfig ? "Requirements available" : "Details TBA",
+  format: event.team,
+}));
 
 // filter chips: the same five tracks the Tracks section introduces
 const FILTERS = [
   { label: "All", track: null },
   { label: "Hackathon", track: "HACKATHON" },
-  { label: "Coding", track: "CODING AND DEVELOPMENT" },
-  { label: "Gaming", track: "GAMING AND ADVENTURE" },
-  { label: "Central", track: "CENTRAL EVENTS" },
-  { label: "Knowledge", track: "KNOWLEDGE" },
+  { label: "Coding", track: "CODING & DEVELOPMENT" },
+  { label: "Gaming", track: "GAMING & ADVENTURE" },
+  { label: "Stage & Central", track: "STAGE & CENTRAL EVENTS" },
+  { label: "Workshops", track: "WORKSHOPS & KNOWLEDGE" },
 ] as const;
 
 export default function EventsPreview() {
@@ -103,6 +35,22 @@ export default function EventsPreview() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [filter, setFilter] = useState(0);
+  // Touch devices (and anyone who asked for reduced motion) get a plain
+  // swipeable row instead of the auto-scrolling marquee: a moving target is
+  // hard to tap, and a marquee has no hover to pause it on a phone.
+  const [scrollLayout, setScrollLayout] = useState(false);
+  useEffect(() => {
+    const coarse = window.matchMedia("(pointer: coarse)");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setScrollLayout(coarse.matches || reduce.matches);
+    update();
+    coarse.addEventListener("change", update);
+    reduce.addEventListener("change", update);
+    return () => {
+      coarse.removeEventListener("change", update);
+      reduce.removeEventListener("change", update);
+    };
+  }, []);
 
   const filtered = FILTERS[filter].track
     ? events.filter((e) => e.track === FILTERS[filter].track)
@@ -152,7 +100,7 @@ export default function EventsPreview() {
               type="button"
               onClick={() => pickFilter(i)}
               aria-pressed={filter === i}
-              className={`min-h-9 rounded-full border px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors duration-200 sm:text-[11px] ${
+              className={`min-h-11 rounded-full border px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors duration-200 sm:min-h-9 sm:px-3.5 sm:text-[11px] ${
                 filter === i
                   ? "border-circuit bg-circuit/15 text-circuit shadow-[0_0_16px_rgba(53,224,201,0.25)]"
                   : "border-line/70 text-muted hover:border-circuit/50 hover:text-ink"
@@ -163,10 +111,84 @@ export default function EventsPreview() {
           ))}
         </div>
 
-        {/* Carousel. Top padding is generous on purpose: a hovered card rises
-            ~34px and grows 16% from its bottom edge, and must never be clipped. */}
+{filtered.length === 1 ? (
+          /* A track with exactly one event doesn't get a carousel to fan
+             through — that's just an awkward sideways shuffle of one card.
+             One centred card, in on a scale + fade + upward move instead. */
+          <div className="flex justify-center py-14 sm:py-16">
+            <motion.div
+              key={filter}
+              initial={{ opacity: 0, scale: 0.94, y: 22 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="w-full max-w-sm rounded-2xl border border-circuit/70 bg-surface-raised p-6 text-left shadow-[0_0_40px_rgba(53,224,201,0.18)] sm:max-w-md sm:p-8"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted">{filtered[0].track}</p>
+                <span className="font-mono text-[10px] text-muted/60">01</span>
+              </div>
+              <h3 className="mt-3 font-display text-2xl font-semibold text-ink sm:text-3xl">
+                {filtered[0].name}
+              </h3>
+              <div className="mt-6 flex items-center justify-between text-xs">
+                <span className="text-muted">{filtered[0].format}</span>
+                <span
+                  className={
+                    filtered[0].status === "Registration open" ? "text-circuit" : "text-muted"
+                  }
+                >
+                  {filtered[0].status}
+                </span>
+              </div>
+            </motion.div>
+          </div>
+        ) : scrollLayout ? (
+          <div
+            key={filter}
+            className="-mx-5 flex snap-x snap-mandatory scroll-pl-5 gap-4 overflow-x-auto px-5 pb-10 pt-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:scroll-pl-6 sm:px-6"
+          >
+            {filtered.map((event, index) => {
+              const on = selectedIndex === index;
+              return (
+                <button
+                  key={event.name}
+                  type="button"
+                  onClick={() => {
+                    setSelectedIndex((v) => (v === index ? null : index));
+                    firePulse(index);
+                  }}
+                  aria-pressed={on}
+                  className={`relative flex h-52 w-[16.5rem] shrink-0 snap-start flex-col justify-between rounded-2xl border p-5 text-left transition-colors duration-300 sm:h-56 sm:w-[18rem] sm:p-6 ${
+                    on
+                      ? "border-circuit/70 bg-surface-raised shadow-[0_0_40px_rgba(53,224,201,0.18)]"
+                      : "border-line/60 bg-surface"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted">{event.track}</p>
+                      <span className="font-mono text-[10px] text-muted/60">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 font-display text-2xl font-semibold text-ink">
+                      {event.name}
+                    </h3>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted">{event.format}</span>
+                    <span className={event.status === "Registration open" ? "text-circuit" : "text-muted"}>
+                      {event.status}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
         <div
           className="relative overflow-visible pb-14 pt-24 sm:pt-28"
+
           style={{
             maskImage:
               "linear-gradient(90deg, transparent 0, black 7%, black 93%, transparent 100%)",
@@ -270,17 +292,7 @@ export default function EventsPreview() {
             })}
           </div>
         </div>
-
-        {/* CTA Link to full Tracks & Events directory */}
-        <div className="mt-8 flex justify-center">
-          <a
-            href="/tracks"
-            className="inline-flex items-center gap-2 rounded-full border border-circuit/60 bg-circuit/10 px-8 py-3.5 font-mono text-xs font-bold uppercase tracking-wider text-circuit shadow-[0_0_20px_rgba(53,224,201,0.2)] transition-all duration-300 hover:scale-105 hover:bg-circuit hover:text-bg"
-          >
-            <span>Explore Full Arena Directory (15 Arenas)</span>
-            <span>→</span>
-          </a>
-        </div>
+        )}
 
         <style jsx>{`
           @keyframes events-scroll {

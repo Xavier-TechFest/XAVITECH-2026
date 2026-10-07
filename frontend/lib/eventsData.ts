@@ -1,588 +1,203 @@
-export interface EventItem {
+export interface ParticipantFieldSpec {
   id: string;
-  name: string; // Crisp 1-2 word display title (e.g. "HACKATHON", "WEB DEVELOPMENT")
-  fullTitle: string; // Complete descriptive name (e.g. "Crucible — Flagship 12-Hour Hackathon")
-  badge: string;
-  badgeLevel: "Crucible" | "Advanced" | "Intermediate" | "Beginner";
-  trackId: string;
-  trackName: string;
-  shortDesc: string;
-  fullDesc: string;
-  time: string;
-  date: string;
-  prize: string;
-  price: string;
-  team: string;
-  venue: string;
-  accentColor: string; // e.g. '#35e0c9'
-  glowColor: string;   // rgba
-  borderColor: string; // CSS border color
-  image: string;
-  highlights: string[];
-  rules: string[];
-  isFlagship?: boolean;
+  label: string;
+  type: "text" | "email" | "tel" | "date" | "select" | "file" | "textarea";
+  required: boolean;
+  placeholder?: string;
+  options?: string[];
+  helpText?: string;
+  accept?: string;
+  pattern?: string;
 }
 
-export interface TrackItem {
-  id: string;
-  num: string;
-  letter: string;
-  name: string;
-  subtitle: string;
-  description: string;
-  accentColor: string;
-  badgeClass: string;
+export interface RegistrationConfig {
+  eventFormat: "individual" | "team";
+  minTeamSize?: number;
+  maxTeamSize?: number;
+  feeAmount?: number;
+  feeBasis?: "per_team" | "per_player" | "per_participant";
+  feeDisplay: string;
+  deadline: string;
+  deadlineDate?: string;
+  teamNameRequired?: boolean;
+  participantFields: ParticipantFieldSpec[];
+  teamFields?: ParticipantFieldSpec[];
+  coordinator?: { name: string; phone?: string; email?: string; coCoordinator?: string };
+  details?: { committee?: string; agenda?: string; duration?: string; game?: string; maps?: string[]; format?: string; note?: string };
+  declarations?: string[];
+  customDeclaration?: string;
 }
+
+export interface EventItem {
+  id: string; name: string; fullTitle: string; badge: string; badgeLevel: "Crucible" | "Advanced" | "Intermediate" | "Beginner"; aliases?: string[]; isFlagship?: boolean;
+  trackId: string; trackName: string; shortDesc: string; fullDesc: string;
+  time: string; date: string; prize: string; price: string; team: string; venue: string;
+  accentColor: string; glowColor: string; borderColor: string; image: string;
+  imagePosition?: string; imageScale?: number;
+  highlights: string[]; rules: string[]; registrationConfig?: RegistrationConfig;
+  coordinatorRequirements?: string[];
+  eligibility?: string[]; registrationInfo?: string[]; requirements?: string[];
+}
+
+export interface TrackItem { id: string; num: string; letter: string; name: string; subtitle: string; description: string; accentColor: string; badgeClass: string }
 
 export const TRACKS: TrackItem[] = [
-  {
-    id: "all",
-    num: "00",
-    letter: "ALL",
-    name: "ALL ARENAS",
-    subtitle: "Complete Directory",
-    description: "Browse the complete directory of 15 high-voltage arenas.",
-    accentColor: "#35e0c9",
-    badgeClass: "border-circuit/60 text-circuit bg-circuit/10",
-  },
-  {
-    id: "technical",
-    num: "01",
-    letter: "A",
-    name: "TECHNICAL & CODING",
-    subtitle: "Software & Engineering",
-    description: "Hackathons, speed coding, systems debugging, data modeling & full-stack web builds.",
-    accentColor: "#35e0c9",
-    badgeClass: "border-[#35e0c9]/60 text-[#35e0c9] bg-[#35e0c9]/10",
-  },
-  {
-    id: "ideation",
-    num: "02",
-    letter: "B",
-    name: "KNOWLEDGE & IDEATION",
-    subtitle: "AI & Cognitive Intelligence",
-    description: "AI agent duels, tech history trivia, and academic research paper defense.",
-    accentColor: "#c084fc",
-    badgeClass: "border-purple-400/60 text-purple-300 bg-purple-500/10",
-  },
-  {
-    id: "learning",
-    num: "03",
-    letter: "C",
-    name: "HANDS-ON LEARNING",
-    subtitle: "Masterclasses & Workshops",
-    description: "Masterclasses on low-latency systems, kernel hacking, and AI architectures.",
-    accentColor: "#f472b6",
-    badgeClass: "border-pink-400/60 text-pink-300 bg-pink-500/10",
-  },
-  {
-    id: "adventure",
-    num: "04",
-    letter: "D",
-    name: "FUN & ADVENTURE",
-    subtitle: "Robotics & Ciphers",
-    description: "Cryptographic cipher scavenger hunts and high-octane robotic obstacle races.",
-    accentColor: "#fbbf24",
-    badgeClass: "border-amber-400/60 text-amber-300 bg-amber-500/10",
-  },
-  {
-    id: "gaming",
-    num: "05",
-    letter: "E",
-    name: "GAMING ARENA",
-    subtitle: "Esports Tournaments",
-    description: "High-stakes tactical BGMI esports tournaments across Erangel & Miramar.",
-    accentColor: "#60a5fa",
-    badgeClass: "border-blue-400/60 text-blue-300 bg-blue-500/10",
-  },
-  {
-    id: "mun",
-    num: "06",
-    letter: "F",
-    name: "GLOBAL AFFAIRS MUN",
-    subtitle: "Diplomacy & AI Policy",
-    description: "Simulated Model UN committee on autonomous weapons, AI sovereignty & cyberwarfare.",
-    accentColor: "#34d399",
-    badgeClass: "border-emerald-400/60 text-emerald-300 bg-emerald-500/10",
-  },
-  {
-    id: "suggested",
-    num: "07",
-    letter: "G",
-    name: "SUGGESTED ARENAS",
-    subtitle: "Experimental & Retro",
-    description: "Experimental challenges including screenless blind coding and pure logic synthesis.",
-    accentColor: "#f87171",
-    badgeClass: "border-rose-400/60 text-rose-300 bg-rose-500/10",
-  },
+  { id: "all", num: "00", letter: "ALL", name: "ALL EVENTS", subtitle: "XAVITECH 2026", description: "Explore all 13 confirmed event listings across five tracks.", accentColor: "#35e0c9", badgeClass: "border-circuit/60 text-circuit bg-circuit/10" },
+  { id: "track-a", num: "01", letter: "A", name: "HACKATHON", subtitle: "Build and create", description: "Hackathon event", accentColor: "#ff6848", badgeClass: "border-orange-400/60 text-orange-300 bg-orange-500/10" },
+  { id: "track-b", num: "02", letter: "B", name: "CODING & DEVELOPMENT", subtitle: "Code and solve", description: "Coding and development events", accentColor: "#35e0c9", badgeClass: "border-cyan-400/60 text-cyan-300 bg-cyan-500/10" },
+  { id: "track-c", num: "03", letter: "C", name: "GAMING & ADVENTURE", subtitle: "Play and explore", description: "Gaming and adventure events", accentColor: "#60a5fa", badgeClass: "border-blue-400/60 text-blue-300 bg-blue-500/10" },
+  { id: "track-d", num: "04", letter: "D", name: "STAGE & CENTRAL EVENTS", subtitle: "Ideas and competition", description: "Stage and central events", accentColor: "#34d399", badgeClass: "border-emerald-400/60 text-emerald-300 bg-emerald-500/10" },
+  { id: "track-e", num: "05", letter: "E", name: "WORKSHOPS & KNOWLEDGE", subtitle: "Learn by doing", description: "Workshops and knowledge events", accentColor: "#f472b6", badgeClass: "border-pink-400/60 text-pink-300 bg-pink-500/10" },
+];
+
+const common = [
+  { id: "fullName", label: "Full name", type: "text" as const, required: true },
+  { id: "college", label: "Institution name", type: "text" as const, required: true },
+  { id: "course", label: "Department / Course / Class", type: "text" as const, required: true },
+  { id: "year", label: "Year / Semester", type: "text" as const, required: true },
+  { id: "mobile", label: "Mobile number", type: "tel" as const, required: true, placeholder: "10-digit Indian mobile number", pattern: "[6-9][0-9]{9}" },
+  { id: "email", label: "Email address", type: "email" as const, required: true },
+  { id: "city", label: "City", type: "text" as const, required: true },
+];
+const idPhoto = { id: "collegeId", label: "College ID card", type: "file" as const, required: true, accept: "image/*,.pdf", helpText: "Upload a clear image or PDF." };
+const profilePhoto = { id: "profilePhoto", label: "Profile photo", type: "file" as const, required: true, accept: "image/*", helpText: "Recent, clear passport-style photo." };
+const baseDeclarations = ["I confirm that the information I provided is accurate.", "I agree to follow the event rules.", "I agree to follow the event code of conduct.", "I consent to the use of my information for event administration.", "I consent to the use of event photos/videos featuring me for official promotion."];
+const deathRaceDeclarations = ["I confirm that the information I provided is accurate.", "I agree to follow the event rules.", "I agree to follow the event code of conduct.", "I consent to the use of event photos/videos featuring me for official promotion."];
+const techQuizFields: ParticipantFieldSpec[] = [...common, { id: "section", label: "Section (optional)", type: "text", required: false }, { id: "studentId", label: "Student ID / Roll number", type: "text", required: true }, idPhoto, profilePhoto];
+const hackTheSkillFields: ParticipantFieldSpec[] = [
+  { id: "fullName", label: "Full name", type: "text", required: true },
+  { id: "college", label: "Institution name", type: "text", required: true },
+  { id: "course", label: "Department / Course / Class", type: "text", required: true },
+  { id: "year", label: "Year / Semester (optional)", type: "text", required: false },
+  { id: "section", label: "Section (optional)", type: "text", required: false },
+  { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "Valid mobile number" },
+  { id: "email", label: "Email address", type: "email", required: true },
+  { id: "studentId", label: "Student ID / Roll number (optional)", type: "text", required: false },
+  { id: "city", label: "City", type: "text", required: true },
+  { ...idPhoto, label: "Valid school / college ID card" },
+  profilePhoto,
+];
+const battleOfBotsFields: ParticipantFieldSpec[] = [
+  { id: "fullName", label: "Full name", type: "text", required: true },
+  { id: "college", label: "Institution name", type: "text", required: true },
+  { id: "course", label: "Department / Course", type: "text", required: true },
+  { id: "year", label: "Year / Semester", type: "text", required: true },
+  { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "Valid mobile number" },
+  { id: "email", label: "Email address", type: "email", required: true },
+  { id: "collegeId", label: "Valid college ID card", type: "file", required: true, accept: "image/*,.pdf", helpText: "Upload a clear image or PDF." },
+];
+const debugDerbyFields: ParticipantFieldSpec[] = [
+  { id: "fullName", label: "Full name", type: "text", required: true },
+  { id: "college", label: "Institution name", type: "text", required: true, placeholder: "Current school, college, or university" },
+  { id: "course", label: "Department / Course / Class", type: "text", required: true, placeholder: "e.g. Class 11, Class 12, BCA, B.Tech" },
+  { id: "year", label: "Year / Semester (optional)", type: "text", required: false, placeholder: "For undergraduate participants, if applicable" },
+  { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "Valid mobile number" },
+  { id: "email", label: "Email address", type: "email", required: true, placeholder: "For event updates" },
+  { id: "city", label: "City (optional)", type: "text", required: false, placeholder: "Home city" },
+  { id: "hackerRank", label: "HackerRank username / account email", type: "text", required: true, placeholder: "Verified HackerRank account" },
+  { id: "language", label: "Debugging language", type: "select", required: true, options: ["Python", "Java", "C", "C++", "JavaScript"] },
+  { ...idPhoto, label: "Valid School / College ID Card" },
+  { ...profilePhoto, label: "Profile photo (optional)", required: false },
+];
+const runtimeRushFields: ParticipantFieldSpec[] = [
+  { id: "fullName", label: "Full name", type: "text", required: true },
+  { id: "college", label: "Institution name", type: "text", required: true },
+  { id: "course", label: "Department / Course / Class", type: "text", required: true, placeholder: "e.g. Class 11, BCA, B.Tech" },
+  { id: "year", label: "Year / Semester (optional)", type: "text", required: false },
+  { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "Valid mobile number" },
+  { id: "email", label: "Email address", type: "email", required: true },
+  { id: "studentId", label: "Student ID / Roll number (optional)", type: "text", required: false },
+  { id: "city", label: "City (optional)", type: "text", required: false },
+  { id: "language", label: "Programming language", type: "select", required: true, options: ["Java", "C", "C++", "Python", "JavaScript"] },
+  { id: "collegeId", label: "Student ID card or signed institutional undertaking", type: "file", required: true, accept: "image/*,.pdf", helpText: "Each participant must have a valid school/college ID. If unavailable, upload an undertaking signed by their current or previous institution." },
+  { id: "profilePhoto", label: "Profile photo (optional)", type: "file", required: false, accept: "image/*" },
+];
+const dataAnalyticsFields: ParticipantFieldSpec[] = [
+  { id: "fullName", label: "Full name", type: "text", required: true },
+  { id: "college", label: "Institution name", type: "text", required: true },
+  { id: "course", label: "Department / Course / Class", type: "text", required: true },
+  { id: "birthDate", label: "Date of birth", type: "date", required: true, helpText: "Select your date of birth from the calendar. Participants must be over 16." },
+  { id: "year", label: "Year / Semester (optional)", type: "text", required: false },
+  { id: "section", label: "Section (optional)", type: "text", required: false },
+  { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "Valid mobile number" },
+  { id: "email", label: "Email address", type: "email", required: true },
+  { id: "studentId", label: "Student ID / Roll number (optional)", type: "text", required: false },
+  { id: "city", label: "City", type: "text", required: true },
+  { ...idPhoto, label: "Student ID card or signed institutional undertaking", helpText: "Upload a valid, unexpired ID card. If unavailable, upload an undertaking signed by your current or previous institution." },
+  { ...profilePhoto, required: false },
+];
+const webWeaveFields: ParticipantFieldSpec[] = [
+  { id: "fullName", label: "Full name", type: "text", required: true, placeholder: "As shown on your ID" },
+  { id: "college", label: "Institution name", type: "text", required: true, placeholder: "School or college name" },
+  { id: "course", label: "Department / Course", type: "text", required: true, placeholder: "For school students, enter School; e.g. BCA" },
+  { id: "year", label: "Class / Year / Semester", type: "select", required: true, options: ["Class 10", "Class 11", "Class 12", "UG Year 1", "UG Year 2", "UG Year 3", "UG Year 4", "UG Semester 1", "UG Semester 2", "UG Semester 3", "UG Semester 4", "UG Semester 5", "UG Semester 6", "UG Semester 7", "UG Semester 8", "Other"] },
+  { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "10-digit mobile number", pattern: "[0-9]{10}" },
+  { id: "email", label: "Email address", type: "email", required: true, placeholder: "Confirmation will be sent to the team leader" },
+  { id: "studentId", label: "Student ID / Roll number (optional)", type: "text", required: false, placeholder: "Letters and numbers", pattern: "[A-Za-z0-9]+" },
+  { id: "collegeId", label: "School / College ID card", type: "file", required: true, accept: ".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf", helpText: "Required for both participants. School ID is accepted for Class 10 and above." },
+];
+const cipherChaseFields: ParticipantFieldSpec[] = [
+  { id: "fullName", label: "Full name", type: "text", required: true },
+  { id: "college", label: "Institution name", type: "text", required: true },
+  { id: "course", label: "Department / Course (optional)", type: "text", required: false },
+  { id: "mobile", label: "Team leader mobile number", type: "tel", required: true },
+  { id: "email", label: "Team leader email address", type: "email", required: true },
+  { id: "studentId", label: "Student ID / Roll number", type: "text", required: true },
+  { id: "city", label: "City", type: "text", required: true },
+  { id: "profilePhoto", label: "Team leader profile photo (optional)", type: "file", required: false, accept: "image/*" },
+  { id: "collegeId", label: "College ID card", type: "file", required: true, accept: "image/*,.pdf", helpText: "Required for every team member." },
+];
+const deathRaceFields: ParticipantFieldSpec[] = [
+  { id: "fullName", label: "Full name", type: "text", required: true },
+  { id: "college", label: "Institution name", type: "text", required: true },
+  { id: "year", label: "Year / Semester (optional)", type: "text", required: false },
+  { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "10-digit Indian mobile number", pattern: "[6-9][0-9]{9}" },
+  { id: "email", label: "Email address (optional)", type: "email", required: false },
+  { id: "studentId", label: "Student ID / Roll number", type: "text", required: true },
+  { id: "city", label: "City (optional)", type: "text", required: false },
+  { ...profilePhoto, required: false },
+  idPhoto,
+];
+const lootGoblinsFields: ParticipantFieldSpec[] = [
+  { id: "fullName", label: "Full name", type: "text", required: true },
+  { id: "college", label: "Institution name", type: "text", required: true },
+  { id: "course", label: "Department / Course (optional)", type: "text", required: false },
+  { id: "year", label: "Year / Semester (optional)", type: "text", required: false },
+  { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "10-digit Indian mobile number", pattern: "[6-9][0-9]{9}" },
+  { id: "email", label: "Email address", type: "email", required: true },
+  { id: "studentId", label: "Student ID / Roll number (XUP students)", type: "text", required: false, helpText: "Required for Xavier University Patna students; leave blank if you are an external participant." },
+  { id: "city", label: "City (optional)", type: "text", required: false },
+  { id: "ign", label: "BGMI In-Game Name (IGN)", type: "text", required: true },
+  { id: "uid", label: "BGMI Character ID / UID", type: "text", required: true },
+  { ...profilePhoto, required: false },
+  { ...idPhoto, label: "College ID or Government Photo ID", helpText: "XUP students: upload college ID. External players: upload a government-issued photo ID." },
+];
+const velocityXFields: ParticipantFieldSpec[] = [
+  { id: "fullName", label: "Full name", type: "text", required: true },
+  { id: "college", label: "Institution name", type: "text", required: true },
+  { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "10-digit Indian mobile number", pattern: "[6-9][0-9]{9}" },
+  { id: "studentId", label: "Student ID / Roll number", type: "text", required: true },
+  { id: "year", label: "Year / Semester (optional)", type: "text", required: false },
+  { id: "email", label: "Email address (optional)", type: "email", required: false },
+  { id: "city", label: "City (optional)", type: "text", required: false },
+  { ...profilePhoto, required: false },
+  idPhoto,
 ];
 
 export const EVENTS: EventItem[] = [
-  // --- TECHNICAL & CODING ---
-  {
-    id: "crucible",
-    name: "HACKATHON",
-    fullTitle: "Crucible — Flagship 12-Hour Hackathon",
-    badge: "Crucible",
-    badgeLevel: "Crucible",
-    trackId: "technical",
-    trackName: "TECHNICAL & CODING",
-    shortDesc: "12 hours of uninterrupted architectural engineering and product synthesis.",
-    fullDesc: "Crucible is Xavier University's flagship hackathon where top product teams, system engineers, and developers gather for 12 intense hours. Tackle real-world civic, industrial, and AI domain problems, receive mentor reviews from industry architects, and demo working prototypes to a panel of expert judges.",
-    time: "09:30 AM – 09:30 PM",
-    date: "24 Oct 2026",
-    prize: "₹50,000",
-    price: "₹1,499",
-    team: "2 to 4 Members",
-    venue: "Aryabhata Computing Center",
-    accentColor: "#35e0c9",
-    glowColor: "rgba(53,224,201,0.25)",
-    borderColor: "rgba(53,224,201,0.5)",
-    image: "/events/crucible.jpg",
-    highlights: [
-      "12-Hour Continuous Product Build Sprint",
-      "Direct Mentorship by Senior System Architects",
-      "Live 3-minute Pitch & Prototype Demo Session",
-      "Cloud Credits & API Access Bundles Provided"
-    ],
-    rules: [
-      "All code must be authored during the 12-hour window.",
-      "Open-source libraries and APIs are permitted.",
-      "Teams must consist of 2 to 4 members.",
-      "Final submission requires a working demo and Git repo link."
-    ]
-  },
-  {
-    id: "code-sprint",
-    name: "CODE SPRINT",
-    fullTitle: "Code Sprint — Competitive Algorithmic Arena",
-    badge: "Advanced",
-    badgeLevel: "Advanced",
-    trackId: "technical",
-    trackName: "TECHNICAL & CODING",
-    shortDesc: "High-velocity algorithmic problem solving under rigorous time constraints.",
-    fullDesc: "Test your raw algorithmic speed, spatial reasoning, and data structure proficiency. Code Sprint presents competitive programmers with multi-level algorithmic problems evaluated instantly by an automated judge system with strict time and memory limits.",
-    time: "11:00 AM – 01:30 PM",
-    date: "24 Oct 2026",
-    prize: "₹15,000",
-    price: "₹899",
-    team: "Individual",
-    venue: "Turing Computer Labs",
-    accentColor: "#35e0c9",
-    glowColor: "rgba(53,224,201,0.25)",
-    borderColor: "rgba(53,224,201,0.4)",
-    image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "Automated IO Judge Platform (Codeforces style)",
-      "Speed-based Penalty Matrix",
-      "Language support: C++, Python, Java, Rust, Go"
-    ],
-    rules: [
-      "Individual participation only.",
-      "No external AI assistants or search engines allowed.",
-      "Plagiarism detection will run automatically on all submissions."
-    ]
-  },
-  {
-    id: "debugging-crucible",
-    name: "DEBUGGING",
-    fullTitle: "Debugging Crucible — Concurrency & Memory Leaks",
-    badge: "Advanced",
-    badgeLevel: "Advanced",
-    trackId: "technical",
-    trackName: "TECHNICAL & CODING",
-    shortDesc: "Deconstruct obscure race conditions, memory leaks, and deadlocks.",
-    fullDesc: "Dive into deliberately broken codebases filled with memory leaks, race conditions, dangling pointers, and infinite loops. Participants must diagnose, fix, and optimize multi-threaded code under time constraints.",
-    time: "02:00 PM – 04:00 PM",
-    date: "24 Oct 2026",
-    prize: "₹10,000",
-    price: "₹699",
-    team: "Individual or Pairs (1–2)",
-    venue: "Systems Lab",
-    accentColor: "#35e0c9",
-    glowColor: "rgba(53,224,201,0.25)",
-    borderColor: "rgba(53,224,201,0.4)",
-    image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "Real-world bug repro scenarios",
-      "GDB, Valgrind, & Profiler tools allowed",
-      "Bonus points for performance speedups"
-    ],
-    rules: [
-      "Fix bugs without breaking existing test suites.",
-      "Time spent and test coverage determine score."
-    ]
-  },
-  {
-    id: "data-analytics",
-    name: "DATA ANALYTICS",
-    fullTitle: "Data Analytics & Modeling Sprint",
-    badge: "Intermediate",
-    badgeLevel: "Intermediate",
-    trackId: "technical",
-    trackName: "TECHNICAL & CODING",
-    shortDesc: "Extracting empirical signal from uncurated multi-gigabyte datasets.",
-    fullDesc: "Uncover hidden business patterns and predictive insights from raw, messy datasets. Participants will perform data cleaning, exploratory data analysis, interactive dashboard creation, and present data stories to data scientists.",
-    time: "01:30 PM – 04:30 PM",
-    date: "24 Oct 2026",
-    prize: "₹12,000",
-    price: "₹999",
-    team: "1 to 2 Members",
-    venue: "Analytics Studio",
-    accentColor: "#35e0c9",
-    glowColor: "rgba(53,224,201,0.25)",
-    borderColor: "rgba(53,224,201,0.4)",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "Uncurated Multi-Gigabyte Real-World Dataset",
-      "Power BI, Tableau, Excel & Python Data Stack",
-      "Executive Dashboard Pitch Round"
-    ],
-    rules: [
-      "Tooling choice is open (Excel, Power BI, Python/Pandas).",
-      "Final deliverable must include an executive dashboard + summary."
-    ]
-  },
-  {
-    id: "ui-ux-designathon",
-    name: "UI/UX DESIGN",
-    fullTitle: "UI/UX Designathon — Systems & Workflows",
-    badge: "Intermediate",
-    badgeLevel: "Intermediate",
-    trackId: "technical",
-    trackName: "TECHNICAL & CODING",
-    shortDesc: "High-fidelity design systems for complex scientific and civic workflows.",
-    fullDesc: "Conceptualize and prototype sleek, modern user experiences for complex systems. Design teams are given a target user persona and problem space, then tasked with delivering micro-interactions, responsive screens, and design tokens.",
-    time: "10:30 AM – 02:00 PM",
-    date: "24 Oct 2026",
-    prize: "₹12,000",
-    price: "₹899",
-    team: "1 to 2 Members",
-    venue: "Design Innovation Lab",
-    accentColor: "#c084fc",
-    glowColor: "rgba(192,132,252,0.25)",
-    borderColor: "rgba(192,132,252,0.4)",
-    image: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "Figma / Framer Interactive Prototyping",
-      "Design System & Accessibility Evaluation",
-      "Live Design Critique by Senior Product Designers"
-    ],
-    rules: [
-      "Designs must be original work created during the event.",
-      "Must include responsive desktop and mobile viewports."
-    ]
-  },
-  {
-    id: "web-craft",
-    name: "WEB DEVELOPMENT",
-    fullTitle: "Web Craft 3.0 — Interactive Web Apps",
-    badge: "Intermediate",
-    badgeLevel: "Intermediate",
-    trackId: "technical",
-    trackName: "TECHNICAL & CODING",
-    shortDesc: "High-performance interactive web apps built with modern full-stack frameworks.",
-    fullDesc: "Build cutting-edge full-stack web applications featuring interactive 3D graphics, fluid animations, and robust API integrations. Showcase your mastery over Next.js, Three.js, React, and Tailwind CSS.",
-    time: "01:00 PM – 05:00 PM",
-    date: "24 Oct 2026",
-    prize: "₹12,000",
-    price: "₹999",
-    team: "1 to 2 Members",
-    venue: "Computing Lab 5",
-    accentColor: "#35e0c9",
-    glowColor: "rgba(53,224,201,0.25)",
-    borderColor: "rgba(53,224,201,0.4)",
-    image: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "Modern Web Stack: Next.js, Three.js, Framer Motion",
-      "Lighthouse Performance & Aesthetics Scoring",
-      "Real-time Deployment Verification"
-    ],
-    rules: [
-      "App must be deployed live on Vercel / Netlify / Render by submission deadline.",
-      "Teams of 1 to 2 members."
-    ]
-  },
-
-  // --- KNOWLEDGE & IDEATION ---
-  {
-    id: "ai-prompt-duel",
-    name: "AI PROMPT BATTLE",
-    fullTitle: "AI Prompt & Agent Duel",
-    badge: "Intermediate",
-    badgeLevel: "Intermediate",
-    trackId: "ideation",
-    trackName: "KNOWLEDGE & IDEATION",
-    shortDesc: "Harness LLMs and autonomous agent workflows to solve algorithmic puzzles.",
-    fullDesc: "Put your prompt engineering and LLM orchestration skills to the ultimate test. Craft multi-agent chains, system prompts, and context pipelines to solve complex multi-step reasoning puzzles faster and more accurately than rivals.",
-    time: "03:00 PM – 05:00 PM",
-    date: "24 Oct 2026",
-    prize: "₹10,000",
-    price: "₹799",
-    team: "Individual",
-    venue: "Cognitive Computing Theater",
-    accentColor: "#c084fc",
-    glowColor: "rgba(192,132,252,0.25)",
-    borderColor: "rgba(192,132,252,0.4)",
-    image: "/events/ai_prompt_duel.jpg",
-    highlights: [
-      "Prompt Optimization & Agentic Workflows",
-      "Benchmark Accuracy & Token Efficiency Scoring",
-      "Head-to-head Live Arena Leaderboard"
-    ],
-    rules: [
-      "Individual competition.",
-      "Standard LLM API keys provided at start."
-    ]
-  },
-  {
-    id: "chronos-tech-quiz",
-    name: "TECH QUIZ",
-    fullTitle: "The Chronos Tech Quiz & Trivia",
-    badge: "Beginner",
-    badgeLevel: "Beginner",
-    trackId: "ideation",
-    trackName: "KNOWLEDGE & IDEATION",
-    shortDesc: "High-voltage trivia covering computing antiquity and quantum breakthroughs.",
-    fullDesc: "From the Babbage Difference Engine to modern quantum computing and frontier AI models, Chronos Tech Quiz tests your deep knowledge across the history, leaders, leaks, and breakthroughs of technology.",
-    time: "11:30 AM – 01:30 PM",
-    date: "24 Oct 2026",
-    prize: "₹8,000",
-    price: "₹499",
-    team: "Pairs (2 Members)",
-    venue: "Auditorium Minor",
-    accentColor: "#c084fc",
-    glowColor: "rgba(192,132,252,0.25)",
-    borderColor: "rgba(192,132,252,0.4)",
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "Rapid-Fire Buzzer & Audio-Visual Rounds",
-      "Tech History, Silicon, Cryptography & Sci-Fi Lore",
-      "Interactive Audience & Finalist Stage Showdown"
-    ],
-    rules: [
-      "Teams of exactly 2 members.",
-      "No phones or electronic devices allowed during rounds."
-    ]
-  },
-  {
-    id: "research-paper-symposium",
-    name: "RESEARCH SYMPOSIUM",
-    fullTitle: "Research Paper Symposium & Defense",
-    badge: "Advanced",
-    badgeLevel: "Advanced",
-    trackId: "ideation",
-    trackName: "KNOWLEDGE & IDEATION",
-    shortDesc: "Defend novel research in distributed systems, cryptography, or robotics.",
-    fullDesc: "A high-level academic defense symposium for students and young researchers. Present your original research papers or literature reviews before a distinguished jury of computer scientists and academic faculty.",
-    time: "02:00 PM – 05:00 PM",
-    date: "24 Oct 2026",
-    prize: "₹12,000",
-    price: "₹999",
-    team: "1 to 3 Authors",
-    venue: "Academic Senate Chamber",
-    accentColor: "#c084fc",
-    glowColor: "rgba(192,132,252,0.25)",
-    borderColor: "rgba(192,132,252,0.4)",
-    image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "Formal Slide Deck Defense & Oral Presentation",
-      "Peer-review feedback from Academic Committee",
-      "Opportunity for publication in University Proceedings"
-    ],
-    rules: [
-      "10-minute presentation + 5-minute Q&A defense.",
-      "1 to 3 authors per paper."
-    ]
-  },
-
-  // --- HANDS-ON LEARNING ---
-  {
-    id: "masterclass-applied-systems",
-    name: "MASTERCLASS",
-    fullTitle: "Masterclass: Applied Systems & AI",
-    badge: "Intermediate",
-    badgeLevel: "Intermediate",
-    trackId: "learning",
-    trackName: "HANDS-ON LEARNING",
-    shortDesc: "Interactive masterclasses on low-latency systems and kernel hacking.",
-    fullDesc: "Join industry architects and researchers in an intensive hands-on masterclass. Gain deep practical insights into writing low-latency systems, profiling Linux kernel performance, and training efficient neural network models.",
-    time: "02:30 PM – 05:00 PM",
-    date: "24 Oct 2026",
-    prize: "Masterclass Badge",
-    price: "₹1,299",
-    team: "Individual Open Access",
-    venue: "Auditorium Major",
-    accentColor: "#f472b6",
-    glowColor: "rgba(244,114,182,0.25)",
-    borderColor: "rgba(244,114,182,0.4)",
-    image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "Live Live-Coding & Guided Systems Walkthrough",
-      "Verifiable Digital Certificate of Mastery",
-      "Take-Home Codebase Repos & Architecture Blueprints"
-    ],
-    rules: [
-      "Open to all registered Techfest attendees.",
-      "Bring your laptop with Docker or Node/Python environment pre-configured."
-    ]
-  },
-
-  // --- FUN & ADVENTURE ---
-  {
-    id: "geodesic-cipher-hunt",
-    name: "CIPHER HUNT",
-    fullTitle: "The Geodesic Cipher Hunt — Cryptographic Treasure",
-    badge: "Intermediate",
-    badgeLevel: "Intermediate",
-    trackId: "adventure",
-    trackName: "FUN & ADVENTURE",
-    shortDesc: "Campus-wide cryptographic scavenger hunt decoding steganography.",
-    fullDesc: "Embark on an adrenaline-pumping campus-wide treasure hunt! Decode steganographic messages, intercept Bluetooth low-energy hardware beacons, solve cipher riddles, and race to unlock the central master vault.",
-    time: "03:30 PM – 06:00 PM",
-    date: "24 Oct 2026",
-    prize: "₹10,000",
-    price: "₹699",
-    team: "Teams of 3 to 4",
-    venue: "Campus-wide",
-    accentColor: "#fbbf24",
-    glowColor: "rgba(251,191,36,0.25)",
-    borderColor: "rgba(251,191,36,0.4)",
-    image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "Physical & Digital Hybrid Cipher Locations",
-      "RFID, QR Codes & Hardware Beacons",
-      "Live Team GPS Tracking & Time Penalty Matrix"
-    ],
-    rules: [
-      "Teams of 3 to 4 members.",
-      "All clues must be decoded on campus grounds within the time limit."
-    ]
-  },
-  {
-    id: "death-race",
-    name: "DEATH RACE",
-    fullTitle: "Death Race: Robotic Obstacle Arena",
-    badge: "Advanced",
-    badgeLevel: "Advanced",
-    trackId: "adventure",
-    trackName: "FUN & ADVENTURE",
-    shortDesc: "Custom wired and wireless robotic rovers navigating obstacle terrain.",
-    fullDesc: "The ultimate clash of custom robotic rovers! Custom-built wired or RF-controlled bots battle through mud pits, incline ramps, rotating obstacles, and bridge crossings in a timed double-elimination race.",
-    time: "01:00 PM – 04:00 PM",
-    date: "24 Oct 2026",
-    prize: "₹15,000",
-    price: "₹1,199",
-    team: "2 to 3 Members",
-    venue: "Outdoor Robotics Colosseum",
-    accentColor: "#fbbf24",
-    glowColor: "rgba(251,191,36,0.25)",
-    borderColor: "rgba(251,191,36,0.4)",
-    image: "/events/death_race.jpg",
-    highlights: [
-      "Heavy-Duty Custom Arena Course",
-      "Timed Speed Laps + Obstacle Clearance Scoring",
-      "Robotic Tech Inspection & Pit Stop Area"
-    ],
-    rules: [
-      "Bot weight must not exceed 5 kg.",
-      "Maximum voltage supplied to bot must be ≤ 24V."
-    ]
-  },
-
-  // --- GAMING ARENA ---
-  {
-    id: "bgmi-arena",
-    name: "BGMI ESPORTS",
-    fullTitle: "BGMI: Battlegrounds Arena Tournament",
-    badge: "Crucible",
-    badgeLevel: "Crucible",
-    trackId: "gaming",
-    trackName: "GAMING ARENA",
-    shortDesc: "High-stakes esports tournament across custom Erangel and Miramar lobbies.",
-    fullDesc: "Drop into custom battlegrounds with Patna's top gaming squads. Compete across 4 high-velocity matches on Erangel and Miramar with point multipliers for eliminations and placement.",
-    time: "02:00 PM – 06:00 PM",
-    date: "24 Oct 2026",
-    prize: "₹15,000",
-    price: "₹999",
-    team: "Squad of 4 (+1 Substitute)",
-    venue: "Esports Arena",
-    accentColor: "#60a5fa",
-    glowColor: "rgba(96,165,250,0.25)",
-    borderColor: "rgba(96,165,250,0.4)",
-    image: "/events/bgmi_arena.jpg",
-    highlights: [
-      "Custom Private Lobbies with Live Shoutcasting",
-      "4 Match Rotation (Erangel, Miramar, Sanhok)",
-      "High-Res Main Stage Broadcast & Leaderboard"
-    ],
-    rules: [
-      "Mobile devices only (Emulators strictly prohibited).",
-      "Squads must consist of 4 players."
-    ]
-  },
-
-  // --- GLOBAL AFFAIRS MUN ---
-  {
-    id: "tech-mun",
-    name: "TECH MUN",
-    fullTitle: "Tech MUN: AI Sovereignty & Cyberwarfare",
-    badge: "Advanced",
-    badgeLevel: "Advanced",
-    trackId: "mun",
-    trackName: "GLOBAL AFFAIRS MUN",
-    shortDesc: "Simulated UN committee on autonomous weapons & frontier AI treaties.",
-    fullDesc: "Step into the shoes of global diplomats, cybersecurity directors, and UN delegates. Formulate international policies, negotiate draft resolutions, and resolve international crises surrounding autonomous weapon systems and AI sovereignty.",
-    time: "11:00 AM – 04:30 PM",
-    date: "24 Oct 2026",
-    prize: "₹12,000",
-    price: "₹899",
-    team: "Individual Delegate",
-    venue: "Convention Hall Alpha",
-    accentColor: "#34d399",
-    glowColor: "rgba(52,211,153,0.25)",
-    borderColor: "rgba(52,211,153,0.4)",
-    image: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "UN Disarmament & Security (DISEC) Simulation",
-      "Real-time Midnight Emergency Crisis Scenario",
-      "Awards for Best Delegate, High Commendation & Special Mention"
-    ],
-    rules: [
-      "Formal business attire required.",
-      "Position papers must be submitted prior to committee opening."
-    ]
-  },
-
-  // --- SUGGESTED ARENAS ---
-  {
-    id: "blind-coding",
-    name: "BLIND CODING",
-    fullTitle: "Blind Coding & Screenless Logic",
-    badge: "Advanced",
-    badgeLevel: "Advanced",
-    trackId: "suggested",
-    trackName: "SUGGESTED ARENAS",
-    shortDesc: "Write complex algorithms with monitors powered completely off.",
-    fullDesc: "Strip away visual code feedback and rely purely on mental compilation! Participants are handed problem statements, but their monitors remain switched off while typing. Once submitted, the judge executes their code.",
-    time: "04:00 PM – 05:30 PM",
-    date: "24 Oct 2026",
-    prize: "₹6,000",
-    price: "₹499",
-    team: "Individual",
-    venue: "Retro Computing Corner",
-    accentColor: "#f87171",
-    glowColor: "rgba(248,113,113,0.25)",
-    borderColor: "rgba(248,113,113,0.4)",
-    image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
-    highlights: [
-      "Monitors Turned OFF during typing rounds",
-      "Pure Mental Execution & Syntax Mastery",
-      "Instant Compilation & Test Run Phase at the end"
-    ],
-    rules: [
-      "Monitors will be powered off or covered.",
-      "Syntax errors incur severe point deductions."
-    ]
-  }
+  { id: "innocraft", name: "INNOCRAFT", fullTitle: "Innocraft — Hackathon", badge: "Track A", badgeLevel: "Crucible", trackId: "track-a", trackName: "TRACK A — HACKATHON", shortDesc: "A team hackathon for school and college participants.", fullDesc: "InnoCraft is a team hackathon for school and college participants. Teams register together through one team leader.", date: "TBA", time: "TBA", prize: "To Be Announced", price: "₹800 per school team / ₹1,000 per college team", team: "Exactly 4 members", venue: "TBA", accentColor: "#ff6848", glowColor: "rgba(255,104,72,.25)", borderColor: "rgba(255,104,72,.5)", image: "/images/events/event-01.jpeg", highlights: [], rules: [], eligibility: ["School Teams: Open to Classes 9–12. All members must belong to the same school.", "College Teams: Open to undergraduate and postgraduate students; external participants are allowed.", "All courses and academic years/semesters are eligible. There is no age restriction."], registrationInfo: ["The team leader submits one registration for all four participants. Separate member registrations are not allowed.", "Team name is required. A participant cannot join multiple teams."], requirements: ["Every participant must provide full name, institution, course/department, year/semester, mobile number, email, student ID/roll number, and city.", "Every participant must verify email/mobile and upload a valid school/college ID card."], registrationConfig: { eventFormat: "team", minTeamSize: 4, maxTeamSize: 4, feeDisplay: "₹800 per school team / ₹1,000 per college team", deadline: "TBA", teamNameRequired: true, teamFields: [{ id: "pool", label: "Participant pool", type: "select", required: true, options: ["School", "College"] }, { id: "teamName", label: "Team name", type: "text", required: true }], participantFields: [...common, { id: "studentId", label: "Student ID / Roll number", type: "text", required: true }, { ...idPhoto, label: "Valid School / College ID Card" }], coordinator: { name: "Utkarsh Gupta", phone: "8252210728", email: "utkarshgupta1821@gmail.com", coCoordinator: "Rajnish Kumar" }, declarations: baseDeclarations } },
+  { id: "webweave", name: "WEBWEAVE", fullTitle: "WebWeave: Web Development Challenge", badge: "Track B", badgeLevel: "Intermediate", trackId: "track-b", trackName: "TRACK B — CODING & DEVELOPMENT", shortDesc: "A two-person web development challenge.", fullDesc: "WebWeave is a team web development challenge for school students in Class 10 and above and undergraduate students, including BCA students. Teams of two bring their own laptop and charger, then build around one shared theme in a four-hour build phase.", date: "TBA", time: "TBA", prize: "To Be Announced", price: "₹300 registration fee", team: "Exactly 2 members", venue: "TBA", accentColor: "#35e0c9", glowColor: "rgba(53,224,201,.2)", borderColor: "rgba(53,224,201,.4)", image: "/images/events/event-03.jpeg", highlights: ["Four-hour build phase.", "Teams must bring their own laptop and charger."], rules: ["Internet access and AI tools are not allowed during the four-hour build phase.", "All teams receive the same theme. Theme-specific resources may be downloaded only during the designated short download window.", "Do not bring a pre-built solution for the theme."], eligibility: ["Open to students in Class 10 and above and undergraduate students, including BCA students, with basic web development knowledge. Anyone interested in web development may participate.", "All courses and departments are eligible. There is no age restriction. External participants are allowed."], registrationInfo: ["Teams must have exactly two participants. The team leader enters both members during registration; separate registrations are not allowed.", "A team name and team leader are required. Participants cannot join more than one team.", "After successful registration, a unique team/registration ID and confirmation email will be sent to the team leader."], requirements: ["Both participants must provide full name, institution, course/department, class/year/semester, 10-digit mobile number, email, and a school/college ID card.", "Student ID/roll number is optional. Section, profile photo, city, and other participant fields are not required.", "Basic HTML, CSS, and JavaScript knowledge is required. Bring one laptop and charger per team."], registrationConfig: { eventFormat: "team", minTeamSize: 2, maxTeamSize: 2, feeAmount: 300, feeDisplay: "₹300 registration fee", deadline: "25 October 2026", deadlineDate: "2026-10-25", teamNameRequired: true, teamFields: [{ id: "teamName", label: "Team name", type: "text", required: true }], participantFields: webWeaveFields, coordinator: { name: "Divyanka Keshri", phone: "9263641089", email: "divyankakeshri8@gmail.com", coCoordinator: "Ashu Kumar" }, details: { duration: "4-hour build phase", format: "Shared theme · HTML, CSS, and JavaScript" }, declarations: baseDeclarations, customDeclaration: "I confirm that both team members have read and agree to follow the event rules." } },
+  { id: "runtime-rush", name: "RUNTIME RUSH", fullTitle: "Runtime Rush — The Coding Challenge", badge: "Track B", badgeLevel: "Advanced", trackId: "track-b", trackName: "TRACK B — CODING & DEVELOPMENT", shortDesc: "An individual or two-person coding challenge for school and college students.", fullDesc: "Runtime Rush is a coding challenge open to school and college students. Participate individually or register with one teammate. Participants compete using Java, C, C++, Python, or JavaScript.", date: "TBA", time: "TBA", prize: "To Be Announced", price: "₹300 registration fee", team: "Individual or 2 participants", venue: "TBA", accentColor: "#35e0c9", glowColor: "rgba(53,224,201,.2)", borderColor: "rgba(53,224,201,.4)", image: "/images/events/event-05.jpeg", highlights: ["Choose individual participation or a team of two.", "Supported languages: Java, C, C++, Python, JavaScript."], rules: ["Participants must hold a valid school/college ID card. If they do not have an ID card, they must provide a proper undertaking signed by their current or previous institution."], eligibility: ["Open to school and college students with a valid student ID card or the required signed institutional undertaking.", "All courses and years/semesters are eligible. External participants are allowed. No age restriction."], registrationInfo: ["Register individually or enter both participants during registration. Participants may not join multiple teams.", "A team name is required for two-person teams. No team leader designation is required; either member may submit the team registration."], requirements: ["For each participant: full name, school/college/university, department/course/class, programming language, and valid student ID card or signed institutional undertaking are required.", "Mobile number and email are required for the registering participant. Year/semester, student ID/roll number, profile photo, and city are optional. Section is not collected.", "Programming language options: Java, C, C++, Python, and JavaScript."], registrationConfig: { eventFormat: "team", minTeamSize: 1, maxTeamSize: 2, feeAmount: 300, feeDisplay: "₹300 registration fee", deadline: "To be decided by Overall Coordinators", teamNameRequired: true, teamFields: [{ id: "teamName", label: "Team name", type: "text", required: true }], participantFields: runtimeRushFields, coordinator: { name: "Kunal", phone: "6369933612", email: "k8847139@gmail.com", coCoordinator: "Aadya Ayushi" }, details: { format: "Individual or two participants" }, declarations: baseDeclarations } },
+  { id: "vlookup", name: "DATA ANALYTICS", fullTitle: "XAVITECH 2026 — Data Analytics", badge: "Track B", badgeLevel: "Intermediate", trackId: "track-b", trackName: "TRACK B — CODING & DEVELOPMENT", shortDesc: "A two-person data analytics competition using Excel and Power BI.", fullDesc: "XAVITECH 2026 Data Analytics is a team competition for pairs. Participants should know Excel and Power BI. The event is open to Class 7–12, undergraduate, and postgraduate students over 16 years old.", date: "TBA", time: "TBA", prize: "To Be Announced", price: "₹300 registration fee", team: "2 participants", venue: "TBA", accentColor: "#35e0c9", glowColor: "rgba(53,224,201,.2)", borderColor: "rgba(53,224,201,.4)", image: "/images/events/event-04.jpeg", highlights: ["Team of two · Excel and Power BI knowledge required."], rules: ["Every participant must be over 16 years old.", "Participants must have a valid, unexpired school/college ID card. If unavailable, provide a proper undertaking signed by the current or previous institution."], eligibility: ["Open to Class 7–12, undergraduate, and postgraduate students over 16 years old.", "Any course or department is eligible; all years/semesters are eligible. External participants are allowed.", "Participants must know Excel and Power BI."], registrationInfo: ["Team participation only; teams must have exactly two members. One team member submits registration and enters both participants.", "A team name and team leader are required. Separate member registrations and participation on multiple teams are not allowed."], requirements: ["For both participants: full name, school/college/university, department/course/class, date of birth, mobile, email, city, and a valid unexpired school/college ID card or signed institutional undertaking.", "Year/semester, section, student ID/roll number, and profile photo are optional. Both participants must verify email/mobile and upload ID proof.", "Prerequisite: knowledge of Excel and Power BI."], registrationConfig: { eventFormat: "team", minTeamSize: 2, maxTeamSize: 2, feeAmount: 300, feeDisplay: "₹300 registration fee", deadline: "To be decided by overall coordinators", teamNameRequired: true, teamFields: [{ id: "teamName", label: "Team name", type: "text", required: true }], participantFields: dataAnalyticsFields, coordinator: { name: "Komal Anand", phone: "7493024995", email: "komalanandd01@gmail.com", coCoordinator: "Aditya" }, declarations: baseDeclarations, customDeclaration: "I confirm that each uploaded ID card is valid and has not expired." } },
+  { id: "debug-derby", name: "DEBUG DERBY", fullTitle: "XAVITECH 2026 — Debug Derby: The Debugging Challenge", badge: "Track B", badgeLevel: "Advanced", trackId: "track-b", trackName: "TRACK B — CODING & DEVELOPMENT", shortDesc: "An individual debugging challenge for school and undergraduate students.", fullDesc: "Debug Derby is an individual programming challenge for Class 11, Class 12, and undergraduate students. Participants compete in two debugging rounds with a combined duration of 90 minutes: basic debugging followed by advanced debugging. A verified HackerRank account is required at least 24 hours before the event.", date: "TBA", time: "TBA", prize: "₹3,000", price: "₹200 per participant", team: "Individual", venue: "TBA", accentColor: "#35e0c9", glowColor: "rgba(53,224,201,.2)", borderColor: "rgba(53,224,201,.4)", image: "/images/events/event-02.jpeg", highlights: ["Two debugging rounds · 90 minutes combined.", "Round 1: basic debugging. Round 2: advanced debugging.", "Prizes: 1st ₹3,000, 2nd ₹2,000, and 3rd ₹1,000."], rules: ["Individual participation only. Use your own verified HackerRank account and work independently.", "AI assistants, code-generation tools, collaboration, copied code, and other unauthorized assistance are prohibited and may lead to immediate disqualification.", "Report technical failures to an invigilator immediately. Verified organizer-side infrastructure failures may receive time compensation or a move to a pre-tested backup computer. HackerRank-wide outages are handled by the faculty/event coordinator."], eligibility: ["Eligible participants are Class 11, Class 12, and undergraduate students.", "No department restriction; participants should have basic programming knowledge. All UG years/semesters are eligible.", "No separate age restriction is specified; eligibility is based on the stated education categories."], registrationInfo: ["Individual registration only.", "Create and verify your HackerRank account at least 24 hours before the competition. Use that account during the event."], requirements: ["Required: full name, current school/college/university, class/course, mobile number, email, valid school/college ID, HackerRank username/account email, and selected debugging language.", "Year/semester, profile photo, and city are optional. Student ID/roll number and section are not collected.", "Supported debugging languages: Python, Java, C, C++, and JavaScript. Basic knowledge of at least one is a prerequisite."], registrationConfig: { eventFormat: "individual", minTeamSize: 1, maxTeamSize: 1, feeAmount: 200, feeBasis: "per_participant", feeDisplay: "₹200 per participant", deadline: "As announced by the Tech Fest organizers", participantFields: debugDerbyFields, coordinator: { name: "Priyanshu Kumar", phone: "8677931410", email: "Priyanshuk092005@gmail.com", coCoordinator: "Akshat Raj" }, details: { duration: "Two rounds · 90 minutes combined", format: "Round 1: basic debugging · Round 2: advanced debugging" }, declarations: baseDeclarations, customDeclaration: "I will use my own verified HackerRank account during the competition." } },
+  { id: "unscripted-nations", name: "MODEL UNITED NATIONS", fullTitle: "XAVITECH 2026 — Model United Nations (MUN)", badge: "Track D", badgeLevel: "Advanced", trackId: "track-d", trackName: "TRACK D — STAGE & CENTRAL EVENTS", shortDesc: "Individual delegate event of XAVITECH 2026 Model United Nations.", fullDesc: "XAVITECH 2026 Model United Nations (MUN) is an individual delegate event for the United Nations Commission on Science and Technology for Development (CSTD).", date: "TBA", time: "TBA", prize: "To Be Announced", price: "₹400", team: "Individual", venue: "TBA", accentColor: "#34d399", glowColor: "rgba(52,211,153,.2)", borderColor: "rgba(52,211,153,.4)", image: "/images/events/event-11.jpeg", highlights: ["Expected participation: 60–70 delegates."], rules: [], eligibility: ["Open to eligible college/university students. All courses and academic years/semesters are eligible unless restricted by the final event policy.", "External participants are allowed subject to final Techfest eligibility and organiser approval. No separate age restriction is proposed."], registrationInfo: ["Individual delegate registration; one registration per delegate."], requirements: ["Required participant details: full name, college/university, department/course, year/semester, mobile number, email, student ID/roll number, and city. Section is optional.", "Upload a valid college ID card and a recent passport-style profile photo.", "Delegates must follow committee rules, the event code of conduct, and organiser instructions."], registrationConfig: { eventFormat: "individual", feeAmount: 400, feeBasis: "per_participant", feeDisplay: "₹400 per delegate", deadline: "TBA", participantFields: [...common, { id: "section", label: "Section (optional)", type: "text", required: false, placeholder: "If applicable" }, { id: "studentId", label: "Student ID / Roll number", type: "text", required: true }, idPhoto, profilePhoto], coordinator: { name: "Zoha Ashraf Azad", phone: "8935987885", email: "zohaashrafazad11@gmail.com", coCoordinator: "Archie" }, details: { committee: "United Nations Commission on Science and Technology for Development (CSTD)", agenda: "Addressing the Opportunities and Risks of Artificial Intelligence and Emerging Technologies for Inclusive and Sustainable Development", duration: "5–5.5 hours" }, declarations: baseDeclarations } },
+  { id: "circuit-of-minds", name: "TECH QUIZ", fullTitle: "XAVITECH 2026 — Tech Quiz", badge: "Track D", badgeLevel: "Beginner", trackId: "track-d", trackName: "TRACK D — STAGE & CENTRAL EVENTS", shortDesc: "A tech quiz competition.", fullDesc: "Tech Quiz is a team-based event with fixed two-member teams.", date: "TBA", time: "TBA", prize: "To Be Announced", price: "₹300 per team", team: "Exactly 2 members", venue: "TBA", accentColor: "#34d399", glowColor: "rgba(52,211,153,.2)", borderColor: "rgba(52,211,153,.4)", image: "/images/events/event-09.jpeg", highlights: ["Expected participation: 20–30 teams (approximately 40–60 participants)."], rules: [], eligibility: ["Open to eligible college/university students. All courses and academic years/semesters are eligible unless restricted by final event policy.", "External participants are allowed subject to final XAVITECH eligibility rules and organiser approval. No separate age restriction has been proposed."], registrationInfo: ["One team member submits a single registration for the team and enters the second member’s details during the same form.", "Separate registrations are not allowed. A team name and team leader designation are not required."], requirements: ["Both participants must provide full name, college/university, department/course, year/semester, mobile number, email, student ID/roll number, and city. Section is optional.", "Both participants must verify email/mobile and upload a valid college ID card and recent passport-style profile photo.", "Valid student identity proof and completion of the online registration form are prerequisites."], registrationConfig: { eventFormat: "team", minTeamSize: 2, maxTeamSize: 2, feeAmount: 300, feeBasis: "per_team", feeDisplay: "₹300 per team", deadline: "TBA", participantFields: techQuizFields, coordinator: { name: "Aman Raj", phone: "9523780498", email: "drrajaman31@gmail.com", coCoordinator: "Princy Kumari" }, details: { duration: "TBA" }, declarations: baseDeclarations, customDeclaration: "I agree to follow the committee procedure and instructions from the organising team." } },
+  { id: "battle-of-bots", name: "BATTLE OF BOTS", fullTitle: "XAVITECH 2026 — Battle of Bots", badge: "Track B", badgeLevel: "Intermediate", trackId: "track-b", trackName: "TRACK B — CODING & DEVELOPMENT", shortDesc: "An AI prompt battle for individual participants and small teams.", fullDesc: "Battle of Bots is an AI prompt battle open to individual participants and teams of up to three. Event rules will be shared by the organizers. Further event details are to be announced.", date: "TBA", time: "TBA", prize: "To Be Announced", price: "₹550 registration fee", team: "Individual or teams of 2–3", venue: "TBA", accentColor: "#34d399", glowColor: "rgba(52,211,153,.2)", borderColor: "rgba(52,211,153,.4)", image: "/images/events/event-10.jpeg", highlights: [], rules: ["Event rules and regulations will be shared by the organizers.", "Team leaders are responsible for the accuracy of submitted team information and must follow the event rules."], eligibility: ["Open to participants from all courses and academic years. External participants are allowed.", "No age restriction is specified."], registrationInfo: ["Choose individual registration or a team of up to three. A team leader submits team registration and enters all members during registration.", "A team name and team leader are required for teams. Separate member registrations and joining multiple teams are not allowed.", "Registration deadline: 27 October 2026. Registration fee: ₹550; the source does not specify whether this is charged per participant or per team."], requirements: ["Each participant must provide full name, institution, department/course, year/semester, mobile number, email address, and a valid college ID card.", "Section, student ID/roll number, profile photo, and city are not collected. Email/mobile verification is not required."], coordinatorRequirements: ["Coordinator access should include participant and team lists, contact details, uploaded ID cards, submitted project/material files, registration and attendance status, and CSV/Excel export."], registrationConfig: { eventFormat: "team", minTeamSize: 1, maxTeamSize: 3, feeAmount: 550, feeDisplay: "₹550 registration fee", deadline: "27 October 2026", deadlineDate: "2026-10-27", teamNameRequired: true, teamFields: [{ id: "teamName", label: "Team name", type: "text", required: true }], participantFields: battleOfBotsFields, coordinator: { name: "Krishna Kumar", phone: "8877828185", email: "krsna6366@gmail.com" }, declarations: baseDeclarations, customDeclaration: "I confirm that my team’s submitted information is accurate and agree to follow the event rules." } },
+  { id: "thoughtlab", name: "IDEATHON", fullTitle: "XAVITECH 2026 — Ideathon", badge: "Track D", badgeLevel: "Intermediate", trackId: "track-d", trackName: "TRACK D — STAGE & CENTRAL EVENTS", shortDesc: "A team ideathon for college and university students.", fullDesc: "XAVITECH 2026 Ideathon is a team event for groups of two to four. A team leader submits the registration, adds one teammate, and invites any remaining members to join through a link.", date: "TBA", time: "TBA", prize: "To Be Announced", price: "₹500 per team", team: "2–4 members", venue: "TBA", accentColor: "#34d399", glowColor: "rgba(52,211,153,.2)", borderColor: "rgba(52,211,153,.4)", image: "/images/events/event-12.jpeg", highlights: [], rules: ["Participants must follow the event rules and code of conduct. No additional restriction is proposed unless required by the final event policy."], eligibility: ["Open to eligible college/university students, subject to final event eligibility rules.", "All courses/departments and academic years/semesters are eligible unless restricted by the final policy. No separate age restriction is proposed.", "External participants are allowed, subject to applicable event eligibility requirements."], registrationInfo: ["Team name and team leader are required. One team leader submits the registration and enters one additional member; remaining members join through an invite/link workflow.", "Separate member registrations are not allowed, and a participant cannot join multiple teams."], requirements: ["Every member must provide full name, college/university, department/course, year/semester, 10-digit mobile number, email address, city, a valid college ID card, and a recent passport-style profile photo.", "Every member must verify email/mobile and upload their own ID. Section and student ID/roll number are not collected.", "A valid student identity proof and completed online registration are required."], registrationConfig: { eventFormat: "team", minTeamSize: 2, maxTeamSize: 4, feeAmount: 500, feeBasis: "per_team", feeDisplay: "₹500 total per team", deadline: "TBA", teamNameRequired: true, teamFields: [{ id: "teamName", label: "Team name", type: "text", required: true }, { id: "proposedIdea", label: "Proposed idea (optional)", type: "textarea", required: false, placeholder: "Briefly describe your team's proposed idea" }], participantFields: [...common, idPhoto, profilePhoto], coordinator: { name: "Amanjeet Sinha", phone: "7970499973", email: "sinhaamanjeet@gmail.com" }, declarations: baseDeclarations, customDeclaration: "I agree to follow the committee procedure and instructions from the organising team." } },
+  { id: "loot-goblins", name: "BATTLEFIELD BLITZ", fullTitle: "XAVITECH 2026 — Battlefield Blitz (BGMI Esports)", badge: "Track C", badgeLevel: "Crucible", trackId: "track-c", trackName: "TRACK C — GAMING & ADVENTURE", shortDesc: "A BGMI esports squad competition.", fullDesc: "Battlefield Blitz is XAVITECH 2026's BGMI esports competition. Each squad registers four core players and may add one optional substitute. Matches use Advanced Custom Rooms in a best-of-three format across Erangel, Miramar, and Rondo.", date: "TBA", time: "TBA", prize: "₹6,000", price: "₹200 per player", team: "4 core players + 1 optional substitute", venue: "TBA", accentColor: "#60a5fa", glowColor: "rgba(96,165,250,.2)", borderColor: "rgba(96,165,250,.4)", image: "/assets/event-images/LootGoblins.png", highlights: ["Best of 3 across Erangel, Miramar, and Rondo.", "Prize standings: 1st ₹6,000, 2nd ₹4,000, MVP ₹2,000."], rules: ["Advanced Custom Room restrictions apply. Emulators, unauthorized peripherals, macros, hacks, cheats, exploits, and unauthorized software/hardware are prohibited.", "Match-fixing, account sharing, ID spoofing, and impersonation are prohibited. Violations may result in disqualification, forfeiture of prizes/certificates, and referral to university administration."], eligibility: ["Open to Xavier University Patna students and external participants.", "All courses/departments and years/semesters are eligible. No age restriction is specified."], registrationInfo: ["Team name and team leader are required. The team leader submits registration for the squad; separate member registrations and participation on multiple teams are not allowed.", "Four core players are compulsory. One substitute (P5) may be added during registration."], requirements: ["Each player must provide full name, institution, active mobile number, verified email, BGMI IGN, and Character ID/UID. Department/course, year/semester, profile photo, and city are optional; section is not collected.", "Every player must provide valid ID: XUP students upload their college ID, and external players upload a government-issued photo ID. Student ID/roll number is required only for XUP students.", "Four core-player entries are required. The P5 substitute's fields are optional."], registrationConfig: { eventFormat: "team", minTeamSize: 4, maxTeamSize: 5, feeAmount: 200, feeBasis: "per_player", feeDisplay: "₹200 per player", deadline: "20 October 2026", teamNameRequired: true, teamFields: [{ id: "teamName", label: "Team name", type: "text", required: true }], participantFields: lootGoblinsFields, coordinator: { name: "Umang Sahni", phone: "9308463995", email: "umangsahni2008@gmail.com", coCoordinator: "Joshua Singh" }, details: { game: "BGMI", maps: ["Erangel", "Miramar", "Rondo"], format: "Best of 3 · Advanced Custom Room", note: "Room ID/password should be sent to the registered team leader shortly before each round. Round schedule confirmation and Squad ID are generated after registration." }, declarations: baseDeclarations, customDeclaration: "I confirm that the squad details are accurate and each member has agreed to participate." } },
+  { id: "cipher-chase", name: "CIPHER CHASE", fullTitle: "Cipher Chase — Tech Treasure Hunt", badge: "Track C", badgeLevel: "Intermediate", trackId: "track-c", trackName: "TRACK C — GAMING & ADVENTURE", shortDesc: "A large-team campus treasure hunt.", fullDesc: "Cipher Chase is a campus treasure hunt for teams of 20–30 students. Clues may use QR codes, Morse code, binary code, and other puzzle formats. Teams must stay within their assigned area and follow the event rules.", date: "TBA", time: "TBA", prize: "To Be Announced", price: "₹200 registration fee", team: "20–30 members", venue: "Campus", accentColor: "#60a5fa", glowColor: "rgba(96,165,250,.2)", borderColor: "rgba(96,165,250,.4)", image: "/images/events/event-07.jpeg", highlights: ["Clues may use QR codes, Morse code, binary code, and similar formats.", "Team leader enters up to four members; the rest join by invite or coordinator entry."], rules: ["Do not damage college property. Damage may result in a penalty or fine.", "Registration fees are non-refundable after cancellation.", "Stay within the team's assigned area. Leaving it will eliminate the entire team.", "Cheating, causing malfunctions, or using a proxy will disqualify the entire team.", "Teams may visit the campus before their assigned time to become familiar with it, but must not search for clues. Anyone caught searching for clues in advance will be immediately eliminated."], eligibility: ["Open to students in Classes 9–12 and undergraduate or postgraduate students.", "All courses and departments are eligible. External participants are allowed. No age restriction is specified."], registrationInfo: ["A team must have 20–30 members. Team name is not required; a team leader is required.", "The team leader submits one registration and enters up to four members. Remaining members join by invite/link or are added by the coordinator later. Separate registrations and joining multiple teams are not allowed.", "Use an email address and mobile number that are not already registered to another team.", "The registration fee is ₹200. The deadline is before 30 October 2026."], requirements: ["Every member must provide full name, institution, student ID/roll number, city, and a valid college ID card. Department/course is optional.", "Only the team leader must provide a mobile number, email address, and optional profile photo. Year/semester and section are not collected."], coordinatorRequirements: ["Provide coordinators with team-wise participant lists, contact details, uploaded ID cards, registration/payment/check-in status, and records for cancelled teams."], registrationConfig: { eventFormat: "team", minTeamSize: 20, maxTeamSize: 30, feeAmount: 200, feeDisplay: "₹200 registration fee", deadline: "Before 30 October 2026", deadlineDate: "2026-10-29", teamNameRequired: false, teamFields: [], participantFields: cipherChaseFields, coordinator: { name: "Sunny Kumar & Shristi Singh", phone: "7280929939 / 9241065537", email: "Sunnykumar221973@gmail.com" }, details: { format: "Campus treasure hunt · QR codes · Morse code · Binary code" }, declarations: baseDeclarations, customDeclaration: "I confirm that I have read and understood the event rules and agree to follow them. I accept responsibility for my team's conduct." } },
+  { id: "velocityx", name: "DEATH RACE", fullTitle: "Death Race", badge: "Track C", badgeLevel: "Advanced", trackId: "track-c", trackName: "TRACK C — GAMING & ADVENTURE", shortDesc: "A Death Race competition.", fullDesc: "Death Race is a team-based competition.", date: "TBA", time: "TBA", prize: "To Be Announced", price: "Paid (Amount TBA)", team: "2–3 members", venue: "TBA", accentColor: "#60a5fa", glowColor: "rgba(96,165,250,.2)", borderColor: "rgba(96,165,250,.4)", image: "/images/events/event-08.jpeg", highlights: [], rules: [], registrationInfo: ["Team name and team leader are required.", "The team leader submits one registration for the team and enters the other members during registration. Separate member registrations are not allowed.", "Teams must have 2–3 participants."], requirements: ["Each member must provide full name, college/university, mobile number, and student ID/roll number.", "Each member must upload a valid college ID card and verify email/mobile.", "Department/course is not required; year/semester, email, profile photo, and city are optional."], registrationConfig: { eventFormat: "team", minTeamSize: 2, maxTeamSize: 3, feeDisplay: "Paid (Amount TBA)", deadline: "TBA", teamNameRequired: true, teamFields: [{ id: "teamName", label: "Team name", type: "text", required: true }], participantFields: velocityXFields, coordinator: { name: "Jai Vardhan", phone: "7856802097", email: "jaivardhan27062007@gmail.com", coCoordinator: "Kaushik" }, declarations: deathRaceDeclarations } },
+  { id: "hack-the-skill", name: "HACK THE SKILLS", fullTitle: "XAVITECH 2026 — Hack the Skills Workshop", badge: "Track E", badgeLevel: "Intermediate", trackId: "track-e", trackName: "TRACK E — WORKSHOPS & KNOWLEDGE", shortDesc: "A hands-on technical workshop for school and college students.", fullDesc: "Hack the Skills is a technical workshop open to students from Class 8 through postgraduate level. Register individually or as a team of two to four. Workshop schedule and venue details will be announced later.", date: "TBA", time: "TBA", prize: "No prize", price: "₹300 registration fee", team: "Individual or teams of 2–4", venue: "TBA", accentColor: "#f472b6", glowColor: "rgba(244,114,182,.2)", borderColor: "rgba(244,114,182,.4)", image: "/images/events/event-13.jpeg", highlights: ["Technical workshop · Schedule and venue to be announced."], rules: [], eligibility: ["Open to school students in Classes 8–12 and college/university students, including undergraduate and postgraduate students.", "All courses and departments are eligible. Participants should have an interest in technical workshops.", "External participants are welcome. No age restriction is specified."], registrationInfo: ["Choose individual registration or a team of 2–4. Team members are entered during registration; invite/link joining is also supported.", "A team name and team leader are required for team registrations. Separate individual registration is allowed, but a participant cannot join multiple teams.", "Registration fee: ₹300. The form does not specify whether the fee is per participant or team."], requirements: ["Each participant must provide full name, institution, department/course/class, mobile number, email address, city, a valid school/college ID card, and a recent profile photo.", "Year/semester, section, and student ID/roll number are optional. Year/semester is requested from the team leader."], coordinatorRequirements: ["Coordinator access should include participant and team lists, contact details, uploaded ID cards, registration/payment/check-in status, and CSV/Excel export."], registrationConfig: { eventFormat: "team", minTeamSize: 1, maxTeamSize: 4, feeAmount: 300, feeDisplay: "₹300 registration fee", deadline: "TBA", teamNameRequired: true, teamFields: [{ id: "teamName", label: "Team name", type: "text", required: true }], participantFields: hackTheSkillFields, coordinator: { name: "Unnati Singh", phone: "9199511866", email: "Unnati31march@gmail.com", coCoordinator: "Srishti Sharma" }, declarations: baseDeclarations, customDeclaration: "I understand workshop arrangements may change and agree to follow event instructions." } },
 ];
+
+export function getEventByIdOrSlug(id: string) { return EVENTS.find((event) => event.id === id); }

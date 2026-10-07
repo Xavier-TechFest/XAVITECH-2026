@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import { AuthShell, AuthCard, AuthAlert } from "@/components/auth";
@@ -50,7 +49,12 @@ function LoginForm() {
   };
 
   return (
-    <AuthShell portalType="participant" backHref="/" backLabel="Back to Festival">
+    <AuthShell
+      portalType="participant"
+      backHref="/"
+      backLabel="Back to Festival"
+      hasNavbar={true}
+    >
       <AuthCard
         category="01 / PARTICIPANT ACCESS"
         badge="GOOGLE OAUTH2"
@@ -58,7 +62,7 @@ function LoginForm() {
         description="Sign in to continue to your participant portal, access digital event passes, and manage registrations."
         footer={
           <div className="space-y-3">
-            <div className="flex items-center justify-center gap-2 text-[11px] font-space text-slate-500">
+            <div className="flex items-center justify-center gap-2 text-[11px] font-body text-slate-400">
               <svg className="w-3.5 h-3.5 text-circuit shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -67,9 +71,9 @@ function LoginForm() {
                   d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                 />
               </svg>
-              <span>Encrypted token authentication via Firebase & Supabase</span>
+              <span>Encrypted token authentication via Firebase & PostgreSQL</span>
             </div>
-            <p className="text-[10px] font-mono text-slate-600 text-center">
+            <p className="text-[10px] font-mono text-slate-500 text-center">
               By proceeding, you agree to official XAVITECH 2026 festival code of conduct.
             </p>
           </div>
@@ -85,11 +89,11 @@ function LoginForm() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isSigningIn || loading}
-              className="w-full min-h-[50px] flex items-center justify-center gap-3 px-5 border border-white/15 bg-white/[0.04] hover:bg-white/[0.09] hover:border-circuit/60 text-white font-space text-sm font-semibold transition-all duration-200 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full min-h-12 flex items-center justify-center gap-3 px-5 border border-white/20 bg-white/[0.05] hover:bg-white/[0.1] hover:border-circuit/60 text-white font-body text-sm font-semibold transition-all duration-200 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-black/40 hover:shadow-circuit/10"
             >
               {isSigningIn || loading ? (
                 <>
-                  <svg className="animate-spin h-4 w-4 text-circuit" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-4 w-4 text-circuit shrink-0" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path
                       className="opacity-75"
@@ -128,8 +132,8 @@ function LoginForm() {
             </button>
 
             {/* Supporting explanation */}
-            <p className="text-[11px] font-space text-slate-500 text-center leading-relaxed">
-              Google Single Sign-On (SSO) securely verifies your email and creates your festival participant profile without requiring a new password.
+            <p className="text-[11px] font-body text-slate-400 text-center leading-relaxed">
+              Google Single Sign-On (SSO) securely verifies your email and connects your festival participant profile without requiring a password.
             </p>
           </div>
         </div>

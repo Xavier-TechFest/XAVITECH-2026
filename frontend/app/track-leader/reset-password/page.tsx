@@ -62,12 +62,12 @@ function ResetPasswordForm() {
           type="error"
           message="No valid reset token was detected in your link. The link may have expired, been truncated, or already consumed."
         />
-        <div className="p-4 border border-white/10 bg-white/[0.02] font-space text-xs text-slate-400 leading-relaxed">
+        <div className="p-4 border border-white/10 bg-white/[0.02] font-body text-xs text-slate-400 leading-relaxed">
           For security, single-use tokens expire after 30 minutes. Request a fresh link below.
         </div>
         <Link
           href="/track-leader/forgot-password"
-          className="min-h-[48px] w-full flex items-center justify-center gap-2 border border-circuit/60 bg-circuit px-5 font-space text-sm font-semibold text-[#04100f] transition-all duration-200 hover:bg-cyan-200 hover:shadow-lg hover:shadow-circuit/20"
+          className="min-h-12 w-full flex items-center justify-center gap-2 border border-circuit/60 bg-circuit px-5 font-body text-sm font-semibold text-[#04100f] transition-all duration-200 hover:bg-cyan-200 hover:shadow-lg hover:shadow-circuit/20"
         >
           Request New Reset Link →
         </Link>
@@ -82,12 +82,12 @@ function ResetPasswordForm() {
           type="success"
           message="Password reset successfully completed. All previous sessions have been terminated for security."
         />
-        <div className="p-4 border border-white/10 bg-white/[0.02] font-space text-xs text-slate-400">
+        <div className="p-4 border border-white/10 bg-white/[0.02] font-body text-xs text-slate-400">
           You can now authenticate into the Track Leader portal using your new credentials.
         </div>
         <Link
           href="/track-leader/login"
-          className="min-h-[48px] w-full flex items-center justify-center gap-2 border border-circuit/60 bg-circuit px-5 font-space text-sm font-semibold text-[#04100f] transition-all duration-200 hover:bg-cyan-200 hover:shadow-lg hover:shadow-circuit/20"
+          className="min-h-12 w-full flex items-center justify-center gap-2 border border-circuit/60 bg-circuit px-5 font-body text-sm font-semibold text-[#04100f] transition-all duration-200 hover:bg-cyan-200 hover:shadow-lg hover:shadow-circuit/20"
         >
           Sign In with New Password →
         </Link>
@@ -127,7 +127,7 @@ function ResetPasswordForm() {
       />
 
       {/* Password Checklist */}
-      <div className="p-3 border border-white/[0.06] bg-white/[0.015] font-space text-[11px] text-slate-400 space-y-1">
+      <div className="p-3 border border-white/[0.06] bg-white/[0.015] font-body text-[11px] text-slate-400 space-y-1.5">
         <div className="flex items-center gap-2">
           <span className={newPassword.length >= 8 ? "text-circuit" : "text-slate-600"}>
             {newPassword.length >= 8 ? "✓" : "○"}
@@ -166,6 +166,11 @@ export default function TrackLeaderResetPasswordPage() {
       portalType="track-leader"
       backHref="/track-leader/login"
       backLabel="Back to Login"
+      technicalMeta={[
+        { label: "TOKEN VALIDATION", value: "CRYPTO VERIFIED" },
+        { label: "SESSION PURGE", value: "ENFORCED ON RESET" },
+        { label: "ACCESS", value: "TRACK LEADER ONLY" },
+      ]}
     >
       <AuthCard
         category="SECURITY // RESET"
@@ -173,7 +178,7 @@ export default function TrackLeaderResetPasswordPage() {
         title="Reset Password"
         description="Create a new secure password for your Track Leader account."
         footer={
-          <div className="flex items-center justify-between gap-3 text-xs font-space text-slate-500">
+          <div className="flex items-center justify-between gap-3 text-xs font-body text-slate-500">
             <span>Remembered your password?</span>
             <Link
               href="/track-leader/login"

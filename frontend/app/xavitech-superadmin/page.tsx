@@ -66,10 +66,10 @@ export default function AdminLoginPage() {
         description="Verify central coordinator identity and administrative secret key to unlock system controls."
         footer={
           <div className="space-y-2 text-center">
-            <p className="font-oxanium text-[10px] uppercase tracking-wider text-slate-500">
+            <p className="font-oxanium text-[10px] uppercase tracking-wider text-slate-400">
               XAVITECH-2026 INTERNAL CONTROL SYSTEM
             </p>
-            <p className="font-space text-[11px] text-slate-600">
+            <p className="font-body text-[11px] text-slate-500">
               Multi-Device Session Enabled • Unauthorized intrusion attempts are permanently logged and flagged.
             </p>
           </div>

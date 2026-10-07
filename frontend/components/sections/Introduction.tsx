@@ -4,30 +4,26 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { motion } from "framer-motion";
 import DataStreams from "@/components/effects/DataStreams";
 import Eyebrow from "@/components/ui/Eyebrow";
-
-const DOMAINS = ["AI // ML // ROBOTICS", "WEB // CLOUD // SECURITY", "DATA // IOT // EMBEDDED"];
+import { useEventSlide } from "@/hooks/useEventSlide";
 
 export default function Introduction() {
   const [glitch, setGlitch] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
 
   // Interactive scanner on the image frame: a reticle follows the pointer with a
-  // live coordinate readout; clicking / tapping pings it and cycles the domain.
+  // live coordinate readout; clicking / tapping pings it.
   const frameRef = useRef<HTMLDivElement>(null);
   const reticleRef = useRef<HTMLDivElement>(null);
   const lineHRef = useRef<HTMLDivElement>(null);
   const lineVRef = useRef<HTMLDivElement>(null);
   const readoutRef = useRef<HTMLSpanElement>(null);
-  const [domain, setDomain] = useState(0);
+  // event promo image for the current 2-hour slot (see lib/eventSlides.ts)
+  const slide = useEventSlide();
   const [pings, setPings] = useState<{ id: number; x: number; y: number }[]>([]);
   const pingId = useRef(0);
 
-  const scan = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const frame = frameRef.current;
-    if (!frame) return;
-    const r = frame.getBoundingClientRect();
-    const x = e.clientX - r.left;
-    const y = e.clientY - r.top;
+  // Shared by both the pointer-driven scan and the touch fallback below.
+  const applyScan = (x: number, y: number, w: number, h: number, lock: string) => {
     if (reticleRef.current) {
       reticleRef.current.style.opacity = "1";
       reticleRef.current.style.transform = `translate(${x}px, ${y}px)`;
@@ -41,8 +37,14 @@ export default function Introduction() {
       lineVRef.current.style.transform = `translateX(${x}px)`;
     }
     if (readoutRef.current) {
-      readoutRef.current.textContent = `X ${(x / r.width).toFixed(2)} · Y ${(y / r.height).toFixed(2)} · LOCK`;
+      readoutRef.current.textContent = `X ${(x / w).toFixed(2)} · Y ${(y / h).toFixed(2)} · ${lock}`;
     }
+  };
+  const scan = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    const r = frame.getBoundingClientRect();
+    applyScan(e.clientX - r.left, e.clientY - r.top, r.width, r.height, "LOCK");
   };
   const scanEnd = () => {
     for (const ref of [reticleRef, lineHRef, lineVRef]) {
@@ -50,13 +52,36 @@ export default function Introduction() {
     }
     if (readoutRef.current) readoutRef.current.textContent = "STANDBY";
   };
+
+  // Touch devices don't hover, so dragging a finger to "scan" isn't discoverable
+  // the way a mouse move is. Rather than require that gesture, coarse-pointer
+  // (touch) devices get a slow automatic sweep instead — the frame still reads
+  // as alive, and a tap still pings it (see onPointerDown={ping} below).
+  useEffect(() => {
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    const start = performance.now();
+    const loop = (now: number) => {
+      const frame = frameRef.current;
+      if (frame) {
+        const r = frame.getBoundingClientRect();
+        const t = (now - start) / 4000;
+        const x = (0.5 + 0.36 * Math.sin(t * 1.3)) * r.width;
+        const y = (0.5 + 0.32 * Math.sin(t * 0.8 + 1.2)) * r.height;
+        applyScan(x, y, r.width, r.height, "AUTO");
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
   const ping = (e: ReactPointerEvent<HTMLDivElement>) => {
     const frame = frameRef.current;
     if (!frame) return;
     const r = frame.getBoundingClientRect();
     const id = ++pingId.current;
     setPings((p) => [...p.slice(-3), { id, x: e.clientX - r.left, y: e.clientY - r.top }]);
-    setDomain((d) => (d + 1) % DOMAINS.length);
     window.setTimeout(() => setPings((p) => p.filter((q) => q.id !== id)), 800);
   };
 
@@ -171,18 +196,23 @@ export default function Introduction() {
               className="relative aspect-[4/3] cursor-crosshair select-none overflow-hidden rounded-2xl border border-cyan-400/25 bg-black/60 shadow-[0_0_60px_rgba(53,224,201,0.08)]"
               style={{ touchAction: "pan-y" }}
             >
-              <img
-                src="/tech-image.jpg"
-                alt="Technology and innovation"
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full object-cover opacity-70 grayscale-[15%]"
-              />
+              {slide && (
+                <motion.img
+                  key={slide.file}
+                  src={`/assets/event-images/${slide.file}`}
+                  alt={`${slide.title} — XAVITECH 2026`}
+                  decoding="async"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8 }}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
 
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 via-transparent to-marigold/20" />
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-marigold/10" />
 
               <div
-                className="absolute inset-0 opacity-20"
+                className="absolute inset-0 opacity-10"
                 style={{
                   backgroundImage:
                     "repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(53,224,201,0.3) 5px)",
@@ -236,15 +266,21 @@ export default function Introduction() {
                 />
               ))}
 
-              <div className="absolute bottom-5 left-5 font-mono text-[10px] tracking-[0.25em] text-cyan-300">
-                {DOMAINS[domain]}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/75 to-transparent" />
+              <div className="absolute bottom-5 left-5 max-w-[60%] font-mono text-[10px] uppercase leading-relaxed tracking-[0.2em] text-cyan-300">
+                {slide && (
+                  <>
+                    <span className="block text-[9px] text-cyan-300/70">{slide.track}</span>
+                    <span className="block">{slide.title}</span>
+                  </>
+                )}
               </div>
               <div className="absolute bottom-5 right-5 hidden font-mono text-[9px] tracking-[0.2em] text-cyan-300/60 sm:block">
                 <span ref={readoutRef}>STANDBY</span>
               </div>
 
               <div className="absolute right-5 top-5 font-mono text-[10px] tracking-[0.2em] text-cyan-300">
-                01 // TECH
+                FEATURED EVENT
               </div>
             </div>
 
@@ -265,16 +301,20 @@ export default function Introduction() {
                 <>
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 translate-x-[3px] font-display text-[1.35rem] font-medium leading-snug sm:text-3xl lg:text-4xl text-cyan-300/70"
+                    className="pointer-events-none absolute inset-0 translate-x-[3px] font-display text-[1.4rem] font-bold uppercase leading-[0.98] tracking-[-0.025em] sm:text-3xl lg:text-5xl text-cyan-300/70"
                   >
-                    Five tracks, dozens of events, one campus, one day.
+                    Five tracks, dozens of events, one campus, one day. Teams
+                    build through the morning, judging runs through the afternoon,
+                    and results go up before the evening is out.
                   </span>
 
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 -translate-x-[3px] font-display text-[1.35rem] font-medium leading-snug sm:text-3xl lg:text-4xl text-marigold/60"
+                    className="pointer-events-none absolute inset-0 -translate-x-[3px] font-display text-[1.4rem] font-bold uppercase leading-[0.98] tracking-[-0.025em] sm:text-3xl lg:text-5xl text-marigold/60"
                   >
-                    Five tracks, dozens of events, one campus, one day.
+                    Five tracks, dozens of events, one campus, one day. Teams
+                    build through the morning, judging runs through the afternoon,
+                    and results go up before the evening is out.
                   </span>
                 </>
               )}
@@ -289,7 +329,7 @@ export default function Introduction() {
                   duration: 0.3,
                   ease: "easeOut",
                 }}
-                className="font-display text-[1.35rem] font-medium leading-snug sm:text-3xl lg:text-4xl text-ink"
+                className="font-display text-[1.4rem] font-bold uppercase leading-[0.98] tracking-[-0.025em] sm:text-3xl lg:text-5xl text-ink"
               >
                 Five tracks, dozens of events, one campus, one day. Teams
                 build through the morning, judging runs through the afternoon,
@@ -307,7 +347,7 @@ export default function Introduction() {
                 duration: 0.35,
                 delay: 0.08,
               }}
-              className="mt-5 text-base leading-relaxed text-muted sm:mt-6"
+              className="mt-5 text-base font-medium leading-relaxed text-marigold sm:mt-6"
             >
               Register ahead of time to lock in your events.
             </motion.p>
@@ -324,7 +364,7 @@ export default function Introduction() {
               className="mt-7 flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.14em] text-muted sm:mt-8 sm:tracking-[0.2em]"
             >
               <span className="h-px w-10 shrink-0 bg-cyan-400/60 sm:w-12" />
-              <span>Technology · Creativity · Competition</span>
+              <span>Explore · Create · Transcend</span>
             </motion.div>
           </div>
         </div>

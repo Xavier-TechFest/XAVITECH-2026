@@ -26,11 +26,11 @@ export default function AuthButton({
   icon,
 }: AuthButtonProps) {
   const baseClass =
-    "min-h-[48px] w-full flex items-center justify-center gap-2 px-5 font-space text-sm font-semibold transition-all duration-200 active:scale-[0.99] disabled:cursor-not-allowed select-none";
+    "min-h-12 w-full flex items-center justify-center gap-2 px-5 font-body text-sm font-semibold transition-all duration-200 active:scale-[0.99] disabled:cursor-not-allowed select-none cursor-pointer";
 
   const variantClasses = {
     primary:
-      "border border-circuit/60 bg-circuit text-[#04100f] hover:bg-cyan-200 hover:shadow-lg hover:shadow-circuit/20 disabled:opacity-50",
+      "border border-circuit/60 bg-circuit text-[#04100f] hover:bg-cyan-200 hover:shadow-lg hover:shadow-circuit/20 disabled:cursor-wait disabled:opacity-50",
     secondary:
       "border border-white/15 bg-white/[0.04] text-slate-200 hover:border-circuit/60 hover:text-circuit hover:bg-white/[0.08] disabled:opacity-40",
     danger:
@@ -66,7 +66,7 @@ export default function AuthButton({
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          <span>{loadingText}</span>
+          <span className="font-mono text-xs uppercase tracking-wider">{loadingText}</span>
         </>
       ) : (
         <>

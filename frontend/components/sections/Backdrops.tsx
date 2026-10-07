@@ -1,6 +1,25 @@
 import type { CSSProperties } from "react";
 import Horizon from "@/components/effects/Horizon";
 
+/**
+ * Section backdrops that continue the Hero / Introduction look:
+ * night-sky gradients, neon teal / marigold, circuit traces,
+ * scanner beams, grid floor, scanlines.
+ *
+ * All of them are purely decorative (aria-hidden, pointer-events-none), have
+ * no client-side JS, and scale down on phones: fewer layers, smaller blurs.
+ * Motion is CSS-only (see globals.css) and is switched off automatically by
+ * the prefers-reduced-motion rule there.
+ *
+ * The base gradient of each backdrop is deliberately translucent: the fixed,
+ * scroll-driven starfield (components/experience/CosmosBackdrop) sits behind
+ * the whole page and shows through the gaps between the circuit traces,
+ * rails and glows.
+ *
+ * Usage: make the section `relative isolate overflow-hidden`, render the
+ * backdrop as its first child, and wrap the real content in `relative`.
+ */
+
 const SCANLINES: CSSProperties = {
   backgroundImage:
     "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.5) 4px)",
@@ -24,6 +43,10 @@ function Seam() {
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Tracks: circuit board                                               */
+/* ------------------------------------------------------------------ */
 
 const TRACES = [
   { d: "M-20,120 H190 L240,170 H440 L490,120 H780 L830,170 H1220", color: "#35E0C9", dur: "5.2s", delay: "0s", desktopOnly: false },
@@ -345,7 +368,9 @@ export function ScheduleBackdrop() {
   );
 }
 
+/* ------------------------------------------------------------------ */
 /* Footer: the hero's planet horizon again, as a bookend               */
+/* ------------------------------------------------------------------ */
 
 export function FooterBackdrop() {
   return (

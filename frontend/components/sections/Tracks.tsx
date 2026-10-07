@@ -49,9 +49,18 @@ const GRID_BASE_WIDTH = 420;
 const GRID_ASPECT = 1.3;
 
 export default function Tracks() {
-  const [mouse, setMouse] = useState({ x: -100, y: -100 });
+  // The binary grid is driven from a rAF loop that writes styles straight to
+  // the digit spans (no React state per pointer move — 77 cells re-rendering
+  // on every move is exactly the kind of cost a phone can't afford).
+  const zeroRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const oneRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const pointerRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const anchorRef = useRef<number | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  // Mobile only: a real tab bar instead of five stacked cards — always one
+  // active track, switched by tapping a pill (see the `sm:hidden` block below).
+  const [mobileTrack, setMobileTrack] = useState(0);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
@@ -162,9 +171,17 @@ export default function Tracks() {
 
   const updateMouse = (e: ReactPointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setMouse({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    pointerRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top, t: performance.now() };
   };
-  const resetMouse = () => setMouse({ x: -100, y: -100 });
+  const resetMouse = () => {
+    pointerRef.current = null;
+  };
+
+  // Which track (if any) the grid should "light up" for: on phones the tab
+  // that's open, otherwise whichever card is hovered / pinned.
+  useEffect(() => {
+    anchorRef.current = window.matchMedia("(max-width: 639px)").matches ? mobileTrack : activeIndex;
+  }, [mobileTrack, activeIndex]);
 
   // digit maths uses the real rendered size, so it lines up on any screen
   const contentWidth = gridSize.w - GRID_PADDING * 2;
@@ -172,6 +189,102 @@ export default function Tracks() {
   const cellWidth = contentWidth / COLS;
   const cellHeight = contentHeight / ROWS;
   const radius = Math.max(70, 105 * (gridSize.w / GRID_BASE_WIDTH));
+
+  // The 0 -> 1 interaction. Three sources drive the glow point, in priority:
+  //   1. a live pointer (mouse hover, or a finger dragging sideways / tapping)
+  //   2. the selected track: its band of columns lights up, so the visual
+  //      answers "which track am I on" (5 tracks across 11 columns)
+  //   3. touch devices only, otherwise-idle: an ambient wander that also
+  //      sweeps down the grid as the section scrolls — so it stays alive
+  //      without needing a hover that phones don't have.
+  // Runs only while the grid is on screen and the tab is visible.
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    const gridEl: HTMLDivElement = grid;
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const cw = (gridSize.w - GRID_PADDING * 2) / COLS;
+    const ch = (gridSize.h - GRID_PADDING * 2) / ROWS;
+    const contentW = gridSize.w - GRID_PADDING * 2;
+    const contentH = gridSize.h - GRID_PADDING * 2;
+    const total = COLS * ROWS;
+    const shown = new Float32Array(total).fill(-1);
+    const pos = { x: gridSize.w / 2, y: gridSize.h / 2, k: 0 }; // k = strength 0..1
+    let visible = false;
+    let raf = 0;
+    let last = 0;
+
+    const io = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible && !raf) raf = requestAnimationFrame(frame);
+    });
+    io.observe(grid);
+
+    function frame(now: number) {
+      raf = 0;
+      if (!visible || document.hidden) return;
+      raf = requestAnimationFrame(frame);
+      // phones: ~30fps is plenty for a glow that's easing anyway
+      if (coarse && now - last < 33) return;
+      const dt = Math.min(0.06, (now - last) / 1000 || 0.016);
+      last = now;
+
+      let tx = pos.x;
+      let ty = pos.y;
+      let tk = 0;
+      const ptr = pointerRef.current;
+      if (ptr && now - ptr.t < 1500) {
+        tx = ptr.x;
+        ty = ptr.y;
+        tk = 1;
+      } else if (anchorRef.current !== null) {
+        const i = anchorRef.current;
+        tx = GRID_PADDING + ((i + 0.5) / 5) * contentW;
+        ty = GRID_PADDING + contentH * (0.5 + 0.28 * Math.sin(now / 1400));
+        tk = 0.85;
+      } else if (coarse && !reduce) {
+        const r = gridEl.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height)));
+        tx = GRID_PADDING + contentW * (0.5 + 0.38 * Math.sin(now / 2300));
+        ty = GRID_PADDING + contentH * p;
+        tk = 0.7;
+      }
+      const e = 1 - Math.exp(-8 * dt);
+      pos.x += (tx - pos.x) * e;
+      pos.y += (ty - pos.y) * e;
+      pos.k += (tk - pos.k) * e;
+
+      for (let i = 0; i < total; i++) {
+        const col = i % COLS;
+        const row = (i / COLS) | 0;
+        const dx = pos.x - (GRID_PADDING + col * cw + cw / 2);
+        const dy = pos.y - (GRID_PADDING + row * ch + ch / 2);
+        const q = Math.round(Math.max(0, 1 - Math.hypot(dx, dy) / radius) * pos.k * 40) / 40;
+        if (q === shown[i]) continue;
+        shown[i] = q;
+        const z = zeroRefs.current[i];
+        const o = oneRefs.current[i];
+        if (z) {
+          z.style.opacity = String(0.35 - q * 0.28);
+          z.style.transform = `scale(${1 + q * 0.08})`;
+        }
+        if (o) {
+          o.style.opacity = String(q);
+          o.style.color = `rgba(53, 224, 201, ${0.35 + q * 0.65})`;
+          o.style.transform = `scale(${1 + q * 0.35})`;
+          o.style.textShadow = q > 0.05 ? `0 0 ${q * 16}px rgba(53, 224, 201, ${q * 0.85})` : "none";
+        }
+      }
+    }
+
+    raf = requestAnimationFrame(frame);
+    return () => {
+      io.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [gridSize.w, gridSize.h, radius]);
 
   return (
     <section
@@ -194,47 +307,31 @@ export default function Tracks() {
               onPointerLeave={resetMouse}
               onPointerCancel={resetMouse}
             >
-              {Array.from({ length: COLS * ROWS }).map((_, index) => {
-                const col = index % COLS;
-                const row = Math.floor(index / COLS);
-
-                const cellX = GRID_PADDING + col * cellWidth + cellWidth / 2;
-                const cellY = GRID_PADDING + row * cellHeight + cellHeight / 2;
-
-                const distance = Math.hypot(mouse.x - cellX, mouse.y - cellY);
-                const intensity = Math.max(0, 1 - distance / radius);
-
-                return (
-                  <div
-                    key={index}
-                    className="relative flex items-center justify-center font-mono text-[10px] sm:text-[11px]"
+              {Array.from({ length: COLS * ROWS }).map((_, index) => (
+                <div
+                  key={index}
+                  className="relative flex items-center justify-center font-mono text-[10px] sm:text-[11px]"
+                >
+                  <span
+                    ref={(el) => {
+                      zeroRefs.current[index] = el;
+                    }}
+                    className="absolute"
+                    style={{ opacity: 0.35, color: "rgba(167, 156, 135, 0.95)" }}
                   >
-                    <span
-                      className="absolute transition-all duration-300 ease-out"
-                      style={{
-                        opacity: 0.35 - intensity * 0.28,
-                        color: "rgba(167, 156, 135, 0.95)",
-                        transform: `scale(${1 + intensity * 0.08})`,
-                      }}
-                    >
-                      0
-                    </span>
-                    <span
-                      className="absolute transition-all duration-300 ease-out"
-                      style={{
-                        opacity: intensity,
-                        color: `rgba(53, 224, 201, ${0.35 + intensity * 0.65})`,
-                        transform: `scale(${1 + intensity * 0.35})`,
-                        textShadow: `0 0 ${intensity * 16}px rgba(53, 224, 201, ${
-                          intensity * 0.85
-                        })`,
-                      }}
-                    >
-                      1
-                    </span>
-                  </div>
-                );
-              })}
+                    0
+                  </span>
+                  <span
+                    ref={(el) => {
+                      oneRefs.current[index] = el;
+                    }}
+                    className="absolute"
+                    style={{ opacity: 0, color: "rgba(53, 224, 201, 0.35)" }}
+                  >
+                    1
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -254,8 +351,77 @@ export default function Tracks() {
           </div>
         </div>
 
-        {/* Track Cards: 1 column on phones, 2 on tablets, 5 across from `lg` */}
-        <div ref={railRef} className="relative mt-10 overflow-visible sm:mt-14 lg:mt-16">
+        {/* Mobile only (< sm): a swipeable A–E tab bar, one track open at a
+            time, instead of the desktop layout simply stacked into a column. */}
+        <div className="mt-10 sm:hidden">
+          <div
+            role="tablist"
+            aria-label="Tracks"
+            className="-mx-5 flex snap-x snap-mandatory scroll-pl-5 gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {tracks.map((track, index) => {
+              const on = mobileTrack === index;
+              return (
+                <button
+                  key={track.name}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  onClick={(e) => {
+                    setMobileTrack(index);
+                    firePulse(index);
+                    // keep the chosen tab fully in view inside the swipe strip
+                    e.currentTarget.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+                  }}
+                  className={`flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors duration-200 ${
+                    on
+                      ? "border-marigold/70 bg-surface-raised text-ink"
+                      : "border-line/60 bg-surface text-muted"
+                  }`}
+                >
+                  <span className={on ? "text-marigold" : "text-muted/70"}>
+                    {String.fromCharCode(65 + index)}
+                  </span>
+                  {track.name}
+                </button>
+              );
+            })}
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={mobileTrack}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="mt-4 rounded-2xl border border-marigold/70 bg-surface-raised p-5"
+            >
+              <span className="text-xs tracking-[0.2em] text-muted">
+                0{mobileTrack + 1}
+              </span>
+              <h3 className="mt-1.5 font-display text-xl font-semibold leading-tight text-ink [overflow-wrap:anywhere]">
+                {tracks[mobileTrack].name}
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted">
+                {tracks[mobileTrack].detail}
+              </p>
+              <p className="mt-3 text-[13px] leading-snug text-ink/80">
+                {tracks[mobileTrack].blurb}
+              </p>
+              <a
+                href="#events"
+                className="mt-3 inline-flex min-h-10 items-center gap-2 text-[13px] font-medium text-circuit transition-colors hover:text-marigold"
+              >
+                View events in this track
+                <span aria-hidden="true">↓</span>
+              </a>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Tablet & up: the five cards, 2 columns on tablets, 5 across from `lg` */}
+        <div ref={railRef} className="relative mt-10 hidden overflow-visible sm:mt-14 sm:block lg:mt-16">
           <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {tracks.map((track, index) => {
               const isActive = activeIndex === index;
@@ -330,12 +496,12 @@ export default function Tracks() {
                             {track.blurb}
                           </p>
                           <a
-                            href="/tracks"
+                            href="#events"
                             onClick={(e) => e.stopPropagation()}
                             className="mt-3 inline-flex min-h-10 items-center gap-2 text-[13px] font-medium text-circuit transition-colors hover:text-marigold"
                           >
                             View events in this track
-                            <span aria-hidden="true">→</span>
+                            <span aria-hidden="true">↓</span>
                           </a>
                         </motion.div>
                       )}

@@ -35,8 +35,8 @@ export default function AuthAlert({
       role: "alert",
     },
     success: {
-      container: "border-emerald-400/40 bg-emerald-400/[0.06] text-emerald-200",
-      iconColor: "text-emerald-400",
+      container: "border-circuit/40 bg-circuit/[0.06] text-cyan-100",
+      iconColor: "text-circuit",
       icon: (
         <path
           strokeLinecap="round"
@@ -48,8 +48,8 @@ export default function AuthAlert({
       role: "status",
     },
     warning: {
-      container: "border-amber-400/40 bg-amber-400/[0.06] text-amber-200",
-      iconColor: "text-amber-400",
+      container: "border-marigold/40 bg-marigold/[0.06] text-amber-200",
+      iconColor: "text-marigold",
       icon: (
         <path
           strokeLinecap="round"
@@ -78,7 +78,7 @@ export default function AuthAlert({
   return (
     <div
       role={styles.role}
-      className={`border p-3.5 font-space text-xs flex items-start gap-3 leading-relaxed ${styles.container} ${className}`}
+      className={`border p-3 sm:p-3.5 font-body text-xs flex items-start gap-3 leading-relaxed ${styles.container} ${className}`}
     >
       <svg
         className={`w-4 h-4 shrink-0 mt-0.5 ${styles.iconColor}`}
@@ -93,7 +93,7 @@ export default function AuthAlert({
         <button
           type="button"
           onClick={action.onClick}
-          className="underline hover:no-underline font-semibold font-mono text-[11px] shrink-0"
+          className="underline hover:no-underline font-semibold font-mono text-[11px] shrink-0 cursor-pointer"
         >
           {action.label}
         </button>
