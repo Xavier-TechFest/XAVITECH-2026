@@ -37,7 +37,7 @@ type RegistrationReview = {
 
 export default function RegistrationForm({ event }: { event: EventItem }) {
   const config = event.registrationConfig;
-  const { user, isAuthenticated, loginWithGoogle, getIdToken } = useAuth();
+  const { user, isAuthenticated, loading, loginWithGoogle, getIdToken } = useAuth();
 
   // Form State
   const [teamSize, setTeamSize] = useState(config?.minTeamSize ?? 1);
@@ -51,6 +51,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const [step, setStep] = useState<"form" | "review" | "confirmed">("form");
   const [review, setReview] = useState<RegistrationReview | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [submitResult, setSubmitResult] = useState<CreatedRegistrationResponse | null>(null);
 
   // Validation State
@@ -60,19 +61,49 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
 
   const registrationClosed = isPastDeadline(config?.deadlineDate);
 
+  // Reset step if user logs out while on the page
+  useEffect(() => {
+    if (!isAuthenticated && !loading) {
+      if (step !== "form") setStep("form");
+    }
+  }, [isAuthenticated, loading, step]);
+
   // Pre-fill leader details (index 0) from authenticated user profile
   useEffect(() => {
     if (user && step === "form") {
       setFormDataState((prev) => {
         const next = { ...prev };
         if (!next["0-fullName"] && user.name) next["0-fullName"] = user.name;
-        if (!next["0-email"] && user.email) next["0-email"] = user.email;
+        // Leader email cannot be edited after authentication; strictly locked to authenticated user's email
+        if (user.email) next["0-email"] = user.email;
         if (!next["0-mobile"] && user.phone) next["0-mobile"] = user.phone;
         if (!next["0-college"] && user.collegeName) next["0-college"] = user.collegeName;
         return next;
       });
     }
   }, [user, step]);
+
+  // Handle Google Sign-In with event context preservation
+  const handleGoogleSignIn = async () => {
+    setIsSigningIn(true);
+    setApiError(null);
+    try {
+      await loginWithGoogle();
+    } catch (err: any) {
+      console.error("Google sign in error:", err);
+      if (err.code === "auth/popup-closed-by-user") {
+        setApiError("Sign-in cancelled. Please sign in with Google to continue.");
+      } else if (err.code === "auth/popup-blocked") {
+        setApiError("The sign-in popup was blocked by your browser. Please allow popups for this site.");
+      } else if (err.code === "auth/network-request-failed") {
+        setApiError("Network connection error. Please check your connectivity and try again.");
+      } else {
+        setApiError(err.message || "Failed to sign in with Google. Please try again.");
+      }
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
 
   if (!config) {
     return (
@@ -102,6 +133,10 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
 
   // Handle generic input change
   const handleInputChange = (key: string, value: string) => {
+    // Leader email cannot be edited after authentication
+    if (key === "0-email" && isAuthenticated) {
+      return;
+    }
     setFormDataState((prev) => ({ ...prev, [key]: value }));
     if (fieldErrors[key]) {
       setFieldErrors((prev) => {
@@ -142,6 +177,11 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const handleReviewStep = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setApiError(null);
+
+    if (!isAuthenticated) {
+      setApiError("Google Sign-In is required to continue with registration.");
+      return;
+    }
 
     if (registrationClosed) {
       setApiError(`Registration is closed. Deadline: ${config.deadline}.`);
@@ -394,12 +434,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
     setApiError(null);
 
     if (!isAuthenticated) {
-      try {
-        await loginWithGoogle();
-      } catch (err: any) {
-        setApiError("Authentication cancelled or failed. Please sign in to submit your registration.");
-        return;
-      }
+      setApiError("Google Sign-In is required to submit your registration.");
+      return;
     }
 
     const token = await getIdToken();
@@ -452,7 +488,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
         const mobileNumber =
           (formDataState[`${index}-mobile`] || (isLeader ? user?.phone : "") || "").trim();
         const email =
-          (formDataState[`${index}-email`] || (isLeader ? user?.email : "") || "").trim();
+          (isLeader && user?.email ? user.email : formDataState[`${index}-email`] || (isLeader ? user?.email : "") || "").trim();
         const city = (formDataState[`${index}-city`] || "").trim();
         const studentId = (formDataState[`${index}-studentId`] || "").trim();
         const standardClass =
@@ -562,50 +598,131 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
         )}
 
         {/* ==================================================================== */}
-        {/* STEP 1: DYNAMIC REGISTRATION FORM                                    */}
+        {/* AUTHENTICATION STATE & REGISTRATION WORKFLOW                         */}
         {/* ==================================================================== */}
-        {step === "form" && (
-          <form noValidate onSubmit={handleReviewStep} className="space-y-8 p-6 sm:p-9">
-            {/* Validation Error Summary */}
-            {errorSummary.length > 0 && (
-              <div
-                role="alert"
-                aria-live="assertive"
-                className="rounded border border-rose-400/40 bg-rose-400/10 p-4 text-sm text-rose-100"
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-24 px-6 text-center space-y-4">
+            <Loader2 size={36} className="animate-spin text-cyan-300" />
+            <div className="space-y-1">
+              <p className="font-oxanium text-xs uppercase tracking-[0.2em] text-cyan-300">
+                Checking Authentication
+              </p>
+              <p className="text-sm text-slate-400">
+                Verifying account session before opening registration...
+              </p>
+            </div>
+          </div>
+        ) : !isAuthenticated ? (
+          /* ==================================================================== */
+          /* AUTHENTICATION REQUIRED GATE (MANDATORY FOR REGISTRATION)            */
+          /* ==================================================================== */
+          <div className="p-6 sm:p-9 space-y-8">
+            <div className="rounded border border-cyan-300/30 bg-cyan-950/30 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded border border-cyan-300/40 bg-cyan-400/10 text-cyan-300">
+                  <Lock size={24} />
+                </div>
+                <div>
+                  <h2 className="font-space text-xl font-bold uppercase tracking-wide text-white">
+                    Google Sign-In Required
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-300 max-w-xl">
+                    Sign in with Google to continue with event registration. Your account will be used to identify the registration leader.
+                  </p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    Please sign in with Google to continue with registration.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isSigningIn}
+                className="w-full md:w-auto inline-flex shrink-0 items-center justify-center gap-2 rounded bg-cyan-300 px-6 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-slate-950 hover:bg-cyan-200 transition shadow-lg shadow-cyan-950/50 disabled:opacity-50 cursor-pointer"
               >
-                <p className="font-semibold flex items-center gap-2">
-                  <AlertCircle size={16} className="text-rose-400" />
-                  Please resolve the following items before continuing:
-                </p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-rose-200">
-                  {errorSummary.map((error, idx) => (
-                    <li key={`${idx}-${error}`}>{error}</li>
+                {isSigningIn ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>SIGNING IN...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn size={16} />
+                    <span>SIGN IN WITH GOOGLE</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Eligibility & Event Rules info */}
+            {event.eligibility?.length ? (
+              <section className="rounded border border-cyan-300/20 bg-cyan-300/[.03] p-5">
+                <Heading
+                  title="Eligibility"
+                  note="Please confirm that you meet these requirements before registering."
+                />
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate-300">
+                  {event.eligibility.map((item, idx) => (
+                    <li key={idx}>{item}</li>
                   ))}
                 </ul>
+              </section>
+            ) : null}
+
+            {registrationClosed && (
+              <div
+                role="status"
+                className="rounded border border-amber-300/30 bg-amber-300/5 p-4 text-sm text-amber-100"
+              >
+                Registration for this event is closed. Cutoff date: {config.deadline}.
               </div>
             )}
 
-            {/* Authentication Notice Banner */}
-            {!isAuthenticated && (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded border border-cyan-300/30 bg-cyan-950/20 p-4 text-sm">
-                <div className="flex items-center gap-3">
-                  <Lock className="text-cyan-300 shrink-0" size={20} />
-                  <div>
-                    <p className="font-semibold text-white">Google Sign-In Recommended</p>
-                    <p className="text-xs text-slate-400">
-                      Sign in now with Google to automatically populate your participant details.
+            {/* Fee & Deadline Summaries */}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Summary label="Registration Fee" value={config.feeDisplay} />
+              <Summary label="Registration Deadline" value={config.deadline} />
+              <Summary label="Event Date" value={event.date} />
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* ==================================================================== */}
+            {/* STEP 1: DYNAMIC REGISTRATION FORM                                    */}
+            {/* ==================================================================== */}
+            {step === "form" && (
+              <form noValidate onSubmit={handleReviewStep} className="space-y-8 p-6 sm:p-9">
+                {/* Validation Error Summary */}
+                {errorSummary.length > 0 && (
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="rounded border border-rose-400/40 bg-rose-400/10 p-4 text-sm text-rose-100"
+                  >
+                    <p className="font-semibold flex items-center gap-2">
+                      <AlertCircle size={16} className="text-rose-400" />
+                      Please resolve the following items before continuing:
                     </p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-rose-200">
+                      {errorSummary.map((error, idx) => (
+                        <li key={`${idx}-${error}`}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Authenticated Leader Badge */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded border border-emerald-400/30 bg-emerald-950/20 p-4 text-sm">
+                  <div className="flex items-center gap-3">
+                    <UserCheck className="text-emerald-400 shrink-0" size={20} />
+                    <div>
+                      <p className="font-semibold text-white">Signed in as {user?.name || user?.email}</p>
+                      <p className="text-xs text-slate-400">
+                        Team Leader details pre-filled from your authenticated Google account ({user?.email}).
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => loginWithGoogle()}
-                  className="inline-flex shrink-0 items-center gap-2 rounded bg-cyan-300 px-4 py-2 font-oxanium text-xs font-bold uppercase tracking-wider text-slate-950 hover:bg-cyan-200 transition"
-                >
-                  <LogIn size={14} /> Sign In with Google
-                </button>
-              </div>
-            )}
 
             {/* Eligibility & Event Rules info */}
             {event.eligibility?.length ? (
@@ -807,7 +924,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
 
               const note =
                 isLeader && isAuthenticated
-                  ? "Pre-filled with your verified Google account profile. You can update any fields."
+                  ? "Pre-filled from your verified Google account profile. Leader email cannot be edited after authentication."
                   : isOptionalSub
                   ? "Optional 5th player. Leave blank if your team has no substitute."
                   : "Fields marked * are mandatory.";
@@ -839,6 +956,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                           !(event.id === "hack-the-skill" && !isLeader && f.id === "year")
                       )
                       .map((field) => {
+                        const isLeaderEmail = isLeader && field.id === "email" && isAuthenticated;
                         const fieldKey = `${index}-${field.id}`;
                         const customLabel =
                           field.id === "college"
@@ -855,12 +973,14 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                             fieldKey={fieldKey}
                             field={field}
                             displayLabel={customLabel}
-                            value={formDataState[fieldKey] || ""}
+                            value={isLeaderEmail ? (user?.email || formDataState[fieldKey] || "") : (formDataState[fieldKey] || "")}
                             fileValue={fileDataState[fieldKey]}
                             error={fieldErrors[fieldKey]}
                             onTextChange={(val) => handleInputChange(fieldKey, val)}
                             onFileChange={(f) => handleFileChange(fieldKey, f)}
                             minAge={config.policy?.minAge}
+                            readOnly={isLeaderEmail}
+                            disabled={isLeaderEmail}
                           />
                         );
                       })}
@@ -1015,16 +1135,6 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               }
             />
 
-            {/* Auth CTA if not logged in */}
-            {!isAuthenticated && (
-              <div className="rounded border border-amber-300/30 bg-amber-950/20 p-5 text-sm">
-                <p className="font-semibold text-amber-200">Google Authentication Required</p>
-                <p className="mt-1 text-slate-300">
-                  Please sign in with your Google account before submitting your registration.
-                </p>
-              </div>
-            )}
-
             {/* Action Buttons */}
             <div className="flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row">
               <button
@@ -1048,10 +1158,6 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                 {isSubmitting ? (
                   <>
                     <Loader2 size={16} className="animate-spin" /> Submitting Registration...
-                  </>
-                ) : !isAuthenticated ? (
-                  <>
-                    <LogIn size={16} /> Sign In & Submit Registration
                   </>
                 ) : (
                   <>
@@ -1140,6 +1246,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
             </div>
           </section>
         )}
+          </>
+        )}
       </div>
     </main>
   );
@@ -1162,6 +1270,8 @@ function DynamicFieldRenderer({
   onTextChange,
   onFileChange,
   minAge,
+  readOnly,
+  disabled,
 }: {
   fieldKey: string;
   field: ParticipantFieldSpec;
@@ -1172,6 +1282,8 @@ function DynamicFieldRenderer({
   onTextChange: (val: string) => void;
   onFileChange: (file: File | null) => void;
   minAge?: number;
+  readOnly?: boolean;
+  disabled?: boolean;
 }) {
   const placeholder = field.placeholder || defaultPlaceholder(field, displayLabel);
 
@@ -1186,8 +1298,9 @@ function DynamicFieldRenderer({
           id={fieldKey}
           value={value}
           required={field.required}
+          disabled={disabled}
           onChange={(e) => onTextChange(e.target.value)}
-          className={`${inputClass} ${error ? "border-rose-400" : ""}`}
+          className={`${inputClass} ${disabled ? "cursor-not-allowed bg-[#020508] text-slate-400 opacity-80" : ""} ${error ? "border-rose-400" : ""}`}
         >
           <option value="">{placeholder}</option>
           {field.options?.map((opt) => (
@@ -1202,8 +1315,10 @@ function DynamicFieldRenderer({
           required={field.required}
           placeholder={placeholder}
           value={value}
+          readOnly={readOnly}
+          disabled={disabled}
           onChange={(e) => onTextChange(e.target.value)}
-          className={`${inputClass} min-h-24 ${error ? "border-rose-400" : ""}`}
+          className={`${inputClass} min-h-24 ${disabled || readOnly ? "cursor-not-allowed bg-[#020508] text-slate-400 opacity-80" : ""} ${error ? "border-rose-400" : ""}`}
         />
       ) : field.type === "file" ? (
         <FileInputField
@@ -1223,11 +1338,14 @@ function DynamicFieldRenderer({
             required={field.required}
             placeholder={field.type === "date" ? undefined : placeholder}
             value={value}
+            readOnly={readOnly}
+            disabled={disabled}
             accept={field.accept}
             pattern={field.pattern}
             inputMode={field.type === "tel" ? "numeric" : undefined}
             maxLength={field.type === "tel" ? 10 : undefined}
             onChange={(e) => {
+              if (readOnly || disabled) return;
               if (field.type === "tel") {
                 const numericOnly = e.target.value.replace(/\D/g, "").slice(0, 10);
                 onTextChange(numericOnly);
@@ -1240,14 +1358,23 @@ function DynamicFieldRenderer({
                 ? getEligibleMaxBirthDate(minAge ?? 16)
                 : undefined
             }
-            className={`${inputClass} ${field.type === "date" ? "[color-scheme:dark]" : ""} ${
+            className={`${inputClass} ${
+              readOnly || disabled
+                ? "cursor-not-allowed bg-[#020508] text-slate-400 border-white/10 opacity-85 select-none"
+                : ""
+            } ${field.type === "date" ? "[color-scheme:dark]" : ""} ${
               error ? "border-rose-400" : ""
             }`}
           />
-          {field.helpText && <p className="mt-1.5 text-xs text-slate-500">{field.helpText}</p>}
-          {field.type === "date" && !field.helpText && (
+          {readOnly && field.id === "email" ? (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-cyan-300/80">
+              <Lock size={12} /> Verified Google account email (locked)
+            </p>
+          ) : field.helpText ? (
+            <p className="mt-1.5 text-xs text-slate-500">{field.helpText}</p>
+          ) : field.type === "date" ? (
             <p className="mt-1.5 text-xs text-slate-500">Select date from calendar.</p>
-          )}
+          ) : null}
         </>
       )}
 
