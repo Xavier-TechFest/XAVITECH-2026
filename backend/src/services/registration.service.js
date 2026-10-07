@@ -72,6 +72,7 @@ export const formatRegistrationResponse = (reg) => {
       studentId: p.student_id || null,
       standardClass: p.standard_class || null,
       idCardUrl: p.id_card_url || null,
+      profilePhotoUrl: p.profile_photo_url || null,
       customFields: p.custom_fields || {},
     })),
   };

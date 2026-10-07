@@ -61,6 +61,88 @@ export const RegistrationParticipantModel = {
   },
 
   /**
+   * Fetch a single participant by UUID.
+   *
+   * @param {string} participantId
+   * @returns {Promise<Object|null>}
+   */
+  getParticipantById: async (participantId) => {
+    const client = getSupabaseClient();
+    if (!client) {
+      throw new Error('Database client is not available');
+    }
+
+    const { data, error } = await client
+      .from('registration_participants')
+      .select('*')
+      .eq('id', participantId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  },
+
+  /**
+   * Fetch a participant by registration ID and participant order index.
+   *
+   * @param {string} registrationId
+   * @param {number} order
+   * @returns {Promise<Object|null>}
+   */
+  getParticipantByRegistrationAndOrder: async (registrationId, order) => {
+    const client = getSupabaseClient();
+    if (!client) {
+      throw new Error('Database client is not available');
+    }
+
+    const { data, error } = await client
+      .from('registration_participants')
+      .select('*')
+      .eq('registration_id', registrationId)
+      .eq('participant_order', order)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  },
+
+  /**
+   * Update participant fields.
+   *
+   * @param {string} participantId
+   * @param {Object} updates
+   * @returns {Promise<Object>}
+   */
+  updateParticipant: async (participantId, updates) => {
+    const client = getSupabaseClient();
+    if (!client) {
+      throw new Error('Database client is not available');
+    }
+
+    const { data, error } = await client
+      .from('registration_participants')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', participantId)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  },
+
+  /**
    * Delete all participant records for a registration.
    *
    * @param {string} registrationId - Registration UUID

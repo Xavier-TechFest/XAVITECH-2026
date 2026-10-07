@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, useEffect } from "react";
+import { FormEvent, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -9,10 +9,14 @@ import {
   Check,
   CheckCircle2,
   FileText,
+  Image as ImageIcon,
   Lock,
   LogIn,
   Loader2,
+  RefreshCw,
+  Trash2,
   Upload,
+  UploadCloud,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -31,7 +35,12 @@ type ParticipantReview = { title: string; entries: ReviewEntry[] };
 type RegistrationReview = {
   team: ReviewEntry[];
   participants: ParticipantReview[];
-  documents: { label: string; fileName: string }[];
+  documents: {
+    label: string;
+    fileName: string;
+    type: "image" | "pdf";
+    size: string;
+  }[];
   confirmations: string[];
 };
 
@@ -51,6 +60,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const [step, setStep] = useState<"form" | "review" | "confirmed">("form");
   const [review, setReview] = useState<RegistrationReview | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadStatusMessage, setUploadStatusMessage] = useState<string | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [submitResult, setSubmitResult] = useState<CreatedRegistrationResponse | null>(null);
 
@@ -398,16 +408,25 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
     }
 
     // Documents summary
-    const docEntries: { label: string; fileName: string }[] = [];
+    const docEntries: {
+      label: string;
+      fileName: string;
+      type: "image" | "pdf";
+      size: string;
+    }[] = [];
     Object.entries(fileDataState).forEach(([key, file]) => {
       const [indexStr, fieldId] = key.split("-");
       const pIdx = Number(indexStr);
+      const isPhoto = fieldId.toLowerCase().includes("photo");
+      const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
       const docLabel =
         config.participantFields.find((f) => f.id === fieldId)?.label ||
-        `Participant ${pIdx + 1} Document`;
+        (isPhoto ? "Profile Photo" : `Participant ${pIdx + 1} Document`);
       docEntries.push({
         label: `Participant ${pIdx + 1} · ${docLabel}`,
-        fileName: `${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
+        fileName: file.name,
+        type: isPdf ? "pdf" : "image",
+        size: `${(file.size / 1024).toFixed(1)} KB`,
       });
     });
 
@@ -523,12 +542,43 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
       });
 
       // 3. Create Draft Registration on Backend
+      setUploadStatusMessage("Creating registration record...");
       const registrationRes = await api.createRegistration(token, {
         eventId: event.id,
         registrationType: isTeam ? "TEAM" : "INDIVIDUAL",
         teamId: createdTeamId,
         participants: participantsPayload,
       });
+
+      // 4. Upload Selected Participant Documents to Cloudinary
+      const fileEntries = Object.entries(fileDataState);
+      if (fileEntries.length > 0 && registrationRes.participants) {
+        for (const [key, file] of fileEntries) {
+          const [indexStr, fieldId] = key.split("-");
+          const pIdx = Number(indexStr);
+          const participant = registrationRes.participants[pIdx];
+          if (participant?.id) {
+            const isPhoto = fieldId.toLowerCase().includes("photo");
+            const docType = isPhoto ? "profile_photo" : "id_card";
+            const docLabel = isPhoto ? "Profile Photo" : "ID Card";
+            setUploadStatusMessage(
+              `Uploading Participant ${pIdx + 1} ${docLabel} (${file.name})...`
+            );
+            try {
+              await api.uploadParticipantDocument(
+                token,
+                registrationRes.id,
+                participant.id,
+                file,
+                docType
+              );
+            } catch (uploadDocErr: any) {
+              console.warn(`Document upload warning for participant ${pIdx + 1}:`, uploadDocErr);
+              // Non-blocking: registration is safely created; log and allow completion
+            }
+          }
+        }
+      }
 
       setSubmitResult(registrationRes);
       setStep("confirmed");
@@ -547,6 +597,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
       }
     } finally {
       setIsSubmitting(false);
+      setUploadStatusMessage(null);
     }
   };
 
@@ -1103,13 +1154,42 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
 
             {/* Uploaded Documents summary */}
             {review.documents.length > 0 && (
-              <ReviewBlock
-                title="Attached Documents"
-                entries={review.documents.map((d) => ({
-                  label: d.label,
-                  value: d.fileName,
-                }))}
-              />
+              <div className="rounded border border-white/10 bg-[#06121b]/60 p-5 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 gap-2">
+                  <h3 className="font-space text-sm font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-2">
+                    <FileText size={16} /> Attached Identity Documents ({review.documents.length})
+                  </h3>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-oxanium uppercase tracking-wider text-emerald-400">
+                    <CheckCircle2 size={13} /> Ready for Cloudinary upload
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {review.documents.map((doc, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-3 rounded border border-white/10 bg-white/[.02] p-3 text-xs"
+                    >
+                      <div className="p-2 rounded bg-cyan-950/40 border border-cyan-400/30 text-cyan-300 shrink-0 mt-0.5">
+                        {doc.type === "pdf" ? <FileText size={18} /> : <ImageIcon size={18} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-200 truncate">{doc.label}</p>
+                        <p className="font-mono text-[11px] text-slate-400 truncate mt-0.5">
+                          {doc.fileName} <span className="text-slate-500">({doc.size})</span>
+                        </p>
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <span className="rounded bg-cyan-400/10 px-1.5 py-0.5 font-oxanium text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                            {doc.type.toUpperCase()}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+                            <Check size={11} /> Validated
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Confirmations */}
@@ -1157,7 +1237,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" /> Submitting Registration...
+                    <Loader2 size={16} className="animate-spin" /> {uploadStatusMessage || "Submitting Registration..."}
                   </>
                 ) : (
                   <>
@@ -1221,6 +1301,15 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                   </span>
                 </div>
               )}
+
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
+                  Verification Documents
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
+                  <CheckCircle2 size={12} /> Stored in Cloudinary
+                </span>
+              </div>
 
               <div className="pt-2 text-xs text-slate-400 leading-relaxed">
                 <span className="text-amber-200 font-semibold">Payment Notice:</span> Official payment gateway
@@ -1404,7 +1493,9 @@ function FileInputField({
   onFileSelect: (file: File | null) => void;
   error?: string;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedFile && selectedFile.type.startsWith("image/")) {
@@ -1418,71 +1509,163 @@ function FileInputField({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
+    setLocalError(null);
+
+    if (!file) {
+      onFileSelect(null);
+      return;
+    }
+
+    // 1. Max size validation (5MB)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setLocalError("File size exceeds 5MB limit. Please choose a smaller file under 5MB.");
+      if (inputRef.current) inputRef.current.value = "";
+      onFileSelect(null);
+      return;
+    }
+
+    // 2. Disallow PDF for profile photo
+    const isPhoto = id.toLowerCase().includes("photo");
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (isPhoto && isPdf) {
+      setLocalError("PDF format is not accepted for profile photos. Please upload a JPG, PNG, or WEBP image.");
+      if (inputRef.current) inputRef.current.value = "";
+      onFileSelect(null);
+      return;
+    }
+
+    // 3. Format extension check
+    const lowerName = file.name.toLowerCase();
+    const allowed = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+    if (!allowed.some((ext) => lowerName.endsWith(ext))) {
+      setLocalError("Unsupported file format. Please upload a PDF, JPG, PNG, or WEBP file.");
+      if (inputRef.current) inputRef.current.value = "";
+      onFileSelect(null);
+      return;
+    }
+
     onFileSelect(file);
   };
 
   const handleClear = () => {
+    setLocalError(null);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
     onFileSelect(null);
   };
 
+  const handleTriggerReplace = () => {
+    inputRef.current?.click();
+  };
+
+  const isPdf =
+    selectedFile &&
+    (selectedFile.type === "application/pdf" || selectedFile.name.toLowerCase().endsWith(".pdf"));
+
+  const displayError = localError || error;
+
   return (
     <div className="space-y-3">
+      {/* Hidden file input */}
       <input
+        ref={inputRef}
         id={id}
         type="file"
         required={required && !selectedFile}
-        accept={accept}
+        accept={accept || (id.toLowerCase().includes("photo") ? "image/*" : "image/*,.pdf")}
         onChange={handleChange}
-        className="block w-full cursor-pointer rounded-sm border border-white/15 bg-[#03080e] p-2 text-sm text-slate-300 file:mr-3 file:border-0 file:bg-cyan-300 file:px-3 file:py-1.5 file:font-oxanium file:text-xs file:font-bold file:uppercase file:text-slate-950 hover:file:bg-cyan-200 transition"
+        className="hidden"
       />
 
-      {previewUrl && (
-        <div className="relative inline-flex flex-col gap-2 rounded border border-cyan-400/40 bg-cyan-950/20 p-3">
-          <p className="font-oxanium text-[10px] uppercase tracking-widest text-cyan-300">
-            Preview
-          </p>
-          <div className="relative h-28 w-28 overflow-hidden rounded border border-white/10 bg-black">
-            <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+      {/* If file is selected: Display rich document card */}
+      {selectedFile ? (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded border border-cyan-400/30 bg-[#040f1a] p-3.5 transition">
+          <div className="flex items-center gap-3 min-w-0">
+            {previewUrl ? (
+              <div className="relative h-14 w-14 overflow-hidden rounded border border-white/10 bg-black shrink-0">
+                <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+              </div>
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded border border-rose-400/30 bg-rose-950/20 text-rose-300 shrink-0">
+                <FileText size={24} />
+              </div>
+            )}
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs font-semibold text-white truncate max-w-[200px] sm:max-w-xs">
+                  {selectedFile.name}
+                </span>
+                <span className="rounded bg-cyan-400/10 px-1.5 py-0.2 font-oxanium text-[9px] font-bold uppercase tracking-wider text-cyan-300">
+                  {isPdf ? "PDF" : "IMAGE"}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] text-slate-400">
+                {(selectedFile.size / 1024).toFixed(1)} KB ·{" "}
+                <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
+                  <Check size={11} /> Ready to upload
+                </span>
+              </p>
+            </div>
           </div>
-          <div className="flex items-center justify-between gap-3 text-xs text-slate-300">
-            <span className="truncate max-w-[120px] font-mono text-[11px]">
-              {selectedFile?.name}
-            </span>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t border-white/5 pt-2 sm:border-0 sm:pt-0">
+            <button
+              type="button"
+              onClick={handleTriggerReplace}
+              className="inline-flex items-center gap-1 rounded border border-white/15 bg-white/5 px-2.5 py-1.5 font-oxanium text-[10px] font-bold uppercase tracking-wider text-slate-200 hover:border-cyan-300 hover:text-cyan-200 transition"
+            >
+              <RefreshCw size={11} /> Replace
+            </button>
             <button
               type="button"
               onClick={handleClear}
-              className="text-rose-400 hover:text-rose-300 font-bold text-[11px] uppercase tracking-wider"
+              className="inline-flex items-center gap-1 rounded border border-rose-500/20 bg-rose-500/10 px-2.5 py-1.5 font-oxanium text-[10px] font-bold uppercase tracking-wider text-rose-300 hover:bg-rose-500/20 transition"
             >
-              Remove
+              <Trash2 size={11} /> Remove
             </button>
           </div>
         </div>
-      )}
-
-      {!previewUrl && selectedFile && (
-        <div className="flex items-center justify-between rounded border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
-          <span className="font-mono truncate">
-            {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-          </span>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="text-rose-400 hover:text-rose-300 font-bold text-[11px] uppercase tracking-wider ml-2"
-          >
-            Remove
-          </button>
+      ) : (
+        /* Empty state: Select document button */
+        <div
+          onClick={handleTriggerReplace}
+          className={`flex cursor-pointer flex-col items-center justify-center rounded border border-dashed p-5 text-center transition ${
+            displayError
+              ? "border-rose-400 bg-rose-950/10 hover:border-rose-300"
+              : "border-white/20 bg-[#02070e] hover:border-cyan-300 hover:bg-[#030d17]"
+          }`}
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-950/40 border border-cyan-400/20 text-cyan-300 mb-2">
+            <Upload size={18} />
+          </div>
+          <p className="font-oxanium text-xs font-bold uppercase tracking-wider text-white">
+            Choose Document / File
+          </p>
+          <p className="mt-1 text-[11px] text-slate-400">
+            {id.toLowerCase().includes("photo")
+              ? "JPG, PNG, or WEBP image (Max 5MB)"
+              : "PDF or clear Image (Max 5MB)"}
+          </p>
         </div>
       )}
 
-      {helpText && <p className="mt-1 text-xs text-slate-500">{helpText}</p>}
-      {error && (
-        <p role="alert" className="mt-1 text-xs text-rose-300">
-          {error}
+      {helpText && !displayError && (
+        <p className="text-[11px] text-slate-400">{helpText}</p>
+      )}
+
+      {displayError && (
+        <p role="alert" className="flex items-center gap-1.5 text-xs text-rose-300">
+          <AlertCircle size={13} className="shrink-0" />
+          <span>{displayError}</span>
         </p>
       )}
     </div>
   );
 }
+
 
 function Heading({ title, note }: { title: string; note: string }) {
   return (

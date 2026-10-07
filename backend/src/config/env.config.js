@@ -97,6 +97,21 @@ export const config = {
     email: process.env.ADMIN_EMAIL || '',
     password: process.env.ADMIN_PASSWORD || '',
   },
+
+  // Cloudinary (Phase 2 Document Uploads)
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+    apiKey: process.env.CLOUDINARY_API_KEY || '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET || '',
+    isConfigured: Boolean(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET &&
+      !process.env.CLOUDINARY_CLOUD_NAME.includes('your_cloudinary') &&
+      !process.env.CLOUDINARY_API_KEY.includes('your_cloudinary') &&
+      !process.env.CLOUDINARY_API_SECRET.includes('your_cloudinary')
+    ),
+  },
 };
 
 export default config;

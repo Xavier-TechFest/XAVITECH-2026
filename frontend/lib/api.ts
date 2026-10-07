@@ -311,6 +311,113 @@ export async function createRegistration(
   return json.data;
 }
 
+export interface UploadDocumentResponse {
+  success: boolean;
+  documentType: string;
+  participantId: string;
+  participantOrder: number;
+  document: {
+    url: string;
+    publicId: string;
+    mimeType: string;
+    resourceType: string;
+    bytes: number;
+    fileName: string;
+  };
+  participant: {
+    id: string;
+    fullName: string;
+    idCardUrl?: string | null;
+    profilePhotoUrl?: string | null;
+  };
+}
+
+export async function uploadParticipantDocument(
+  token: string,
+  registrationId: string,
+  participantId: string,
+  file: File,
+  documentType: string = "id_card"
+): Promise<UploadDocumentResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("documentType", documentType);
+
+  const response = await fetch(
+    `${API_BASE_URL}/registrations/${encodeURIComponent(registrationId)}/participants/${encodeURIComponent(participantId)}/documents`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to upload document",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
+export async function getParticipantDocuments(
+  token: string,
+  registrationId: string,
+  participantId: string
+): Promise<any> {
+  const response = await fetch(
+    `${API_BASE_URL}/registrations/${encodeURIComponent(registrationId)}/participants/${encodeURIComponent(participantId)}/documents`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to retrieve documents",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
+export async function deleteParticipantDocument(
+  token: string,
+  registrationId: string,
+  participantId: string,
+  documentType: string
+): Promise<any> {
+  const response = await fetch(
+    `${API_BASE_URL}/registrations/${encodeURIComponent(registrationId)}/participants/${encodeURIComponent(participantId)}/documents/${encodeURIComponent(documentType)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to delete document",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
 export async function createTeam(
   token: string,
   payload: { eventId: string; teamName: string }
@@ -1505,6 +1612,9 @@ export const api = {
   updateUserProfile,
   fetchMyRegistrations,
   createRegistration,
+  uploadParticipantDocument,
+  getParticipantDocuments,
+  deleteParticipantDocument,
   createTeam,
   addTeamMember,
   fetchMyTeams,
