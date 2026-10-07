@@ -275,6 +275,7 @@ export interface CreatedRegistrationResponse {
   teamId?: string | null;
   registrationType: string;
   status: string;
+  payableAmount?: number | null;
   createdAt: string;
   event?: any;
   team?: any;

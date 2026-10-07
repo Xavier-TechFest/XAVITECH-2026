@@ -6,6 +6,7 @@ import EventModel from '../models/event.model.js';
 import eventService from './event.service.js';
 import teamService from './team.service.js';
 import userService from './user.service.js';
+import { calculatePayableAmount } from './payment.service.js';
 import { generateRegistrationId } from '../utils/registrationId.js';
 import logger from '../utils/logger.util.js';
 
@@ -15,6 +16,15 @@ import logger from '../utils/logger.util.js';
 export const formatRegistrationResponse = (reg) => {
   if (!reg) return null;
 
+  let payableAmount = null;
+  if (reg.event) {
+    try {
+      payableAmount = calculatePayableAmount(reg.event, reg, reg.participants || []);
+    } catch {
+      payableAmount = null;
+    }
+  }
+
   return {
     id: reg.id,
     registrationId: reg.registration_id,
@@ -23,6 +33,7 @@ export const formatRegistrationResponse = (reg) => {
     teamId: reg.team_id || null,
     registrationType: reg.registration_type,
     status: reg.status,
+    payableAmount,
     createdAt: reg.created_at,
     updatedAt: reg.updated_at,
     event: reg.event

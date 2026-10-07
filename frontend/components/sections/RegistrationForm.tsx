@@ -1459,16 +1459,12 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                       Total Payable
                     </span>
                     <p className="font-space text-lg font-bold text-cyan-300">
-                      {paymentInfo
-                        ? `₹${paymentInfo.amount}`
-                        : event.id === "velocityx"
+                      {paymentInfo?.amount != null
+                        ? `₹${Number(paymentInfo.amount).toFixed(2)}`
+                        : submitResult?.payableAmount != null
+                        ? `₹${Number(submitResult.payableAmount).toFixed(2)}`
+                        : event.id === "velocityx" || submitResult?.payableAmount === null
                         ? "Amount TBA"
-                        : event.id === "innocraft"
-                        ? participantPool === "School"
-                          ? "₹800"
-                          : "₹1,000"
-                        : event.id === "loot-goblins"
-                        ? `₹${200 * Math.max(submitResult.participants?.length || 4, 4)}`
                         : config.feeDisplay || `₹${config.feeAmount ?? 0}`}
                     </p>
                   </div>
@@ -1515,7 +1511,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                           <div className="rounded border border-cyan-400/30 bg-cyan-950/30 p-3 text-center text-xs text-cyan-200 max-w-md">
                             <p className="font-semibold text-white">Integration Mode Active</p>
                             <p className="mt-1 text-slate-300">
-                              Transaction reference <code className="text-cyan-300">{paymentInfo.transactionId}</code> initialized for ₹{paymentInfo.amount}. Live payments will open following coordinator verification.
+                              Transaction reference <code className="text-cyan-300">{paymentInfo.transactionId}</code> initialized for ₹{Number(paymentInfo.amount).toFixed(2)}. Live payments will open following coordinator verification.
                             </p>
                           </div>
                         )}
