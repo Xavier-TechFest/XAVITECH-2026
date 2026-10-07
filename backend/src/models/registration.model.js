@@ -31,7 +31,8 @@ export const RegistrationModel = {
         *,
         event:events(id, name, slug, category, registration_type, fee),
         user:users(id, name, email, phone, college_name),
-        team:teams(id, team_name, status, members:team_members(*))
+        team:teams(id, team_name, status, members:team_members(*)),
+        participants:registration_participants(*)
       `)
       .single();
 
@@ -65,7 +66,8 @@ export const RegistrationModel = {
         *,
         event:events(id, name, slug, category, registration_type, fee),
         user:users(id, name, email, phone, college_name),
-        team:teams(id, team_name, status, members:team_members(*))
+        team:teams(id, team_name, status, members:team_members(*)),
+        participants:registration_participants(*)
       `)
       .eq('id', id)
       .maybeSingle();
@@ -95,7 +97,8 @@ export const RegistrationModel = {
         *,
         event:events(id, name, slug, category, registration_type, fee),
         user:users(id, name, email, phone, college_name),
-        team:teams(id, team_name, status, members:team_members(*))
+        team:teams(id, team_name, status, members:team_members(*)),
+        participants:registration_participants(*)
       `)
       .eq('registration_id', registrationId)
       .maybeSingle();
@@ -124,7 +127,8 @@ export const RegistrationModel = {
       .select(`
         *,
         event:events(id, name, slug, category, registration_type, fee),
-        team:teams(id, team_name, status, members:team_members(*))
+        team:teams(id, team_name, status, members:team_members(*)),
+        participants:registration_participants(*)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -172,22 +176,32 @@ export const RegistrationModel = {
 
   /**
    * Update the status of a registration.
+   * Supports lookup by database UUID or human-readable registration ID.
    *
-   * @param {string} registrationId - Unique code (or UUID)
-   * @param {string} status - New registration status
+   * @param {string} identifier - Unique code (e.g. XVT-2026-ABC123) or UUID
+   * @param {string} status - New registration status (e.g. 'PAYMENT_PENDING')
    * @returns {Promise<Object>}
    */
-  updateRegistrationStatus: async (registrationId, status) => {
+  updateRegistrationStatus: async (identifier, status) => {
     const client = getSupabaseClient();
     if (!client) {
       throw new Error('Database client is not available');
     }
 
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(identifier || '').trim());
+    const column = isUUID ? 'id' : 'registration_id';
+
     const { data, error } = await client
       .from('registrations')
-      .update({ status })
-      .eq('registration_id', registrationId)
-      .select()
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq(column, identifier)
+      .select(`
+        *,
+        event:events(id, name, slug, category, registration_type, fee),
+        user:users(id, name, email, phone, college_name),
+        team:teams(id, team_name, status, members:team_members(*)),
+        participants:registration_participants(*)
+      `)
       .single();
 
     if (error) {

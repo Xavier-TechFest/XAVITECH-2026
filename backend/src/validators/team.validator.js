@@ -26,7 +26,10 @@ export const validateTeamCreate = (data) => {
   if (!eventId) {
     errors.push('event_id is required');
   } else if (!UUID_REGEX.test(eventId)) {
-    errors.push('event_id must be a valid UUID');
+    const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    if (!SLUG_REGEX.test(eventId.toLowerCase())) {
+      errors.push('event_id must be a valid UUID or event slug');
+    }
   }
 
   if (!teamName) {

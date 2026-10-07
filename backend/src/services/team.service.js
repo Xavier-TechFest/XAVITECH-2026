@@ -116,7 +116,8 @@ export const teamService = {
     }
 
     // 1. Fetch and validate event
-    const event = await EventModel.getEventById(eventId);
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId);
+    const event = isUUID ? await EventModel.getEventById(eventId) : await EventModel.getEventBySlug(eventId.toLowerCase());
     if (!event) {
       const error = new Error('Event not found with the provided ID');
       error.statusCode = 404;
@@ -143,7 +144,7 @@ export const teamService = {
     }
 
     // 3. Prevent duplicate active team for the same leader + same event
-    const existingActiveTeam = await TeamModel.findActiveTeamByLeaderAndEvent(leader.id, eventId);
+    const existingActiveTeam = await TeamModel.findActiveTeamByLeaderAndEvent(leader.id, event.id);
     if (existingActiveTeam) {
       const error = new Error(
         `You already have an active team for this event ("${existingActiveTeam.team_name}", Status: ${existingActiveTeam.status})`
@@ -159,7 +160,7 @@ export const teamService = {
 
     // 4. Create the team in database
     const createdTeam = await TeamModel.createTeam({
-      event_id: eventId,
+      event_id: event.id,
       leader_user_id: leader.id,
       team_name: teamName,
       status: 'DRAFT',

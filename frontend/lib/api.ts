@@ -248,6 +248,299 @@ export async function fetchMyRegistrations(token: string): Promise<ParticipantRe
   return json.data || json || [];
 }
 
+export interface RegistrationParticipantInput {
+  fullName?: string;
+  institutionName?: string;
+  mobileNumber?: string;
+  email?: string;
+  city?: string;
+  studentId?: string;
+  standardClass?: string;
+  idCardUrl?: string;
+  [key: string]: any;
+}
+
+export interface CreateRegistrationPayload {
+  eventId: string;
+  registrationType?: "INDIVIDUAL" | "TEAM";
+  teamId?: string;
+  participants?: RegistrationParticipantInput[];
+}
+
+export interface CreatedRegistrationResponse {
+  id: string;
+  registrationId: string;
+  userId: string;
+  eventId: string;
+  teamId?: string | null;
+  registrationType: string;
+  status: string;
+  createdAt: string;
+  event?: any;
+  team?: any;
+  user?: any;
+  participants?: any[];
+}
+
+export async function createRegistration(
+  token: string,
+  payload: CreateRegistrationPayload
+): Promise<CreatedRegistrationResponse> {
+  const response = await fetch(`${API_BASE_URL}/registrations`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      event_id: payload.eventId,
+      registration_type: payload.registrationType || "INDIVIDUAL",
+      team_id: payload.teamId,
+      participants: payload.participants,
+    }),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to create registration",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
+export async function submitRegistration(
+  token: string,
+  registrationId: string
+): Promise<CreatedRegistrationResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/registrations/${encodeURIComponent(registrationId)}/submit`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to submit registration",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
+export interface UploadDocumentResponse {
+  success: boolean;
+  documentType: string;
+  participantId: string;
+  participantOrder: number;
+  document: {
+    url: string;
+    publicId: string;
+    mimeType: string;
+    resourceType: string;
+    bytes: number;
+    fileName: string;
+  };
+  participant: {
+    id: string;
+    fullName: string;
+    idCardUrl?: string | null;
+    profilePhotoUrl?: string | null;
+  };
+}
+
+export async function uploadParticipantDocument(
+  token: string,
+  registrationId: string,
+  participantId: string,
+  file: File,
+  documentType: string = "id_card"
+): Promise<UploadDocumentResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("documentType", documentType);
+
+  const response = await fetch(
+    `${API_BASE_URL}/registrations/${encodeURIComponent(registrationId)}/participants/${encodeURIComponent(participantId)}/documents`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to upload document",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
+export async function getParticipantDocuments(
+  token: string,
+  registrationId: string,
+  participantId: string
+): Promise<any> {
+  const response = await fetch(
+    `${API_BASE_URL}/registrations/${encodeURIComponent(registrationId)}/participants/${encodeURIComponent(participantId)}/documents`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to retrieve documents",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
+export async function deleteParticipantDocument(
+  token: string,
+  registrationId: string,
+  participantId: string,
+  documentType: string
+): Promise<any> {
+  const response = await fetch(
+    `${API_BASE_URL}/registrations/${encodeURIComponent(registrationId)}/participants/${encodeURIComponent(participantId)}/documents/${encodeURIComponent(documentType)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to delete document",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
+export async function createTeam(
+  token: string,
+  payload: { eventId: string; teamName: string }
+): Promise<{ team: { id: string; teamName: string; eventId: string; status: string } }> {
+  const response = await fetch(`${API_BASE_URL}/teams`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      event_id: payload.eventId,
+      team_name: payload.teamName,
+    }),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to create team",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
+export async function addTeamMember(
+  token: string,
+  teamId: string,
+  payload: { name: string }
+): Promise<{ member: { id: string; name: string; memberOrder: number } }> {
+  const response = await fetch(`${API_BASE_URL}/teams/${teamId}/members`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: payload.name,
+    }),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to add team member",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
+export async function fetchMyTeams(token: string): Promise<any[]> {
+  const response = await fetch(`${API_BASE_URL}/teams/my`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to fetch user teams",
+      response.status,
+      json
+    );
+  }
+  return json.data || [];
+}
+
+export async function fetchRegistrationDetails(
+  token: string,
+  registrationId: string
+): Promise<CreatedRegistrationResponse> {
+  const response = await fetch(`${API_BASE_URL}/registrations/${registrationId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to fetch registration details",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
 export interface AdminProfile {
   id: string;
   name: string;
@@ -1344,6 +1637,15 @@ export const api = {
   fetchUserProfile,
   updateUserProfile,
   fetchMyRegistrations,
+  createRegistration,
+  submitRegistration,
+  uploadParticipantDocument,
+  getParticipantDocuments,
+  deleteParticipantDocument,
+  createTeam,
+  addTeamMember,
+  fetchMyTeams,
+  fetchRegistrationDetails,
   adminLogin,
   adminGetMe,
   adminLogout,
