@@ -3,7 +3,6 @@ import { Rajdhani, Space_Grotesk, Orbitron } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import LoadingScreen from "@/components/effects/LoadingScreen";
 import SoundToggle from "@/components/effects/SoundToggle";
-// @ts-expect-error Next.js processes global CSS imports at build time.
 import "./globals.css";
 
 // Headings — angular, technical, still fully readable at any size.
