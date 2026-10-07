@@ -72,6 +72,12 @@ export interface RegistrationPolicy {
    * Minimum participant age if applicable (e.g. 16 for Data Analytics)
    */
   minimumAge?: number;
+  minAge?: number;
+
+  /**
+   * Whether additional team members join by invite link after creation
+   */
+  joinByInviteAfterCreation?: boolean;
 
   /**
    * Whether school/college pool selection applies (e.g. InnoCraft)
@@ -1861,21 +1867,23 @@ export function getEventPrizeBreakdown(event: EventItem): PrizeBreakdown | undef
 /**
  * Determine if team name is required for an event given the chosen team size.
  */
-export function isTeamNameRequired(event: EventItem, teamSize: number): boolean {
+export function isTeamNameRequired(event: EventItem, teamSize?: number): boolean {
+  const size = teamSize ?? event.registrationConfig?.minTeamSize ?? 1;
   const policy = event.registrationConfig?.policy?.teamNamePolicy;
   if (policy === "never") return false;
   if (policy === "always") return true;
-  if (policy === "if_team") return teamSize > 1;
-  return event.registrationConfig?.teamNameRequired ?? false;
+  if (policy === "if_team") return size > 1;
+  return event.registrationConfig?.teamNameRequired ?? (size > 1);
 }
 
 /**
  * Determine how many participants should be collected in the initial registration form.
  */
-export function getFormParticipantCount(event: EventItem, selectedTeamSize: number): number {
+export function getFormParticipantCount(event: EventItem, selectedTeamSize?: number): number {
+  const size = selectedTeamSize ?? event.registrationConfig?.minTeamSize ?? 1;
   const maxInitial = event.registrationConfig?.policy?.maxInitialFormParticipants;
   if (maxInitial && maxInitial > 0) {
-    return Math.min(selectedTeamSize, maxInitial);
+    return Math.min(size, maxInitial);
   }
-  return selectedTeamSize;
+  return size;
 }

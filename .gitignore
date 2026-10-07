@@ -24,4 +24,5 @@ Thumbs.db
 service-account*.json
 *.pem
 tests/
+brain/
 .next_prod/

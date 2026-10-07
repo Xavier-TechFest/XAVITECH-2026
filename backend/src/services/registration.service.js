@@ -1,6 +1,8 @@
 import RegistrationModel from '../models/registration.model.js';
+import RegistrationParticipantModel from '../models/registrationParticipant.model.js';
 import UserModel from '../models/user.model.js';
 import TeamModel from '../models/team.model.js';
+import EventModel from '../models/event.model.js';
 import eventService from './event.service.js';
 import teamService from './team.service.js';
 import userService from './user.service.js';
@@ -58,6 +60,20 @@ export const formatRegistrationResponse = (reg) => {
           collegeName: reg.user.college_name || null,
         }
       : undefined,
+    participants: (reg.participants || []).map((p) => ({
+      id: p.id,
+      participantOrder: p.participant_order,
+      participantRole: p.participant_role,
+      fullName: p.full_name,
+      institutionName: p.institution_name,
+      mobileNumber: p.mobile_number,
+      email: p.email,
+      city: p.city || null,
+      studentId: p.student_id || null,
+      standardClass: p.standard_class || null,
+      idCardUrl: p.id_card_url || null,
+      customFields: p.custom_fields || {},
+    })),
   };
 };
 
@@ -106,7 +122,22 @@ export const registrationService = {
     // 1. Resolve PostgreSQL user identity securely
     const user = await resolvePostgresUser(firebaseUser);
 
-    const eventId = (payload.event_id || payload.eventId || '').trim();
+    const rawEventId = (payload.event_id || payload.eventId || '').trim();
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawEventId);
+    let event = null;
+    if (isUUID) {
+      event = await EventModel.getEventById(rawEventId);
+    } else {
+      event = await EventModel.getEventBySlug(rawEventId.toLowerCase());
+    }
+
+    if (!event) {
+      const error = new Error('Event not found with the provided identifier');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const eventId = event.id;
     const registrationType = (payload.registration_type || payload.registrationType || 'INDIVIDUAL').toUpperCase();
 
     // 2. Validate event availability and configuration
@@ -185,11 +216,58 @@ export const registrationService = {
       status: 'DRAFT',
     });
 
+    // 7. Store participant snapshot records in registration_participants table if provided
+    const rawParticipants = payload.participants || payload.participantDetails;
+    if (Array.isArray(rawParticipants) && rawParticipants.length > 0) {
+      const participantsToInsert = rawParticipants.map((p, index) => {
+        const fullName = (p.full_name || p.fullName || p.name || (index === 0 ? user.name : '') || `Participant ${index + 1}`).trim();
+        const institutionName = (p.institution_name || p.institution || p.college || user.college_name || '').trim();
+        const mobileNumber = (p.mobile_number || p.mobile || p.phone || (index === 0 ? user.phone : '') || '').trim();
+        const email = (p.email || (index === 0 ? user.email : '') || '').trim();
+        const city = (p.city || '').trim();
+        const studentId = (p.student_id || p.studentId || '').trim();
+        const standardClass = (p.standard_class || p.standard || p.year || p.course || '').trim();
+        const idCardUrl = p.id_card_url || p.idCardUrl || null;
+
+        // Collect extra event-specific fields into custom_fields
+        const {
+          full_name, fullName: _fn, name: _n,
+          institution_name: _in, institution: _i, college: _c,
+          mobile_number: _mn, mobile: _m, phone: _p,
+          email: _e, city: _ct, student_id: _si, studentId: _sid,
+          id_card_url: _icu, idCardUrl: _icurl,
+          ...customFields
+        } = p;
+
+        return {
+          registration_id: registrationRecord.id,
+          participant_order: index + 1,
+          participant_role: index === 0 ? 'LEADER' : 'MEMBER',
+          full_name: fullName,
+          institution_name: institutionName,
+          mobile_number: mobileNumber,
+          email: email,
+          city: city,
+          student_id: studentId,
+          standard_class: standardClass,
+          id_card_url: idCardUrl,
+          custom_fields: customFields || {},
+        };
+      });
+
+      try {
+        await RegistrationParticipantModel.createParticipants(participantsToInsert);
+      } catch (partErr) {
+        logger.error(`Error saving participants for registration ${registrationId}:`, partErr);
+      }
+    }
+
     logger.info(
       `Registration created: ${registrationId} for user ${user.id} (${user.email}) on event ${eventId} [${registrationType}]${teamIdToAssociate ? ' (Team: ' + teamIdToAssociate + ')' : ''}`
     );
 
-    return formatRegistrationResponse(registrationRecord);
+    const freshRecord = await RegistrationModel.getRegistrationById(registrationRecord.id);
+    return formatRegistrationResponse(freshRecord || registrationRecord);
   },
 
   /**
