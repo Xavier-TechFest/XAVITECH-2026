@@ -8,6 +8,8 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  Clock,
+  CreditCard,
   FileText,
   Image as ImageIcon,
   Lock,
@@ -64,12 +66,53 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [submitResult, setSubmitResult] = useState<CreatedRegistrationResponse | null>(null);
 
+  // Payment Gateway State
+  const [isInitiatingPayment, setIsInitiatingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [paymentInfo, setPaymentInfo] = useState<{
+    transactionId: string;
+    amount: number;
+    currency: string;
+    accessKey?: string;
+    paymentUrl?: string;
+    liveMode?: boolean;
+  } | null>(null);
+
   // Validation State
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [errorSummary, setErrorSummary] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const registrationClosed = isPastDeadline(config?.deadlineDate);
+
+  // Check URL query parameters for return from Easebuzz gateway
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get("paymentStatus");
+    const regId = params.get("registrationId");
+
+    if (regId && isAuthenticated) {
+      getIdToken().then((token) => {
+        if (token) {
+          api
+            .fetchRegistrationDetails(token, regId)
+            .then((details) => {
+              setSubmitResult(details);
+              setStep("confirmed");
+              if (paymentStatus === "success") {
+                setPaymentInfo(null);
+              } else if (paymentStatus === "cancelled") {
+                setPaymentError("Payment checkout was cancelled. You may retry payment when ready.");
+              } else if (paymentStatus === "failed") {
+                setPaymentError("Payment transaction failed. Please retry or contact support.");
+              }
+            })
+            .catch(console.error);
+        }
+      });
+    }
+  }, [isAuthenticated]);
 
   // Reset step if user logs out while on the page
   useEffect(() => {
@@ -618,6 +661,28 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
     } finally {
       setIsSubmitting(false);
       setUploadStatusMessage(null);
+    }
+  };
+
+  // Payment Initiation Handler
+  const handlePayNow = async () => {
+    if (!submitResult) return;
+    setIsInitiatingPayment(true);
+    setPaymentError(null);
+    try {
+      const token = await getIdToken();
+      if (!token) throw new Error("Authentication session expired. Please sign in again.");
+      const regId = submitResult.id || submitResult.registrationId;
+      const res = await api.initiatePayment(token, regId);
+      setPaymentInfo(res);
+      if (res.liveMode && res.paymentUrl) {
+        window.location.href = res.paymentUrl;
+      }
+    } catch (err: any) {
+      console.error("Payment initiation error:", err);
+      setPaymentError(err.message || "Unable to connect to payment gateway. Please try again.");
+    } finally {
+      setIsInitiatingPayment(false);
     }
   };
 
@@ -1361,10 +1426,92 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                 </span>
               </div>
 
-              <div className="pt-2 text-xs text-slate-400 leading-relaxed">
-                <span className="text-amber-200 font-semibold">Payment Notice:</span> Official payment gateway
-                integration will open prior to the event date. Your registration is securely reserved in{" "}
-                <span className="text-amber-200 font-semibold">{submitResult.status || "PAYMENT_PENDING"}</span> status.
+              {/* Payment Status & Action Card */}
+              <div className="rounded border border-amber-400/20 bg-amber-400/[.03] p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                  <div>
+                    <span className="font-oxanium text-[10px] uppercase tracking-widest text-slate-400">
+                      Payment Status
+                    </span>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS"
+                            ? "bg-emerald-400/10 border border-emerald-400/30 text-emerald-300"
+                            : "bg-amber-400/10 border border-amber-400/30 text-amber-200"
+                        }`}
+                      >
+                        {submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS" ? (
+                          <>
+                            <CheckCircle2 size={12} /> Confirmed & Paid
+                          </>
+                        ) : (
+                          <>
+                            <Clock size={12} /> Payment Pending
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-left sm:text-right">
+                    <span className="font-oxanium text-[10px] uppercase tracking-widest text-slate-400">
+                      Total Payable
+                    </span>
+                    <p className="font-space text-lg font-bold text-cyan-300">
+                      {event.id === "innocraft"
+                        ? participantPool === "School"
+                          ? "₹800"
+                          : "₹1,000"
+                        : event.id === "loot-goblins"
+                        ? `₹${200 * Math.max(submitResult.participants?.length || 4, 4)}`
+                        : config.feeDisplay || `₹${config.feeAmount ?? 0}`}
+                    </p>
+                  </div>
+                </div>
+
+                {submitResult.status === "PAYMENT_PENDING" ? (
+                  <div className="pt-2 flex flex-col items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handlePayNow}
+                      disabled={isInitiatingPayment}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded bg-amber-400 px-8 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-slate-950 hover:bg-amber-300 transition shadow-lg shadow-amber-950/40 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isInitiatingPayment ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          <span>CONNECTING TO GATEWAY...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard size={16} />
+                          <span>PAY NOW</span>
+                        </>
+                      )}
+                    </button>
+
+                    {paymentError && (
+                      <p role="alert" className="text-center text-xs text-rose-300">
+                        {paymentError}
+                      </p>
+                    )}
+
+                    {paymentInfo && !paymentInfo.liveMode && (
+                      <div className="rounded border border-cyan-400/30 bg-cyan-950/30 p-3 text-center text-xs text-cyan-200 max-w-md">
+                        <p className="font-semibold text-white">Integration Mode Active</p>
+                        <p className="mt-1 text-slate-300">
+                          Transaction reference <code className="text-cyan-300">{paymentInfo.transactionId}</code> initialized for ₹{paymentInfo.amount}. Live payments will open following coordinator verification.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center pt-2 text-xs text-emerald-300 flex items-center justify-center gap-1.5 font-medium">
+                    <CheckCircle2 size={14} />
+                    <span>Your festival seat has been confirmed. You will receive an official entry pass.</span>
+                  </div>
+                )}
               </div>
             </div>
 

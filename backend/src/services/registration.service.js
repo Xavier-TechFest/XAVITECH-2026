@@ -82,7 +82,7 @@ export const formatRegistrationResponse = (reg) => {
  * Helper to resolve the authenticated PostgreSQL user from Firebase auth context.
  * Never trusts any client-provided user_id or email.
  */
-const resolvePostgresUser = async (firebaseUser) => {
+export const resolvePostgresUser = async (firebaseUser) => {
   if (!firebaseUser?.uid) {
     const error = new Error('Authentication required. Missing verified Firebase user.');
     error.statusCode = 401;

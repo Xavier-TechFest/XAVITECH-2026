@@ -1633,12 +1633,86 @@ export async function trackLeaderExportRegistrations(
   return { blob, filename };
 }
 
+/**
+ * Initiate Easebuzz payment for a registration in PAYMENT_PENDING status.
+ */
+export async function initiatePayment(
+  token: string,
+  registrationId: string
+): Promise<{
+  transactionId: string;
+  registrationId: string;
+  amount: number;
+  currency: string;
+  accessKey: string;
+  paymentUrl: string;
+  liveMode: boolean;
+  event: { name: string; slug: string };
+}> {
+  const url = `${API_BASE_URL}/payments/initiate`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ registrationId }),
+  });
+
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    const error: any = new Error(data.message || "Failed to initiate payment");
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+
+  return data.data;
+}
+
+/**
+ * Fetch payment status by transaction reference ID.
+ */
+export async function fetchPaymentStatus(
+  token: string,
+  transactionId: string
+): Promise<{
+  transactionId: string;
+  registrationId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  gatewayReference?: string;
+  paymentMode?: string;
+  failureReason?: string;
+  registrationStatus?: string;
+}> {
+  const url = `${API_BASE_URL}/payments/status/${encodeURIComponent(transactionId)}`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    const error: any = new Error(data.message || "Failed to fetch payment status");
+    error.status = response.status;
+    throw error;
+  }
+
+  return data.data;
+}
+
 export const api = {
   fetchUserProfile,
   updateUserProfile,
   fetchMyRegistrations,
   createRegistration,
   submitRegistration,
+  initiatePayment,
+  fetchPaymentStatus,
   uploadParticipantDocument,
   getParticipantDocuments,
   deleteParticipantDocument,

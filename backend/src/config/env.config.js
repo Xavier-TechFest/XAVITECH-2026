@@ -84,10 +84,28 @@ export const config = {
   },
 
 
-  // Payment Gateway (Phase 3)
+  // Easebuzz Payment Gateway Integration
+  easebuzz: {
+    key: process.env.EASEBUZZ_KEY || '',
+    salt: process.env.EASEBUZZ_SALT || '',
+    env: (process.env.EASEBUZZ_ENV || 'production').toLowerCase(),
+    liveEnabled: process.env.EASEBUZZ_LIVE_ENABLED === 'true',
+    liveTestEventSlug: (process.env.EASEBUZZ_LIVE_TEST_EVENT_SLUG || '').trim().toLowerCase(),
+    subMerchantId: process.env.EASEBUZZ_SUB_MERCHANT_ID || '',
+    get baseUrl() {
+      return this.env === 'prod' || this.env === 'production'
+        ? 'https://pay.easebuzz.in'
+        : 'https://testpay.easebuzz.in';
+    },
+    get isConfigured() {
+      return Boolean(this.key && this.salt && !this.key.includes('your_easebuzz'));
+    },
+  },
+
+  // Legacy payment gateway reference
   payment: {
-    keyId: process.env.PAYMENT_GATEWAY_KEY_ID || '',
-    keySecret: process.env.PAYMENT_GATEWAY_KEY_SECRET || '',
+    keyId: process.env.EASEBUZZ_KEY || process.env.PAYMENT_GATEWAY_KEY_ID || '',
+    keySecret: process.env.EASEBUZZ_SALT || process.env.PAYMENT_GATEWAY_KEY_SECRET || '',
     webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET || '',
   },
 
