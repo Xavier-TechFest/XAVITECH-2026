@@ -21,8 +21,12 @@ const config: Config = {
         line: "#22252F",
       },
       fontFamily: {
-        display: ["var(--font-unbounded)", "sans-serif"],
-        body: ["var(--font-manrope)", "sans-serif"],
+        display: ["var(--font-display)", "sans-serif"],
+        body: ["var(--font-body)", "sans-serif"],
+        accent: ["var(--font-accent)", "sans-serif"],
+        oxanium: ["var(--font-accent)", "monospace"],
+        space: ["var(--font-body)", "sans-serif"],
+        sora: ["var(--font-display)", "sans-serif"],
       },
       maxWidth: {
         prose: "68ch",

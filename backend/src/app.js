@@ -34,11 +34,23 @@ const corsOptions = {
       (allowed) => normalizeOrigin(allowed) === normalizedIncoming
     );
 
+    // Whitelist custom production domains
+    const isCustomDomain =
+      normalizedIncoming === 'https://xavitech.in' ||
+      normalizedIncoming === 'https://www.xavitech.in';
+
     // Whitelist production Vercel app domain and Vercel preview deployments
     const isVercelProduction = normalizedIncoming === 'https://xavitech-2026.vercel.app';
     const isVercelPreview = /^https:\/\/xavitech-2026[a-z0-9-]*\.vercel\.app$/.test(normalizedIncoming);
 
-    if (isConfigured || isVercelProduction || isVercelPreview) {
+    // Whitelist localhost development origins
+    const isLocalhost =
+      normalizedIncoming === 'http://localhost:3000' ||
+      normalizedIncoming === 'http://127.0.0.1:3000' ||
+      /^http:\/\/localhost:[0-9]+$/.test(normalizedIncoming) ||
+      /^http:\/\/127\.0\.0\.1:[0-9]+$/.test(normalizedIncoming);
+
+    if (isConfigured || isCustomDomain || isVercelProduction || isVercelPreview || isLocalhost) {
       return callback(null, true);
     }
 
@@ -46,7 +58,15 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With', 'Accept', 'Origin'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'Cookie',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Cache-Control',
+  ],
   exposedHeaders: ['Set-Cookie'],
   optionsSuccessStatus: 200,
 };

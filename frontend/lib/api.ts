@@ -6,24 +6,34 @@
  * Resolves the standardized API base URL.
  * Ensures the returned URL always ends with "/api" and has no trailing slash,
  * gracefully handling environments where NEXT_PUBLIC_API_URL is configured
- * either with or without the "/api" suffix, or with trailing slashes.
+ * either with or without the "/api" suffix (e.g. http://localhost:5000 or https://xavitech-2026.onrender.com).
+ * Also automatically falls back to http://localhost:5000/api on local dev hosts (localhost, 127.0.0.1)
+ * and https://xavitech-2026.onrender.com/api in production.
  */
-function resolveApiBaseUrl(): string {
-  const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-  let trimmed = rawUrl.trim().replace(/\/+$/, "");
-
-  // Fallback to default if empty
-  if (!trimmed) {
-    trimmed = "http://localhost:5000/api";
+export function resolveApiBaseUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (configured) {
+    let trimmed = configured.replace(/\/+$/, "");
+    if (trimmed.startsWith("/") && typeof window !== "undefined" && window.location?.origin) {
+      trimmed = `${window.location.origin}${trimmed}`;
+    }
+    return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
   }
 
-  // If a relative path was passed (e.g. "/api"), resolve against browser origin
-  if (trimmed.startsWith("/") && typeof window !== "undefined" && window.location?.origin) {
-    trimmed = `${window.location.origin}${trimmed}`;
+  // Automatic environment fallback if NEXT_PUBLIC_API_URL is not explicitly provided:
+  if (typeof window !== "undefined" && window.location?.hostname) {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return "http://localhost:5000/api";
+    }
+    return "https://xavitech-2026.onrender.com/api";
   }
 
-  // Ensure path ends with /api
-  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+  if (process.env.NODE_ENV === "production") {
+    return "https://xavitech-2026.onrender.com/api";
+  }
+
+  return "http://localhost:5000/api";
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();

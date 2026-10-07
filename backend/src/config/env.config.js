@@ -11,17 +11,19 @@ dotenv.config();
 
 const normalizeOrigin = (origin) => {
   if (!origin || typeof origin !== 'string') return '';
-  return origin.trim().replace(/\/+$/, '');
+  return origin.trim().replace(/\/+$/, '').toLowerCase();
 };
 
 const parseCorsOrigins = (...inputs) => {
   const defaultOrigins = [
+    'https://xavitech.in',
+    'https://www.xavitech.in',
+    'https://xavitech-2026.vercel.app',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'https://xavitech-2026.vercel.app',
   ];
 
-  const originsSet = new Set(defaultOrigins);
+  const originsSet = new Set(defaultOrigins.map((origin) => normalizeOrigin(origin)));
 
   inputs.forEach((raw) => {
     if (!raw || typeof raw !== 'string') return;
@@ -48,8 +50,8 @@ const formatPrivateKey = (key) => {
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT, 10) || 5000,
-  clientUrl: normalizeOrigin(process.env.CLIENT_URL || process.env.FRONTEND_URL) || 'https://xavitech-2026.vercel.app',
-  frontendUrl: normalizeOrigin(process.env.FRONTEND_URL || process.env.CLIENT_URL) || 'https://xavitech-2026.vercel.app',
+  clientUrl: normalizeOrigin(process.env.CLIENT_URL || process.env.FRONTEND_URL) || 'https://xavitech.in',
+  frontendUrl: normalizeOrigin(process.env.FRONTEND_URL || process.env.CLIENT_URL) || 'https://xavitech.in',
   corsOrigins: parseCorsOrigins(
     process.env.CLIENT_URL,
     process.env.FRONTEND_URL,
@@ -77,7 +79,7 @@ export const config = {
     apiKey: process.env.BREVO_API_KEY || '',
     senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@xavitech2026.com',
     senderName: process.env.BREVO_SENDER_NAME || 'XAVITECH 2026',
-    frontendUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000',
+    frontendUrl: normalizeOrigin(process.env.FRONTEND_URL || process.env.CLIENT_URL) || 'https://xavitech.in',
     sendEnabled: process.env.EMAIL_SEND_ENABLED === 'true' || Boolean(process.env.BREVO_API_KEY),
   },
 
