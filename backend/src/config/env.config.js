@@ -52,6 +52,7 @@ export const config = {
   port: parseInt(process.env.PORT, 10) || 5000,
   clientUrl: normalizeOrigin(process.env.CLIENT_URL || process.env.FRONTEND_URL) || 'https://xavitech.in',
   frontendUrl: normalizeOrigin(process.env.FRONTEND_URL || process.env.CLIENT_URL) || 'https://xavitech.in',
+  serverUrl: normalizeOrigin(process.env.SERVER_URL || process.env.BACKEND_URL) || `http://localhost:${parseInt(process.env.PORT, 10) || 5000}`,
   corsOrigins: parseCorsOrigins(
     process.env.CLIENT_URL,
     process.env.FRONTEND_URL,
@@ -84,10 +85,31 @@ export const config = {
   },
 
 
-  // Payment Gateway (Phase 3)
+  // Easebuzz Payment Gateway Integration
+  easebuzz: {
+    key: process.env.EASEBUZZ_KEY || '',
+    salt: process.env.EASEBUZZ_SALT || '',
+    env: (process.env.EASEBUZZ_ENV || 'production').toLowerCase(),
+    liveEnabled: process.env.EASEBUZZ_LIVE_ENABLED === 'true',
+    liveTestEventSlug: (process.env.EASEBUZZ_LIVE_TEST_EVENT_SLUG || '').trim().toLowerCase(),
+    testFeeOverrideEnabled: process.env.EASEBUZZ_TEST_FEE_OVERRIDE_ENABLED === 'true',
+    testFeeAmount: parseFloat(process.env.EASEBUZZ_TEST_FEE_AMOUNT) || 1.00,
+    callbackUrl: process.env.EASEBUZZ_CALLBACK_URL || '',
+    subMerchantId: process.env.EASEBUZZ_SUB_MERCHANT_ID || '',
+    get baseUrl() {
+      return this.env === 'prod' || this.env === 'production'
+        ? 'https://pay.easebuzz.in'
+        : 'https://testpay.easebuzz.in';
+    },
+    get isConfigured() {
+      return Boolean(this.key && this.salt && !this.key.includes('your_easebuzz'));
+    },
+  },
+
+  // Legacy payment gateway reference
   payment: {
-    keyId: process.env.PAYMENT_GATEWAY_KEY_ID || '',
-    keySecret: process.env.PAYMENT_GATEWAY_KEY_SECRET || '',
+    keyId: process.env.EASEBUZZ_KEY || process.env.PAYMENT_GATEWAY_KEY_ID || '',
+    keySecret: process.env.EASEBUZZ_SALT || process.env.PAYMENT_GATEWAY_KEY_SECRET || '',
     webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET || '',
   },
 
