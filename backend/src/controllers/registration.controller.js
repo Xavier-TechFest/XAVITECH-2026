@@ -47,8 +47,23 @@ export const getRegistrationById = async (req, res, next) => {
   }
 };
 
+/**
+ * POST /api/registrations/:registrationId/submit
+ * Finalizes a draft registration and transitions its status to PAYMENT_PENDING.
+ */
+export const submitRegistration = async (req, res, next) => {
+  try {
+    const identifier = req.params.registrationId || req.params.id;
+    const registration = await registrationService.submitRegistration(req.user, identifier);
+    return sendSuccess(res, 'Registration submitted successfully', registration);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   createRegistration,
   listMyRegistrations,
   getRegistrationById,
+  submitRegistration,
 };

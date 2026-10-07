@@ -3,6 +3,7 @@ import {
   createRegistration,
   listMyRegistrations,
   getRegistrationById,
+  submitRegistration,
 } from '../controllers/registration.controller.js';
 import {
   uploadParticipantDocument,
@@ -24,6 +25,9 @@ router.get('/my', listMyRegistrations);
 
 // POST /api/registrations -> Create new draft registration
 router.post('/', validate(validateRegistrationCreate), createRegistration);
+
+// POST /api/registrations/:registrationId/submit -> Finalize draft and transition to PAYMENT_PENDING
+router.post('/:registrationId/submit', submitRegistration);
 
 // GET /api/registrations/:registrationId -> Get registration details with ownership enforcement
 router.get('/:registrationId', getRegistrationById);

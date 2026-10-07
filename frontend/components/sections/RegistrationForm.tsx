@@ -580,7 +580,27 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
         }
       }
 
-      setSubmitResult(registrationRes);
+      // 5. Finalize Registration -> Transition status to PAYMENT_PENDING
+      setUploadStatusMessage("Finalizing registration submission...");
+      let finalRegistration = registrationRes;
+      try {
+        finalRegistration = await api.submitRegistration(
+          token,
+          registrationRes.id || registrationRes.registrationId
+        );
+      } catch (submitErr: any) {
+        console.warn("Status transition to PAYMENT_PENDING warning, attempting refresh:", submitErr);
+        try {
+          finalRegistration = await api.fetchRegistrationDetails(
+            token,
+            registrationRes.id || registrationRes.registrationId
+          );
+        } catch {
+          // If fetch fails, keep registrationRes
+        }
+      }
+
+      setSubmitResult(finalRegistration);
       setStep("confirmed");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
@@ -1287,7 +1307,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                   Registration Status
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 px-2.5 py-0.5 text-xs font-semibold text-amber-200">
-                  {submitResult.status || "DRAFT"} · PAYMENT PENDING
+                  {submitResult.status || "PAYMENT_PENDING"}
                 </span>
               </div>
 
@@ -1302,6 +1322,36 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                 </div>
               )}
 
+              {submitResult.participants && submitResult.participants.length > 0 && (
+                <div className="border-b border-white/10 pb-3 space-y-2">
+                  <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400 block">
+                    Registered Participants ({submitResult.participants.length})
+                  </span>
+                  <div className="space-y-1.5">
+                    {submitResult.participants.map((p: any, pIdx: number) => (
+                      <div key={p.id || pIdx} className="flex items-center justify-between text-xs text-slate-300">
+                        <span className="truncate max-w-[240px]">
+                          {p.participantOrder ? `${p.participantOrder}. ` : ""}{p.fullName || p.name || `Participant ${pIdx + 1}`}
+                          {p.participantRole === "LEADER" ? " (Leader)" : ""}
+                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {p.idCardUrl && (
+                            <span className="rounded bg-cyan-400/10 text-cyan-300 px-1.5 py-0.5 text-[10px] font-mono border border-cyan-400/20">
+                              ID Card
+                            </span>
+                          )}
+                          {p.profilePhotoUrl && (
+                            <span className="rounded bg-purple-400/10 text-purple-300 px-1.5 py-0.5 text-[10px] font-mono border border-purple-400/20">
+                              Photo
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
                   Verification Documents
@@ -1313,8 +1363,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
 
               <div className="pt-2 text-xs text-slate-400 leading-relaxed">
                 <span className="text-amber-200 font-semibold">Payment Notice:</span> Official payment gateway
-                integration will open prior to the event date. Your registration is securely reserved in Draft
-                status.
+                integration will open prior to the event date. Your registration is securely reserved in{" "}
+                <span className="text-amber-200 font-semibold">{submitResult.status || "PAYMENT_PENDING"}</span> status.
               </div>
             </div>
 

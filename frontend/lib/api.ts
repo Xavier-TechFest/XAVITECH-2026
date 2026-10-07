@@ -311,6 +311,32 @@ export async function createRegistration(
   return json.data;
 }
 
+export async function submitRegistration(
+  token: string,
+  registrationId: string
+): Promise<CreatedRegistrationResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/registrations/${encodeURIComponent(registrationId)}/submit`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to submit registration",
+      response.status,
+      json
+    );
+  }
+  return json.data;
+}
+
 export interface UploadDocumentResponse {
   success: boolean;
   documentType: string;
@@ -1612,6 +1638,7 @@ export const api = {
   updateUserProfile,
   fetchMyRegistrations,
   createRegistration,
+  submitRegistration,
   uploadParticipantDocument,
   getParticipantDocuments,
   deleteParticipantDocument,
