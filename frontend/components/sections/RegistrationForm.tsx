@@ -1459,7 +1459,9 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                       Total Payable
                     </span>
                     <p className="font-space text-lg font-bold text-cyan-300">
-                      {event.id === "velocityx"
+                      {paymentInfo
+                        ? `₹${paymentInfo.amount}`
+                        : event.id === "velocityx"
                         ? "Amount TBA"
                         : event.id === "innocraft"
                         ? participantPool === "School"

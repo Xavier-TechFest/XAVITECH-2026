@@ -91,6 +91,8 @@ export const config = {
     env: (process.env.EASEBUZZ_ENV || 'production').toLowerCase(),
     liveEnabled: process.env.EASEBUZZ_LIVE_ENABLED === 'true',
     liveTestEventSlug: (process.env.EASEBUZZ_LIVE_TEST_EVENT_SLUG || '').trim().toLowerCase(),
+    testFeeOverrideEnabled: process.env.EASEBUZZ_TEST_FEE_OVERRIDE_ENABLED === 'true',
+    testFeeAmount: parseFloat(process.env.EASEBUZZ_TEST_FEE_AMOUNT) || 1.00,
     subMerchantId: process.env.EASEBUZZ_SUB_MERCHANT_ID || '',
     get baseUrl() {
       return this.env === 'prod' || this.env === 'production'

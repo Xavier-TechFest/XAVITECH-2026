@@ -29,7 +29,17 @@ export const calculatePayableAmount = (event, registration, participants = []) =
 
   const baseFee = Number(event.fee || 0);
 
-  // 1. InnoCraft (Hackathon): Pool-based fee (School: 800, College: 1000)
+  // 1. Temporary Controlled Live Test Override (Debug Derby only when both live & test override flags are active)
+  if (
+    config.easebuzz.liveEnabled &&
+    config.easebuzz.testFeeOverrideEnabled &&
+    event.slug === 'debug-derby'
+  ) {
+    logger.info(`[TEST MODE] Applying temporary live test fee override of ₹${config.easebuzz.testFeeAmount} for Debug Derby`);
+    return Number(config.easebuzz.testFeeAmount.toFixed(2));
+  }
+
+  // 2. InnoCraft (Hackathon): Pool-based fee (School: 800, College: 1000)
   if (event.slug === 'innocraft') {
     const leader = participants.find((p) => p.participant_order === 1) || participants[0];
     const pool = leader?.custom_fields?.pool || (leader?.custom_fields && leader.custom_fields['Participant pool']);
