@@ -29,8 +29,8 @@ export const getEmailConfig = () => {
   const rawFrontendUrl =
     config.brevo.frontendUrl ||
     process.env.FRONTEND_URL ||
-    process.env.CLIENT_URL ||
-    'http://localhost:3000';
+    config.frontendUrl ||
+    'https://xavitech.in';
   const frontendUrl = rawFrontendUrl.replace(/\/$/, '');
   const sendEnabled =
     process.env.EMAIL_SEND_ENABLED === 'true' ||
