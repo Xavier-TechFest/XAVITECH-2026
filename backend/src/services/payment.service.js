@@ -184,7 +184,7 @@ export const paymentService = {
     if (isLive && config.easebuzz.isConfigured) {
       const formattedAmount = payableAmount.toFixed(2);
       const productInfo = `XAVITECH 2026 - ${event.name}`.slice(0, 100);
-      const returnUrl = `${config.clientUrl}/api/payments/callback`;
+      const returnUrl = config.easebuzz.callbackUrl || `${config.serverUrl}/api/payments/callback`;
 
       const hash = generateInitiateHash({
         key: config.easebuzz.key,

@@ -52,6 +52,7 @@ export const config = {
   port: parseInt(process.env.PORT, 10) || 5000,
   clientUrl: normalizeOrigin(process.env.CLIENT_URL || process.env.FRONTEND_URL) || 'https://xavitech.in',
   frontendUrl: normalizeOrigin(process.env.FRONTEND_URL || process.env.CLIENT_URL) || 'https://xavitech.in',
+  serverUrl: normalizeOrigin(process.env.SERVER_URL || process.env.BACKEND_URL) || `http://localhost:${parseInt(process.env.PORT, 10) || 5000}`,
   corsOrigins: parseCorsOrigins(
     process.env.CLIENT_URL,
     process.env.FRONTEND_URL,
@@ -93,6 +94,7 @@ export const config = {
     liveTestEventSlug: (process.env.EASEBUZZ_LIVE_TEST_EVENT_SLUG || '').trim().toLowerCase(),
     testFeeOverrideEnabled: process.env.EASEBUZZ_TEST_FEE_OVERRIDE_ENABLED === 'true',
     testFeeAmount: parseFloat(process.env.EASEBUZZ_TEST_FEE_AMOUNT) || 1.00,
+    callbackUrl: process.env.EASEBUZZ_CALLBACK_URL || '',
     subMerchantId: process.env.EASEBUZZ_SUB_MERCHANT_ID || '',
     get baseUrl() {
       return this.env === 'prod' || this.env === 'production'

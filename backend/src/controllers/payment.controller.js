@@ -38,8 +38,9 @@ export const handleCallback = async (req, res, next) => {
 
     const result = await paymentService.processCallback(req.body);
 
-    // If request accepts HTML (browser form POST from gateway return), redirect to frontend
-    const isBrowserPost = req.headers['content-type']?.includes('application/x-www-form-urlencoded') &&
+    // If request is from browser form POST or accepts HTML, redirect to frontend
+    const isBrowserPost =
+      req.headers['content-type']?.includes('application/x-www-form-urlencoded') ||
       req.headers['accept']?.includes('text/html');
 
     if (isBrowserPost) {
