@@ -45,7 +45,16 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return Number((baseFee * count).toFixed(2));
   }
 
-  // 3. All other events have standard flat team or individual fee configured in DB
+  // 3. VelocityX (Death Race): Fee is TBA and pending coordinator confirmation
+  if (event.slug === 'velocityx') {
+    const error = new Error(
+      'Registration fee for VelocityX (Death Race) is pending confirmation by event coordinators. Online payment is not yet open for this event.'
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 4. All other events have standard flat team or individual fee configured in DB
   return Number(baseFee.toFixed(2));
 };
 
