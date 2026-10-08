@@ -73,9 +73,13 @@ function computeDerivedPreview(params: {
   return "OPEN";
 }
 
+// Module-level in-memory cache to ensure instant transitions when switching from sidebar
+let eventsCache: AdminEventItem[] | null = null;
+
 export default function AdminEventsManagementPage() {
-  const [events, setEvents] = useState<AdminEventItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [events, setEvents] = useState<AdminEventItem[]>(eventsCache || []);
+  const [isLoading, setIsLoading] = useState(!eventsCache);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Filters
@@ -98,22 +102,51 @@ export default function AdminEventsManagementPage() {
   const [formStartAtLocal, setFormStartAtLocal] = useState<string>("");
   const [formEndAtLocal, setFormEndAtLocal] = useState<string>("");
 
-  const fetchEvents = useCallback(async () => {
-    setIsLoading(true);
+  const fetchEvents = useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    } else if (!eventsCache) {
+      setIsLoading(true);
+    }
     setErrorMsg(null);
     try {
       const data = await adminGetEventsList();
+      eventsCache = data;
       setEvents(data);
     } catch (err: any) {
       console.error("Failed to load admin events:", err);
       setErrorMsg(err.message || "Failed to load events. Please check permissions or connection.");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchEvents();
+    let isMounted = true;
+
+    // Use cached events immediately if available (sidebar navigation instant switch)
+    if (eventsCache) {
+      setEvents(eventsCache);
+      setIsLoading(false);
+      // Background revalidation (stale-while-revalidate)
+      adminGetEventsList()
+        .then((data) => {
+          if (isMounted) {
+            eventsCache = data;
+            setEvents(data);
+          }
+        })
+        .catch((err) => {
+          console.warn("Background events revalidation failed:", err);
+        });
+    } else {
+      fetchEvents(false);
+    }
+
+    return () => {
+      isMounted = false;
+    };
   }, [fetchEvents]);
 
   // Derived tracks list for dropdown
@@ -287,9 +320,9 @@ export default function AdminEventsManagementPage() {
         registrationEndAt: endIso,
       });
 
-      // Update state locally
-      setEvents((prev) =>
-        prev.map((item) =>
+      // Update state locally and keep cache in sync
+      setEvents((prev) => {
+        const next = prev.map((item) =>
           item.id === selectedEvent.id
             ? {
                 ...item,
@@ -304,8 +337,10 @@ export default function AdminEventsManagementPage() {
                 registrationStatus: updated.registrationStatus,
               }
             : item
-        )
-      );
+        );
+        eventsCache = next;
+        return next;
+      });
 
       setModalSuccess("Registration settings saved successfully!");
       setTimeout(() => {
@@ -380,13 +415,13 @@ export default function AdminEventsManagementPage() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={fetchEvents}
-            disabled={isLoading}
+            onClick={() => fetchEvents(true)}
+            disabled={isLoading || isRefreshing}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-[#35e0c9]/40 text-neutral-300 hover:text-[#35e0c9] font-mono text-xs font-bold transition cursor-pointer disabled:opacity-50"
             title="Refresh events list"
           >
             <svg
-              className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-[#35e0c9]" : ""}`}
+              className={`w-3.5 h-3.5 ${isLoading || isRefreshing ? "animate-spin text-[#35e0c9]" : ""}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -398,7 +433,7 @@ export default function AdminEventsManagementPage() {
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            <span>REFRESH</span>
+            <span>{isRefreshing ? "REFRESHING..." : "REFRESH"}</span>
           </button>
         </div>
       </div>
@@ -410,7 +445,11 @@ export default function AdminEventsManagementPage() {
             Total Events
           </div>
           <div className="text-2xl font-bold font-mono text-white mt-1">
-            {metrics.total}
+            {isLoading && events.length === 0 ? (
+              <span className="text-neutral-500 animate-pulse">...</span>
+            ) : (
+              metrics.total
+            )}
           </div>
           <div className="text-[10px] font-mono text-neutral-500 mt-0.5">
             13 festival events
@@ -422,7 +461,11 @@ export default function AdminEventsManagementPage() {
             Open for Registration
           </div>
           <div className="text-2xl font-bold font-mono text-emerald-300 mt-1">
-            {metrics.openCount}
+            {isLoading && events.length === 0 ? (
+              <span className="text-neutral-500 animate-pulse">...</span>
+            ) : (
+              metrics.openCount
+            )}
           </div>
           <div className="text-[10px] font-mono text-neutral-500 mt-0.5">
             Active & accepting
@@ -434,7 +477,11 @@ export default function AdminEventsManagementPage() {
             Coming Soon
           </div>
           <div className="text-2xl font-bold font-mono text-cyan-300 mt-1">
-            {metrics.comingSoonCount}
+            {isLoading && events.length === 0 ? (
+              <span className="text-neutral-500 animate-pulse">...</span>
+            ) : (
+              metrics.comingSoonCount
+            )}
           </div>
           <div className="text-[10px] font-mono text-neutral-500 mt-0.5">
             Future window start
@@ -446,7 +493,11 @@ export default function AdminEventsManagementPage() {
             Closed / Disabled
           </div>
           <div className="text-2xl font-bold font-mono text-rose-300 mt-1">
-            {metrics.closedCount + metrics.disabledCount}
+            {isLoading && events.length === 0 ? (
+              <span className="text-neutral-500 animate-pulse">...</span>
+            ) : (
+              metrics.closedCount + metrics.disabledCount
+            )}
           </div>
           <div className="text-[10px] font-mono text-neutral-500 mt-0.5">
             {metrics.closedCount} closed, {metrics.disabledCount} disabled
@@ -458,7 +509,11 @@ export default function AdminEventsManagementPage() {
             Total Registrations
           </div>
           <div className="text-2xl font-bold font-mono text-white mt-1">
-            {metrics.totalRegs}
+            {isLoading && events.length === 0 ? (
+              <span className="text-neutral-500 animate-pulse">...</span>
+            ) : (
+              metrics.totalRegs
+            )}
           </div>
           <div className="text-[10px] font-mono text-neutral-500 mt-0.5">
             Live PostgreSQL count
@@ -540,7 +595,7 @@ export default function AdminEventsManagementPage() {
       {errorMsg && (
         <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-xs flex items-center justify-between">
           <span>{errorMsg}</span>
-          <button onClick={fetchEvents} className="underline hover:text-white cursor-pointer ml-3">
+          <button onClick={() => fetchEvents(true)} className="underline hover:text-white cursor-pointer ml-3">
             Retry
           </button>
         </div>
@@ -561,15 +616,15 @@ export default function AdminEventsManagementPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800/60 font-mono text-xs">
-              {isLoading ? (
+              {isLoading && events.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-neutral-500 font-mono">
+                  <td colSpan={6} className="py-12 text-center text-neutral-400 font-mono">
                     <div className="flex items-center justify-center gap-2">
                       <svg className="w-4 h-4 animate-spin text-[#35e0c9]" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                       </svg>
-                      <span>Loading events and live capacities...</span>
+                      <span>Loading events...</span>
                     </div>
                   </td>
                 </tr>

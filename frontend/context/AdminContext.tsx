@@ -52,6 +52,7 @@ interface TrackLeadersQueryResponse {
 interface AdminContextType {
   admin: AdminProfile | null;
   isLoadingAdmin: boolean;
+  login: (profile: AdminProfile) => void;
   logout: () => Promise<void>;
 
 
@@ -245,19 +246,25 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   // 5. Resolve Admin Authentication Once at Layout Level
   useEffect(() => {
+    const cleanPath = pathname?.replace(/\/$/, "") || "";
+    const isLoginPage = cleanPath === "/xavitech-superadmin";
+
     // If on the login page itself, don't perform protected auth guard
-    if (pathname === "/xavitech-superadmin") {
+    if (isLoginPage) {
       setIsLoadingAdmin(false);
+      authCheckedRef.current = false;
       return;
     }
 
-    // Only verify once per browser memory session
-    if (authCheckedRef.current) {
+    // If already verified and admin profile is in state, session is active
+    if (authCheckedRef.current && admin) {
+      setIsLoadingAdmin(false);
       return;
     }
 
     let isMounted = true;
     authCheckedRef.current = true;
+    setIsLoadingAdmin(true);
 
     async function verifyAdminSession() {
       try {
@@ -270,6 +277,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         if (isMounted) {
           clearAdminToken();
           setAdmin(null);
+          authCheckedRef.current = false;
           setIsLoadingAdmin(false);
           router.replace("/xavitech-superadmin");
         }
@@ -281,7 +289,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [pathname, router]);
+  }, [pathname, router, admin]);
+
+  // Direct login session hydration
+  const login = useCallback((profile: AdminProfile) => {
+    setAdmin(profile);
+    setIsLoadingAdmin(false);
+    authCheckedRef.current = true;
+  }, []);
 
   // 4. Logout Handler
   const logout = useCallback(async () => {
@@ -303,6 +318,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       trackLeaderDetailsCache.current = {};
       setTracks(null);
       authCheckedRef.current = false;
+      setIsLoadingAdmin(false);
       router.replace("/xavitech-superadmin");
 
     }
@@ -530,6 +546,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const value: AdminContextType = {
     admin,
     isLoadingAdmin,
+    login,
     logout,
     dashboardStats,
     getDashboardStats,
