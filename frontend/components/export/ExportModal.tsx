@@ -24,6 +24,7 @@ interface ExportModalProps {
     eventId?: string;
     registrationType?: string;
     status?: string;
+    paymentStatus?: string;
   };
   tracks?: Array<{ id: string; name: string; slug: string }>;
   assignedTrack?: { id: string; name: string; slug: string } | null;

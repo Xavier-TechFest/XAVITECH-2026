@@ -642,6 +642,15 @@ export interface AdminDashboardStats {
   totalParticipants: number;
   totalTeams: number;
   activeEvents: number;
+  confirmedRegistrations?: number;
+  pendingRegistrations?: number;
+  paymentPendingRegistrations?: number;
+  failedOrCancelledRegistrations?: number;
+  registrationStatusCounts?: Record<string, number>;
+  paymentStatusCounts?: Record<string, number>;
+  eventCounts?: Array<{ eventId: string; name: string; slug: string; trackId?: string; count: number }>;
+  trackCounts?: Array<{ trackId: string; name: string; slug: string; count: number }>;
+  assignedTrack?: TrackLeaderAssignedTrack | null;
 }
 
 export interface PaginationMeta {
@@ -656,6 +665,8 @@ export interface AdminRegistrationListItem {
   registrationId: string;
   registrationType: "INDIVIDUAL" | "TEAM";
   status: string;
+  paymentStatus?: string;
+  payableAmount?: number;
   createdAt: string;
   updatedAt: string;
   participantCount: number;
@@ -666,6 +677,11 @@ export interface AdminRegistrationListItem {
     category?: string;
     fee: number;
     trackId?: string;
+    track?: {
+      id: string;
+      name: string;
+      slug: string;
+    } | null;
   } | null;
   user: {
     id: string;
@@ -681,6 +697,27 @@ export interface AdminRegistrationListItem {
     memberCount: number;
     totalTeamSize: number;
   } | null;
+  participants?: Array<{
+    id: string;
+    fullName: string;
+    email?: string | null;
+    mobileNumber?: string | null;
+    institutionName?: string | null;
+    participantRole: string;
+    participantOrder: number;
+    customFields?: Record<string, any>;
+    idCardUrl?: string | null;
+    profilePhotoUrl?: string | null;
+  }>;
+  payment?: {
+    transactionId?: string | null;
+    status?: string;
+    amount?: number;
+    currency?: string;
+    gateway?: string | null;
+    failureReason?: string | null;
+    createdAt?: string | null;
+  } | null;
 }
 
 export interface AdminRegistrationDetail {
@@ -688,6 +725,8 @@ export interface AdminRegistrationDetail {
   registrationId: string;
   registrationType: "INDIVIDUAL" | "TEAM";
   status: string;
+  paymentStatus?: string;
+  payableAmount?: number;
   createdAt: string;
   updatedAt: string;
   totalParticipants: number;
@@ -699,6 +738,13 @@ export interface AdminRegistrationDetail {
     category: string | null;
     trackId?: string;
     track_id?: string;
+    track?: {
+      id: string;
+      name: string;
+      slug: string;
+      description?: string | null;
+      isActive?: boolean;
+    } | null;
     registrationType: string;
     minTeamSize: number | null;
     maxTeamSize: number | null;
@@ -739,6 +785,50 @@ export interface AdminRegistrationDetail {
     memberCount: number;
     totalTeamSize: number;
   } | null;
+  participants: Array<{
+    id: string;
+    participantOrder: number;
+    participantRole: string;
+    fullName: string;
+    email: string | null;
+    mobileNumber: string | null;
+    institutionName: string | null;
+    city?: string | null;
+    studentId?: string | null;
+    standardClass?: string | null;
+    customFields?: Record<string, any>;
+    documents?: {
+      idCard?: {
+        url: string;
+        publicId?: string;
+        mimeType?: string;
+        resourceType?: string;
+      } | null;
+      profilePhoto?: {
+        url: string;
+        publicId?: string;
+        mimeType?: string;
+        resourceType?: string;
+      } | null;
+    };
+    idCardUrl?: string | null;
+    profilePhotoUrl?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
+  }>;
+  payment?: {
+    status: string;
+    transactionId?: string | null;
+    amount: number;
+    currency: string;
+    gateway?: string | null;
+    gatewayReference?: string | null;
+    paymentMode?: string | null;
+    failureReason?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    transactions?: Array<any>;
+  };
 }
 
 export interface AdminTeamListItem {
@@ -846,6 +936,7 @@ export async function adminGetRegistrations(params?: {
   eventId?: string;
   registrationType?: string;
   status?: string;
+  paymentStatus?: string;
 }): Promise<{ registrations: AdminRegistrationListItem[]; pagination: PaginationMeta }> {
   const url = new URL(`${API_BASE_URL}/admin/registrations`);
   if (params?.page) url.searchParams.set("page", String(params.page));
@@ -855,6 +946,7 @@ export async function adminGetRegistrations(params?: {
   if (params?.eventId) url.searchParams.set("eventId", params.eventId);
   if (params?.registrationType) url.searchParams.set("registrationType", params.registrationType);
   if (params?.status) url.searchParams.set("status", params.status);
+  if (params?.paymentStatus) url.searchParams.set("paymentStatus", params.paymentStatus);
 
   const response = await fetch(url.toString(), {
     method: "GET",
@@ -1397,6 +1489,20 @@ export async function trackLeaderResetPassword(
   };
 }
 
+export async function trackLeaderGetDashboardStats(): Promise<AdminDashboardStats> {
+  const response = await fetch(`${API_BASE_URL}/track-leader/stats`, {
+    method: "GET",
+    headers: getTrackLeaderHeaders(),
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(json.message || "Failed to fetch track leader statistics", response.status, json);
+  }
+  return json.data;
+}
+
 export async function trackLeaderGetRegistrations(params?: {
   page?: number;
   limit?: number;
@@ -1404,6 +1510,7 @@ export async function trackLeaderGetRegistrations(params?: {
   eventId?: string;
   registrationType?: string;
   status?: string;
+  paymentStatus?: string;
 }): Promise<{ registrations: AdminRegistrationListItem[]; pagination: PaginationMeta }> {
   const url = new URL(`${API_BASE_URL}/track-leader/registrations`);
   if (params?.page) url.searchParams.set("page", String(params.page));
@@ -1412,6 +1519,7 @@ export async function trackLeaderGetRegistrations(params?: {
   if (params?.eventId) url.searchParams.set("eventId", params.eventId);
   if (params?.registrationType) url.searchParams.set("registrationType", params.registrationType);
   if (params?.status) url.searchParams.set("status", params.status);
+  if (params?.paymentStatus) url.searchParams.set("paymentStatus", params.paymentStatus);
 
   const response = await fetch(url.toString(), {
     method: "GET",
@@ -1749,6 +1857,7 @@ export const api = {
   trackLeaderLogout,
   trackLeaderGetTrack,
   trackLeaderGetEvents,
+  trackLeaderGetDashboardStats,
   trackLeaderGetRegistrations,
   trackLeaderGetRegistrationDetails,
   trackLeaderForgotPassword,

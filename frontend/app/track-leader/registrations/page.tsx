@@ -1216,6 +1216,126 @@ export default function TrackLeaderRegistrationsPage() {
                   </div>
                 )}
 
+                {/* Authoritative Participants Roster from PostgreSQL */}
+                {inspectDetail.participants && inspectDetail.participants.length > 0 && (
+                  <div
+                    className={`p-4 rounded-xl border ${
+                      isLight
+                        ? "bg-slate-50 border-slate-200"
+                        : "bg-[#131929]/50 border-neutral-800"
+                    }`}
+                  >
+                    <h4
+                      className={`text-xs font-mono uppercase tracking-wider font-bold mb-3 flex items-center justify-between ${
+                        isLight ? "text-slate-700" : "text-neutral-300"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#35e0c9]" />
+                        Participants Snapshot ({inspectDetail.participants.length} Records)
+                      </span>
+                    </h4>
+
+                    <div className="space-y-2">
+                      {inspectDetail.participants.map((p) => {
+                        const hasIdCard = p.documents?.idCard?.url || p.idCardUrl;
+                        const hasPhoto = p.documents?.profilePhoto?.url || p.profilePhotoUrl;
+                        const customKeys = p.customFields ? Object.keys(p.customFields) : [];
+
+                        return (
+                          <div
+                            key={p.id}
+                            className={`p-3 rounded-lg border text-xs font-mono space-y-1.5 ${
+                              isLight
+                                ? "bg-white border-slate-200"
+                                : "bg-[#0a0e17] border-neutral-800"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-sm">
+                                {p.fullName}{" "}
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded ml-1 border ${
+                                    p.participantRole === "LEADER"
+                                      ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                                      : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                                  }`}
+                                >
+                                  #{p.participantOrder} {p.participantRole}
+                                </span>
+                              </span>
+
+                              <div className="flex items-center gap-1.5">
+                                {hasIdCard && (
+                                  <a
+                                    href={hasIdCard}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-1.5 py-0.5 rounded text-[10px] bg-[#35e0c9]/10 text-[#35e0c9] border border-[#35e0c9]/30 hover:underline"
+                                  >
+                                    ID Card ↗
+                                  </a>
+                                )}
+                                {hasPhoto && (
+                                  <a
+                                    href={hasPhoto}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/30 hover:underline"
+                                  >
+                                    Photo ↗
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="text-[11px] text-neutral-400 grid grid-cols-1 sm:grid-cols-2 gap-1 pt-1">
+                              <div>Email: <span className={isLight ? "text-slate-800" : "text-neutral-200"}>{p.email || "—"}</span></div>
+                              <div>Phone: <span className={isLight ? "text-slate-800" : "text-neutral-200"}>{p.mobileNumber || "—"}</span></div>
+                              <div className="sm:col-span-2">
+                                Institution: <span className={isLight ? "text-slate-800" : "text-neutral-200"}>{p.institutionName || "—"}</span>
+                                {p.standardClass ? ` (Class: ${p.standardClass})` : ""}
+                              </div>
+                            </div>
+
+                            {customKeys.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pt-1 border-t border-dashed border-neutral-800/40">
+                                {customKeys.map((k) => (
+                                  <span key={k} className="px-1.5 py-0.2 rounded text-[10px] bg-neutral-900 border border-neutral-800 text-neutral-300">
+                                    <span className="text-neutral-500">{k}:</span> {String(p.customFields![k])}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Safe Payment Telemetry Block */}
+                <div
+                  className={`p-3 rounded-xl border text-xs font-mono flex items-center justify-between ${
+                    isLight
+                      ? "bg-slate-50 border-slate-200 text-slate-800"
+                      : "bg-[#131929]/50 border-neutral-800 text-neutral-300"
+                  }`}
+                >
+                  <div>
+                    <span className="text-[10px] uppercase text-neutral-500 block">Payment State</span>
+                    <span className="font-bold text-emerald-400">
+                      {inspectDetail.payment?.status || inspectDetail.paymentStatus || "PENDING"}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase text-neutral-500 block">Payable Amount</span>
+                    <span className="font-bold text-white">
+                      ₹{inspectDetail.payment?.amount ?? inspectDetail.payableAmount ?? inspectDetail.event?.fee ?? 0}
+                    </span>
+                  </div>
+                </div>
+
                 {/* Read-Only Console Notice */}
                 <div
                   className={`p-3 rounded-xl border text-[11px] font-mono flex items-center gap-2.5 ${

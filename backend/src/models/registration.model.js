@@ -29,10 +29,11 @@ export const RegistrationModel = {
       .insert([registrationData])
       .select(`
         *,
-        event:events(id, name, slug, category, registration_type, fee),
+        event:events(id, name, slug, category, registration_type, fee, track_id, track:tracks(id, name, slug)),
         user:users(id, name, email, phone, college_name),
         team:teams(id, team_name, status, members:team_members(*)),
-        participants:registration_participants(*)
+        participants:registration_participants(*),
+        payment_transactions(id, transaction_id, amount, currency, status, gateway)
       `)
       .single();
 
@@ -64,10 +65,11 @@ export const RegistrationModel = {
       .from('registrations')
       .select(`
         *,
-        event:events(id, name, slug, category, registration_type, fee),
+        event:events(id, name, slug, category, registration_type, fee, track_id, track:tracks(id, name, slug)),
         user:users(id, name, email, phone, college_name),
         team:teams(id, team_name, status, members:team_members(*)),
-        participants:registration_participants(*)
+        participants:registration_participants(*),
+        payment_transactions(id, transaction_id, amount, currency, status, gateway)
       `)
       .eq('id', id)
       .maybeSingle();
@@ -95,10 +97,11 @@ export const RegistrationModel = {
       .from('registrations')
       .select(`
         *,
-        event:events(id, name, slug, category, registration_type, fee),
+        event:events(id, name, slug, category, registration_type, fee, track_id, track:tracks(id, name, slug)),
         user:users(id, name, email, phone, college_name),
         team:teams(id, team_name, status, members:team_members(*)),
-        participants:registration_participants(*)
+        participants:registration_participants(*),
+        payment_transactions(id, transaction_id, amount, currency, status, gateway)
       `)
       .eq('registration_id', registrationId)
       .maybeSingle();
@@ -126,9 +129,10 @@ export const RegistrationModel = {
       .from('registrations')
       .select(`
         *,
-        event:events(id, name, slug, category, registration_type, fee),
+        event:events(id, name, slug, category, registration_type, fee, track_id, track:tracks(id, name, slug)),
         team:teams(id, team_name, status, members:team_members(*)),
-        participants:registration_participants(*)
+        participants:registration_participants(*),
+        payment_transactions(id, transaction_id, amount, currency, status, gateway)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });

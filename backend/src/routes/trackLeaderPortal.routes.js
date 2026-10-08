@@ -17,6 +17,10 @@ const router = Router();
 router.use(requireTrackLeader);
 router.use(requirePasswordChanged);
 
+// GET /api/track-leader/stats & /dashboard/stats -> Live track overview metrics
+router.get('/stats', trackLeaderPortalController.getDashboardStats);
+router.get('/dashboard/stats', trackLeaderPortalController.getDashboardStats);
+
 // GET /api/track-leader/track -> Get assigned track details
 router.get('/track', trackLeaderPortalController.getMyTrack);
 

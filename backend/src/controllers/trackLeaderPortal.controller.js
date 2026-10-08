@@ -140,6 +140,54 @@ export const trackLeaderPortalController = {
   },
 
   /**
+   * GET /api/track-leader/stats & GET /api/track-leader/dashboard/stats
+   * Retrieve live overview statistics strictly scoped to the authenticated Track Leader's active assigned track.
+   */
+  getDashboardStats: async (req, res, next) => {
+    try {
+      const activeAssignment = await TrackLeaderAssignmentModel.getActiveAssignment(req.user.id);
+
+      if (!activeAssignment || !activeAssignment.track_id) {
+        return sendSuccess(
+          res,
+          'No track is currently assigned to your account.',
+          {
+            assignedTrack: null,
+            totalRegistrations: 0,
+            confirmedRegistrations: 0,
+            pendingRegistrations: 0,
+            paymentPendingRegistrations: 0,
+            failedOrCancelledRegistrations: 0,
+            totalParticipants: 0,
+            totalTeams: 0,
+            activeEvents: 0,
+            registrationStatusCounts: {},
+            paymentStatusCounts: {},
+            eventCounts: [],
+            trackCounts: [],
+          },
+          200
+        );
+      }
+
+      const stats = await adminRegistrationService.getDashboardStats(activeAssignment.track_id);
+
+      return sendSuccess(
+        res,
+        'Track leader dashboard statistics retrieved successfully',
+        {
+          assignedTrack: activeAssignment.track,
+          ...stats,
+        },
+        200
+      );
+    } catch (error) {
+      logger.error('Error fetching track leader dashboard stats:', error);
+      next(error);
+    }
+  },
+
+  /**
    * GET /api/track-leader/registrations
    * Retrieve ONLY registrations belonging to the authenticated Track Leader's assigned track.
    */
@@ -164,7 +212,7 @@ export const trackLeaderPortalController = {
         );
       }
 
-      const { page, limit, search, eventId, registrationType, status } = req.query;
+      const { page, limit, search, eventId, registrationType, status, paymentStatus } = req.query;
 
       // If an eventId filter is requested, strictly verify it belongs to this track
       if (eventId) {
@@ -188,6 +236,7 @@ export const trackLeaderPortalController = {
         eventId,
         registrationType,
         status,
+        paymentStatus,
       });
 
       return sendSuccess(res, 'Track registrations retrieved successfully', result, 200);
