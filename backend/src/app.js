@@ -50,7 +50,19 @@ const corsOptions = {
       /^http:\/\/localhost:[0-9]+$/.test(normalizedIncoming) ||
       /^http:\/\/127\.0\.0\.1:[0-9]+$/.test(normalizedIncoming);
 
-    if (isConfigured || isCustomDomain || isVercelProduction || isVercelPreview || isLocalhost) {
+    // Whitelist Easebuzz payment gateway origins for browser-redirect callbacks
+    const isEasebuzzGateway =
+      normalizedIncoming === 'https://pay.easebuzz.in' ||
+      normalizedIncoming === 'https://testpay.easebuzz.in';
+
+    if (
+      isConfigured ||
+      isCustomDomain ||
+      isVercelProduction ||
+      isVercelPreview ||
+      isLocalhost ||
+      isEasebuzzGateway
+    ) {
       return callback(null, true);
     }
 
