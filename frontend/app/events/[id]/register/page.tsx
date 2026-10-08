@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { EVENTS } from "@/lib/eventsData";
+import { EVENTS, getEventByIdOrSlug } from "@/lib/eventsData";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import RegistrationForm, { RegistrationLoadingSkeleton } from "@/components/sections/RegistrationForm";
@@ -13,13 +13,18 @@ interface RegisterPageProps {
 }
 
 export function generateStaticParams() {
-  return EVENTS.map((event) => ({
-    id: event.id,
-  }));
+  const params: { id: string }[] = [];
+  EVENTS.forEach((event) => {
+    params.push({ id: event.id });
+    event.aliases?.forEach((alias) => {
+      params.push({ id: alias });
+    });
+  });
+  return params;
 }
 
 export function generateMetadata({ params }: RegisterPageProps) {
-  const event = EVENTS.find((e) => e.id === params.id);
+  const event = getEventByIdOrSlug(params.id);
   if (!event) return { title: "Event Registration — XAVITECH '26" };
 
   return {
@@ -29,7 +34,7 @@ export function generateMetadata({ params }: RegisterPageProps) {
 }
 
 export default function RegisterPage({ params }: RegisterPageProps) {
-  const event = EVENTS.find((e) => e.id === params.id) || EVENTS[0];
+  const event = getEventByIdOrSlug(params.id) || EVENTS[0];
 
   if (!event) {
     notFound();

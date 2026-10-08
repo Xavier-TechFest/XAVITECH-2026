@@ -756,6 +756,7 @@ export const EVENTS: EventItem[] = [
   {
     id: "vlookup",
     name: "DATA ANALYTICS",
+    aliases: ["data-analytics"],
     fullTitle: "XAVITECH 2026 — Data Analytics",
     badge: "Track B",
     badgeLevel: "Intermediate",
@@ -977,6 +978,7 @@ export const EVENTS: EventItem[] = [
   {
     id: "unscripted-nations",
     name: "MODEL UNITED NATIONS",
+    aliases: ["model-united-nations", "mun"],
     fullTitle: "XAVITECH 2026 — Model United Nations (MUN)",
     badge: "Track D",
     badgeLevel: "Advanced",
@@ -1082,6 +1084,7 @@ export const EVENTS: EventItem[] = [
   {
     id: "circuit-of-minds",
     name: "TECH QUIZ",
+    aliases: ["tech-quiz"],
     fullTitle: "XAVITECH 2026 — Tech Quiz",
     badge: "Track D",
     badgeLevel: "Beginner",
@@ -1275,6 +1278,7 @@ export const EVENTS: EventItem[] = [
   {
     id: "thoughtlab",
     name: "IDEATHON",
+    aliases: ["ideathon"],
     fullTitle: "XAVITECH 2026 — Ideathon",
     badge: "Track D",
     badgeLevel: "Intermediate",
@@ -1379,6 +1383,7 @@ export const EVENTS: EventItem[] = [
   {
     id: "loot-goblins",
     name: "BATTLEFIELD BLITZ",
+    aliases: ["battlefield-blitz", "bgmi", "battleground-blitz"],
     fullTitle: "XAVITECH 2026 — Battlefield Blitz (BGMI Esports)",
     badge: "Track C",
     badgeLevel: "Crucible",
@@ -1614,6 +1619,7 @@ export const EVENTS: EventItem[] = [
   {
     id: "velocityx",
     name: "DEATH RACE",
+    aliases: ["death-race"],
     fullTitle: "Death Race",
     badge: "Track C",
     badgeLevel: "Advanced",
@@ -1708,6 +1714,7 @@ export const EVENTS: EventItem[] = [
   {
     id: "hack-the-skill",
     name: "HACK THE SKILLS",
+    aliases: ["hack-the-skills"],
     fullTitle: "XAVITECH 2026 — Hack the Skills Workshop",
     badge: "Track E",
     badgeLevel: "Intermediate",
