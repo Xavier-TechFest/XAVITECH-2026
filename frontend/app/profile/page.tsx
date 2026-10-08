@@ -114,6 +114,40 @@ function resolveEventFromRegistration(reg: ParticipantRegistration): EventItem |
   return null;
 }
 
+/**
+ * Resolves the appropriate continuation route for an existing registration based on its status.
+ * Never routes an enrolled user to the public event catalog page.
+ */
+function buildRegistrationContinuationUrl(
+  eventSlug: string,
+  registrationId: string | null,
+  rawStatus: string
+): string {
+  if (!eventSlug) return "/events";
+
+  const cleanStatus = (rawStatus || "").toUpperCase().trim();
+  const cleanId = registrationId ? encodeURIComponent(registrationId.trim()) : "";
+
+  if (cleanId) {
+    switch (cleanStatus) {
+      case "CONFIRMED":
+      case "PAYMENT_SUCCESS":
+        return `/events/${eventSlug}/register?registrationId=${cleanId}&step=confirmed&paymentStatus=success`;
+      case "PAYMENT_FAILED":
+        return `/events/${eventSlug}/register?registrationId=${cleanId}&step=payment&paymentStatus=failed`;
+      case "CANCELLED":
+        return `/events/${eventSlug}/register?registrationId=${cleanId}&step=payment&paymentStatus=cancelled`;
+      case "DRAFT":
+      case "PAYMENT_PENDING":
+      default:
+        return `/events/${eventSlug}/register?registrationId=${cleanId}&step=payment`;
+    }
+  }
+
+  // Fallback if registrationId is missing: Never route to public catalog; route to register
+  return `/events/${eventSlug}/register`;
+}
+
 interface ParticipantEventViewModel {
   id: string;
   registrationId: string | null;
@@ -242,9 +276,6 @@ export default function ProfilePage() {
         const venue = staticEvent?.venue || registration.event?.venue || "Campus Venue";
         const accent = staticEvent?.accentColor || "#35e0c9";
 
-        // Verified public route: Always navigates to /events/[id] (where id is the slug) or /events
-        const href = staticEvent ? `/events/${staticEvent.id}` : "/events";
-
         // Participation type
         const isTeam =
           registration.registrationType === "TEAM" ||
@@ -293,10 +324,11 @@ export default function ProfilePage() {
           }
         }
 
-        // Registration ID
+        // Registration ID (human-readable code e.g. XVT-2026-82CAAK or UUID fallback)
         const registrationId =
-          (typeof registration.registrationId === "string" && registration.registrationId) ||
-          (typeof registration.registration_id === "string" && registration.registration_id) ||
+          (typeof registration.registrationId === "string" && registration.registrationId.trim()) ||
+          (typeof registration.registration_id === "string" && registration.registration_id.trim()) ||
+          (typeof registration.id === "string" && registration.id.trim()) ||
           null;
 
         // Payable Amount / Fee
@@ -379,6 +411,20 @@ export default function ProfilePage() {
             }
             break;
         }
+
+        // Resolves official event slug for continuation routing across all 13 festival events
+        const eventSlug =
+          (staticEvent && staticEvent.id) ||
+          (typeof registration.event?.slug === "string" && registration.event.slug.trim().toLowerCase()) ||
+          (typeof registration.eventSlug === "string" && registration.eventSlug.trim().toLowerCase()) ||
+          (typeof registration.event_slug === "string" && registration.event_slug.trim().toLowerCase()) ||
+          (registration.eventId && UUID_TO_EVENT_SLUG[registration.eventId]) ||
+          (registration.event_id && UUID_TO_EVENT_SLUG[registration.event_id]) ||
+          (typeof registration.event?.id === "string" && UUID_TO_EVENT_SLUG[registration.event.id]) ||
+          "";
+
+        // Continuation route based on existing registration state (never public catalog)
+        const href = buildRegistrationContinuationUrl(eventSlug, registrationId, rawStatus);
 
         const stableKey =
           registration.id ||

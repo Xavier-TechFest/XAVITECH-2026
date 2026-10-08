@@ -292,14 +292,27 @@ export const registrationService = {
 
   /**
    * Fetch all registrations created by the authenticated user.
+   * Supports optional filtering by eventSlug or eventId.
    *
    * @param {Object} firebaseUser - Verified user attached by auth middleware
+   * @param {Object} [options] - Optional query filters (eventSlug, eventId, event)
    * @returns {Promise<Array>} List of user's registrations
    */
-  getUserRegistrations: async (firebaseUser) => {
+  getUserRegistrations: async (firebaseUser, options = {}) => {
     const user = await resolvePostgresUser(firebaseUser);
     const registrations = await RegistrationModel.getUserRegistrations(user.id);
-    return registrations.map(formatRegistrationResponse);
+    let formatted = registrations.map(formatRegistrationResponse);
+
+    const eventFilter = (options?.eventSlug || options?.eventId || options?.event || '').trim().toLowerCase();
+    if (eventFilter) {
+      formatted = formatted.filter((r) => {
+        const matchesId = r.eventId && String(r.eventId).toLowerCase() === eventFilter;
+        const matchesSlug = r.event?.slug && String(r.event.slug).toLowerCase() === eventFilter;
+        return matchesId || matchesSlug;
+      });
+    }
+
+    return formatted;
   },
 
   /**
