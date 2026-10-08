@@ -27,7 +27,7 @@ export const getDashboardStats = async (req, res, next) => {
  */
 export const listRegistrations = async (req, res, next) => {
   try {
-    const { page, limit, search, trackId, eventId, registrationType, status } = req.query;
+    const { page, limit, search, trackId, eventId, registrationType, status, paymentStatus } = req.query;
 
     const result = await adminRegistrationService.listRegistrations({
       page,
@@ -37,6 +37,7 @@ export const listRegistrations = async (req, res, next) => {
       eventId,
       registrationType,
       status,
+      paymentStatus,
     });
 
     return sendSuccess(res, 'Registrations retrieved successfully', result, 200);

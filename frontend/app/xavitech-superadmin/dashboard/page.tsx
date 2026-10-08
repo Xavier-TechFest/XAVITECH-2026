@@ -138,6 +138,95 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* Live Status Distributions & Track Breakdowns */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          {/* Registration Status Breakdown */}
+          <div className="bg-[#0e131f]/90 border border-neutral-800/80 rounded-2xl p-6 backdrop-blur-xl">
+            <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-4 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#35e0c9]" />
+                Registration Status Distribution
+              </span>
+              <span className="text-[11px] text-neutral-500 font-mono">Live PostgreSQL Aggregates</span>
+            </h2>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+                <span className="text-[10px] font-mono uppercase text-emerald-400/80 block">Confirmed</span>
+                <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">
+                  {stats.confirmedRegistrations ?? 0}
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                <span className="text-[10px] font-mono uppercase text-amber-400/80 block">Pay Pending</span>
+                <span className="text-2xl font-bold font-mono text-amber-400 mt-1 block">
+                  {stats.paymentPendingRegistrations ?? 0}
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                <span className="text-[10px] font-mono uppercase text-blue-400/80 block">Draft / In Progress</span>
+                <span className="text-2xl font-bold font-mono text-blue-400 mt-1 block">
+                  {stats.pendingRegistrations ?? 0}
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/20">
+                <span className="text-[10px] font-mono uppercase text-red-400/80 block">Cancelled / Failed</span>
+                <span className="text-2xl font-bold font-mono text-red-400 mt-1 block">
+                  {stats.failedOrCancelledRegistrations ?? 0}
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/20">
+                <span className="text-[10px] font-mono uppercase text-purple-400/80 block">Total Teams</span>
+                <span className="text-2xl font-bold font-mono text-purple-400 mt-1 block">
+                  {stats.totalTeams ?? 0}
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-teal-500/5 border border-teal-500/20">
+                <span className="text-[10px] font-mono uppercase text-teal-400/80 block">Total Attendees</span>
+                <span className="text-2xl font-bold font-mono text-[#35e0c9] mt-1 block">
+                  {stats.totalParticipants ?? 0}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Track-Wise Distribution */}
+          <div className="bg-[#0e131f]/90 border border-neutral-800/80 rounded-2xl p-6 backdrop-blur-xl">
+            <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-4 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-400" />
+                Track-Wise Registrations
+              </span>
+              <Link href="/xavitech-superadmin/registrations" className="text-[11px] text-[#35e0c9] font-mono hover:underline">
+                View All →
+              </Link>
+            </h2>
+
+            <div className="space-y-2">
+              {stats.trackCounts && stats.trackCounts.length > 0 ? (
+                stats.trackCounts.map((tr) => (
+                  <div
+                    key={tr.trackId}
+                    className="p-2.5 rounded-xl bg-[#131929]/50 border border-neutral-800 flex items-center justify-between text-xs font-mono"
+                  >
+                    <div>
+                      <span className="text-white font-semibold">{tr.name}</span>
+                      <span className="text-neutral-500 text-[10px] block">{tr.slug}</span>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-lg bg-[#35e0c9]/10 text-[#35e0c9] border border-[#35e0c9]/30 font-bold">
+                      {tr.count} records
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs font-mono text-neutral-500 text-center py-4">No track data recorded yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Admin Identity & Session Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Admin Identity Card */}

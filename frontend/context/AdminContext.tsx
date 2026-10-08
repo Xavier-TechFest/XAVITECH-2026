@@ -89,6 +89,7 @@ interface AdminContextType {
       eventId?: string;
       registrationType?: string;
       status?: string;
+      paymentStatus?: string;
     },
     forceRefresh?: boolean
   ) => Promise<RegistrationsQueryResponse>;
@@ -358,6 +359,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         eventId?: string;
         registrationType?: string;
         status?: string;
+        paymentStatus?: string;
       },
       forceRefresh = false
     ): Promise<RegistrationsQueryResponse> => {
@@ -369,6 +371,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         eventId: params?.eventId || "",
         registrationType: params?.registrationType || "",
         status: params?.status || "",
+        paymentStatus: params?.paymentStatus || "",
       });
 
       if (!forceRefresh && registrationsCache.current[cacheKey]) {
