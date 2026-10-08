@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 /** How long the logos stay fully visible before the dissolve starts. */
-const HOLD_MS = 2800;
+const HOLD_MS = 900;
 /** How long the pixel dissolve takes. */
-const DISSOLVE_MS = 950;
+const DISSOLVE_MS = 500;
+/** Maximum time to wait for the splash logos before showing the page. */
+const LOGO_WAIT_MS = 1200;
 const BG = "#07080B";
 
 /**
@@ -51,13 +53,18 @@ export default function LoadingScreen() {
     let holdTimer = 0;
     let raf = 0;
     let progRaf = 0;
+    let failSafeTimer = 0;
     document.documentElement.style.overflow = "hidden";
 
     const finish = () => {
       if (cancelled) return;
+      window.clearTimeout(failSafeTimer);
       document.documentElement.style.overflow = "";
       setStage("done");
     };
+
+    // Keep the splash from trapping the page if an animation frame stalls.
+    failSafeTimer = window.setTimeout(finish, LOGO_WAIT_MS + HOLD_MS + DISSOLVE_MS + 500);
 
     const dissolve = () => {
       if (cancelled) return;
@@ -148,7 +155,7 @@ export default function LoadingScreen() {
             }),
       ),
     );
-    const cap = new Promise<void>((res) => window.setTimeout(res, 4000));
+    const cap = new Promise<void>((res) => window.setTimeout(res, LOGO_WAIT_MS));
     Promise.race([loaded, cap]).then(() => {
       if (cancelled) return;
       holdTimer = window.setTimeout(dissolve, HOLD_MS);
@@ -168,6 +175,7 @@ export default function LoadingScreen() {
     return () => {
       cancelled = true;
       window.clearTimeout(holdTimer);
+      window.clearTimeout(failSafeTimer);
       cancelAnimationFrame(raf);
       cancelAnimationFrame(progRaf);
       document.documentElement.style.overflow = "";
