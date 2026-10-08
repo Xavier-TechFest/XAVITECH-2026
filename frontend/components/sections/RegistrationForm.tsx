@@ -123,6 +123,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   });
   const [review, setReview] = useState<RegistrationReview | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [uploadStatusMessage, setUploadStatusMessage] = useState<string | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [submitResult, setSubmitResult] = useState<CreatedRegistrationResponse | null>(null);
@@ -691,17 +692,84 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Unified Payment Initiation Handler (used automatically after submit and manually via PAY NOW)
+  const initiatePaymentFlow = async (
+    targetRegistration: CreatedRegistrationResponse,
+    existingToken?: string
+  ) => {
+    setIsInitiatingPayment(true);
+    setPaymentError(null);
+    try {
+      const token = existingToken || (await getIdToken());
+      if (!token) throw new Error("Authentication session expired. Please sign in again.");
+
+      let currentResult = targetRegistration;
+      // If in DRAFT status, finalize to PAYMENT_PENDING before initiating payment
+      if (currentResult.status === "DRAFT") {
+        const submitted = await api.submitRegistration(
+          token,
+          currentResult.registrationId || currentResult.id
+        );
+        currentResult = submitted;
+        setSubmitResult(submitted);
+      }
+
+      // Check if event is velocityx (Death Race) where fee is pending coordinator confirmation
+      if (event.id === "velocityx") {
+        return;
+      }
+
+      // If registration is already confirmed or free
+      if (
+        currentResult.status === "CONFIRMED" ||
+        currentResult.status === "PAYMENT_SUCCESS" ||
+        currentResult.payableAmount === 0
+      ) {
+        return;
+      }
+
+      const regId = currentResult.id || currentResult.registrationId;
+      setUploadStatusMessage("Opening secure payment gateway...");
+      const res = await api.initiatePayment(token, regId);
+      setPaymentInfo(res);
+      if (res.liveMode && res.paymentUrl) {
+        window.location.href = res.paymentUrl;
+      }
+    } catch (err: any) {
+      console.error("Payment initiation error:", err);
+      setPaymentError(
+        err.message || "Unable to connect to payment gateway. You can retry payment below."
+      );
+    } finally {
+      setIsInitiatingPayment(false);
+    }
+  };
+
+  // Payment Initiation Handler for manual PAY NOW button
+  const handlePayNow = async () => {
+    if (!submitResult || isInitiatingPayment) return;
+    await initiatePaymentFlow(submitResult);
+  };
+
   // Final Submit to Backend API
   const handleFinalSubmit = async () => {
     setApiError(null);
 
+    // Prevent duplicate submission / double clicking
+    if (isSubmittingRef.current || isSubmitting || isInitiatingPayment) {
+      return;
+    }
+    isSubmittingRef.current = true;
+
     if (!isAuthenticated) {
+      isSubmittingRef.current = false;
       setApiError("Google Sign-In is required to submit your registration.");
       return;
     }
 
     const token = await getIdToken();
     if (!token) {
+      isSubmittingRef.current = false;
       setApiError("Authentication session expired. Please sign in again.");
       return;
     }
@@ -816,8 +884,10 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                 docType
               );
             } catch (uploadDocErr: any) {
-              console.warn(`Document upload warning for participant ${pIdx + 1}:`, uploadDocErr);
-              // Non-blocking: registration is safely created; log and allow completion
+              console.error(`Document upload failed for participant ${pIdx + 1}:`, uploadDocErr);
+              throw new Error(
+                `Failed to upload ${docLabel} for Participant ${pIdx + 1} (${file.name}): ${uploadDocErr.message || "Upload failed"}. Please retry.`
+              );
             }
           }
         }
@@ -854,6 +924,16 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
         url.searchParams.set("step", "confirmed");
         window.history.replaceState(null, "", url.toString());
       }
+
+      // 6. Automatic Payment Initiation for New Registration in PAYMENT_PENDING
+      if (
+        finalRegistration.status === "PAYMENT_PENDING" &&
+        event.id !== "velocityx" &&
+        finalRegistration.payableAmount !== 0
+      ) {
+        setUploadStatusMessage("Registration submitted! Opening secure payment gateway...");
+        await initiatePaymentFlow(finalRegistration, token);
+      }
     } catch (err: any) {
       console.error("Registration submission failed:", err);
       if (err.status === 409) {
@@ -868,36 +948,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
       }
     } finally {
       setIsSubmitting(false);
+      isSubmittingRef.current = false;
       setUploadStatusMessage(null);
-    }
-  };
-
-  // Payment Initiation Handler
-  const handlePayNow = async () => {
-    if (!submitResult) return;
-    setIsInitiatingPayment(true);
-    setPaymentError(null);
-    try {
-      const token = await getIdToken();
-      if (!token) throw new Error("Authentication session expired. Please sign in again.");
-      let currentResult = submitResult;
-      // If in DRAFT status, finalize to PAYMENT_PENDING before initiating payment
-      if (currentResult.status === "DRAFT") {
-        const submitted = await api.submitRegistration(token, currentResult.registrationId || currentResult.id);
-        currentResult = submitted;
-        setSubmitResult(submitted);
-      }
-      const regId = currentResult.id || currentResult.registrationId;
-      const res = await api.initiatePayment(token, regId);
-      setPaymentInfo(res);
-      if (res.liveMode && res.paymentUrl) {
-        window.location.href = res.paymentUrl;
-      }
-    } catch (err: any) {
-      console.error("Payment initiation error:", err);
-      setPaymentError(err.message || "Unable to connect to payment gateway. Please try again.");
-    } finally {
-      setIsInitiatingPayment(false);
     }
   };
 
@@ -937,6 +989,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                 ? "Cancelled"
                 : submitResult.status === "DRAFT"
                 ? "Draft Saved"
+                : isInitiatingPayment
+                ? "Submitted · Connecting to Gateway"
                 : "Received"
             } · {event.trackName}
           </p>
@@ -949,10 +1003,16 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               ? "Registration Cancelled"
               : submitResult.status === "DRAFT"
               ? "Draft Registration Saved"
+              : isInitiatingPayment
+              ? "Opening Payment Gateway..."
               : "Registration Created"}
           </h2>
           <p className="mt-3 text-sm text-slate-300 max-w-lg mx-auto">
-            {submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS" ? (
+            {isInitiatingPayment ? (
+              <span className="text-cyan-200">
+                Registration record created. Connecting to secure Easebuzz checkout...
+              </span>
+            ) : submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS" ? (
               <>Your registration for <span className="font-bold text-white">{event.name}</span> is confirmed. See you at the festival!</>
             ) : submitResult.status === "PAYMENT_FAILED" ? (
               <>Your registration for <span className="font-bold text-white">{event.name}</span> requires fee payment to be confirmed.</>
@@ -1151,6 +1211,13 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                         </>
                       )}
                     </button>
+
+                    {isInitiatingPayment && (
+                      <p className="text-xs text-amber-300 font-mono flex items-center justify-center gap-1.5 animate-pulse">
+                        <Loader2 size={13} className="animate-spin shrink-0" />
+                        <span>Redirecting to Easebuzz payment portal...</span>
+                      </p>
+                    )}
 
                     {paymentError ? (
                       <p role="alert" className="text-center text-xs text-rose-300">
@@ -1954,8 +2021,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                   setStep("form");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                disabled={isSubmitting}
-                className="flex items-center justify-center gap-2 rounded border border-white/15 px-6 py-4 font-oxanium text-sm font-bold uppercase tracking-widest text-white hover:border-cyan-300 hover:text-cyan-200 transition"
+                disabled={isSubmitting || isInitiatingPayment}
+                className="flex items-center justify-center gap-2 rounded border border-white/15 px-6 py-4 font-oxanium text-sm font-bold uppercase tracking-widest text-white hover:border-cyan-300 hover:text-cyan-200 transition disabled:opacity-50"
               >
                 <ArrowLeft size={16} /> Edit Details
               </button>
@@ -1963,20 +2030,33 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               <button
                 type="button"
                 onClick={handleFinalSubmit}
-                disabled={isSubmitting}
-                className="flex items-center justify-center gap-2 bg-cyan-300 px-6 py-4 font-oxanium text-sm font-bold uppercase tracking-widest text-slate-950 hover:bg-cyan-200 transition disabled:opacity-50"
+                disabled={isSubmitting || isInitiatingPayment}
+                className="flex items-center justify-center gap-2 bg-cyan-300 px-6 py-4 font-oxanium text-sm font-bold uppercase tracking-widest text-slate-950 hover:bg-cyan-200 transition disabled:opacity-50 cursor-pointer"
               >
-                {isSubmitting ? (
+                {isSubmitting || isInitiatingPayment ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" /> {uploadStatusMessage || "Submitting Registration..."}
+                    <Loader2 size={16} className="animate-spin" />{" "}
+                    {uploadStatusMessage || "Preparing Secure Payment..."}
+                  </>
+                ) : event.id === "velocityx" || feeTotal === 0 ? (
+                  <>
+                    <Check size={16} /> Submit Registration
                   </>
                 ) : (
                   <>
-                    <Check size={16} /> Submit Registration
+                    <CreditCard size={16} /> Submit & Pay
                   </>
                 )}
               </button>
             </div>
+
+            <p className="text-xs text-slate-400 text-center sm:text-left">
+              {event.id === "velocityx"
+                ? "Your registration will be reserved. Fee payment will open once confirmed by event coordinators."
+                : feeTotal === 0
+                ? "Your registration will be submitted immediately."
+                : "After submission, you will be automatically redirected to the secure Easebuzz payment gateway."}
+            </p>
           </section>
         )}
 
