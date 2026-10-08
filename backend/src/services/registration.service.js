@@ -90,6 +90,28 @@ export const formatRegistrationResponse = (reg) => {
 };
 
 /**
+ * Format lightweight registration index record for global frontend cache.
+ * Excludes heavy documents, participants snapshots, and payment transaction details.
+ */
+export const formatRegistrationIndexItem = (reg) => {
+  if (!reg) return null;
+  return {
+    id: reg.id,
+    registrationId: reg.registration_id,
+    userId: reg.user_id,
+    eventId: reg.event_id,
+    eventSlug: reg.event?.slug || null,
+    eventName: reg.event?.name || null,
+    teamId: reg.team_id || null,
+    teamName: reg.team?.team_name || null,
+    registrationType: reg.registration_type,
+    status: reg.status,
+    createdAt: reg.created_at,
+    updatedAt: reg.updated_at,
+  };
+};
+
+/**
  * Helper to resolve the authenticated PostgreSQL user from Firebase auth context.
  * Never trusts any client-provided user_id or email.
  */
@@ -299,6 +321,10 @@ export const registrationService = {
    * @returns {Promise<Array>} List of user's registrations
    */
   getUserRegistrations: async (firebaseUser, options = {}) => {
+    if (options?.format === 'index' || options?.mode === 'index') {
+      return registrationService.getUserRegistrationIndex(firebaseUser, options);
+    }
+
     const user = await resolvePostgresUser(firebaseUser);
     const registrations = await RegistrationModel.getUserRegistrations(user.id);
     let formatted = registrations.map(formatRegistrationResponse);
@@ -308,6 +334,31 @@ export const registrationService = {
       formatted = formatted.filter((r) => {
         const matchesId = r.eventId && String(r.eventId).toLowerCase() === eventFilter;
         const matchesSlug = r.event?.slug && String(r.event.slug).toLowerCase() === eventFilter;
+        return matchesId || matchesSlug;
+      });
+    }
+
+    return formatted;
+  },
+
+  /**
+   * Fetch lightweight registration index for the authenticated user.
+   * Returns only essential identification and status fields without heavy participant snapshots or documents.
+   *
+   * @param {Object} firebaseUser - Verified user attached by auth middleware
+   * @param {Object} [options] - Optional query filters (eventSlug, eventId, event)
+   * @returns {Promise<Array>} Lightweight list of registration index items
+   */
+  getUserRegistrationIndex: async (firebaseUser, options = {}) => {
+    const user = await resolvePostgresUser(firebaseUser);
+    const registrations = await RegistrationModel.getUserRegistrationIndex(user.id);
+    let formatted = registrations.map(formatRegistrationIndexItem);
+
+    const eventFilter = (options?.eventSlug || options?.eventId || options?.event || '').trim().toLowerCase();
+    if (eventFilter) {
+      formatted = formatted.filter((r) => {
+        const matchesId = r.eventId && String(r.eventId).toLowerCase() === eventFilter;
+        const matchesSlug = r.eventSlug && String(r.eventSlug).toLowerCase() === eventFilter;
         return matchesId || matchesSlug;
       });
     }

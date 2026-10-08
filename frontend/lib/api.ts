@@ -270,6 +270,73 @@ export interface ParticipantRegistration {
   }>;
 }
 
+/**
+ * Lightweight registration index item stored in centralized frontend cache.
+ * Contains only essential identification and status fields without heavy participant snapshots or documents.
+ */
+export interface RegistrationIndexItem {
+  id: string;
+  registrationId: string;
+  userId?: string;
+  eventId: string;
+  eventSlug: string | null;
+  eventName?: string | null;
+  teamId?: string | null;
+  teamName?: string | null;
+  registrationType: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Canonical database UUID to official event slug mapping for all 13 official festival events.
+ */
+export const UUID_TO_EVENT_SLUG: Record<string, string> = {
+  "213a4266-b523-4317-b80e-c0120965cbe4": "innocraft",
+  "abeecd1f-e07d-43e5-8970-691e6ed010b2": "webweave",
+  "b631bfc9-ac25-4958-9bb0-c908ae8967b8": "runtime-rush",
+  "c83ca21b-9787-4c8d-9bb4-0a1ac7c5b793": "vlookup",
+  "15328fe9-412b-4f0a-93fc-96ff567f6f93": "debug-derby",
+  "770970ed-6e63-4bd7-b9e9-ff4874acd060": "unscripted-nations",
+  "b5c3b61d-2b26-45d2-9ff4-92cce891b727": "circuit-of-minds",
+  "218f1371-b8e6-4d59-8e90-e0a5d0f000f6": "battle-of-bots",
+  "ae0bcfc2-517a-4b86-be13-88abe1ce5ea0": "thoughtlab",
+  "620c5d8b-9e67-4a6c-82e3-0366c071d153": "loot-goblins",
+  "74693e7b-9409-4934-a154-dc351f9ceb73": "cipher-chase",
+  "2dfb0b0d-ffba-4cbc-993f-72aa907da3b7": "velocityx",
+  "f3c690be-8655-4d7f-a7e9-75d3e84a5e54": "hack-the-skill",
+};
+
+/**
+ * Fetch lightweight registration index for the authenticated user.
+ * Returns only essential routing/status fields without heavy participant snapshots or documents.
+ * Called ONCE when Firebase auth resolves to populate the centralized registration cache.
+ */
+export async function fetchMyRegistrationIndex(
+  token: string
+): Promise<RegistrationIndexItem[]> {
+  const url = `${API_BASE_URL}/registrations/my?format=index`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to fetch registrations index",
+      response.status,
+      json
+    );
+  }
+  return json.data || json || [];
+}
+
 export async function fetchMyRegistrations(
   token: string,
   options?: { eventSlug?: string; eventId?: string }
@@ -1886,6 +1953,7 @@ export async function fetchPaymentStatus(
 export const api = {
   fetchUserProfile,
   updateUserProfile,
+  fetchMyRegistrationIndex,
   fetchMyRegistrations,
   fetchMyRegistrationForEvent,
   createRegistration,

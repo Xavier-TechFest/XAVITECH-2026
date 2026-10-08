@@ -26,7 +26,10 @@ export const createRegistration = async (req, res, next) => {
  */
 export const listMyRegistrations = async (req, res, next) => {
   try {
-    const registrations = await registrationService.getUserRegistrations(req.user, req.query);
+    const isIndexFormat = req.query.format === 'index' || req.query.mode === 'index';
+    const registrations = isIndexFormat
+      ? await registrationService.getUserRegistrationIndex(req.user, req.query)
+      : await registrationService.getUserRegistrations(req.user, req.query);
     return sendSuccess(res, 'User registrations retrieved successfully', registrations);
   } catch (error) {
     next(error);

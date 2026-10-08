@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import { EVENTS, TRACKS, EventItem } from "@/lib/eventsData";
-import { api, ParticipantRegistration } from "@/lib/api";
+import { api, ParticipantRegistration, UUID_TO_EVENT_SLUG } from "@/lib/api";
 
 function validatePhoneNumber(value: string): { isValid: boolean; error: string | null } {
   const trimmed = value.trim();
@@ -47,23 +47,6 @@ function extractTrackName(trackRaw: unknown): string {
   }
   return "";
 }
-
-// Canonical database UUID to official event slug mapping for all 13 official festival events
-const UUID_TO_EVENT_SLUG: Record<string, string> = {
-  "213a4266-b523-4317-b80e-c0120965cbe4": "innocraft",
-  "abeecd1f-e07d-43e5-8970-691e6ed010b2": "webweave",
-  "b631bfc9-ac25-4958-9bb0-c908ae8967b8": "runtime-rush",
-  "c83ca21b-9787-4c8d-9bb4-0a1ac7c5b793": "vlookup",
-  "15328fe9-412b-4f0a-93fc-96ff567f6f93": "debug-derby",
-  "770970ed-6e63-4bd7-b9e9-ff4874acd060": "unscripted-nations",
-  "b5c3b61d-2b26-45d2-9ff4-92cce891b727": "circuit-of-minds",
-  "218f1371-b8e6-4d59-8e90-e0a5d0f000f6": "battle-of-bots",
-  "ae0bcfc2-517a-4b86-be13-88abe1ce5ea0": "thoughtlab",
-  "620c5d8b-9e67-4a6c-82e3-0366c071d153": "loot-goblins",
-  "74693e7b-9409-4934-a154-dc351f9ceb73": "cipher-chase",
-  "2dfb0b0d-ffba-4cbc-993f-72aa907da3b7": "velocityx",
-  "f3c690be-8655-4d7f-a7e9-75d3e84a5e54": "hack-the-skill",
-};
 
 function resolveEventFromRegistration(reg: ParticipantRegistration): EventItem | null {
   const slugCandidate = (
@@ -172,7 +155,7 @@ interface ParticipantEventViewModel {
 }
 
 export default function ProfilePage() {
-  const { user, loading, isAuthenticated, updateProfile, logout, getIdToken } = useAuth();
+  const { user, loading, isAuthenticated, updateProfile, logout, getIdToken, refreshRegistrations } = useAuth();
   const router = useRouter();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -218,6 +201,7 @@ export default function ProfilePage() {
         if (!cancelled) {
           const safeRows = Array.isArray(rows) ? rows : [];
           setRegistrations(safeRows);
+          refreshRegistrations().catch(() => {});
         }
       } catch (error: unknown) {
         if (!cancelled) {
