@@ -98,7 +98,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
             </div>
             <div>
               <span className="text-muted block text-[10px] uppercase tracking-wider">Prize Pool</span>
-              <span className="mt-1 block font-extrabold text-marigold text-sm">{event.prize === "TBA" ? "TBA" : event.prize}</span>
+              <span className="mt-1 block font-extrabold text-marigold text-sm">{event.prize === "TBA" ? "Exciting Gifts & Prizes" : event.prize}</span>
             </div>
             {event.team !== "TBA" && <div>
               <span className="text-muted block text-[10px] uppercase tracking-wider">{event.team === "Individual" ? "Participation Type" : "Team Size"}</span>
@@ -142,7 +142,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
           {!event.exploreSections?.length && event.requirements?.length ? <ContentList title="Requirements" items={event.requirements} /> : null}
           {event.exploreSections?.length ? <EventExploreSections sections={event.exploreSections} /> : null}
 
-          {event.registrationConfig?.coordinator && <div className="mt-6 border-t border-line pt-5"><h3 className="font-oxanium text-xs font-bold uppercase tracking-wider text-circuit">Event Contact</h3><Contact name={event.registrationConfig.coordinator.name} role="Event Coordinator" email={event.registrationConfig.coordinator.email} phone={event.registrationConfig.coordinator.phone}/>{event.registrationConfig.coordinator.coCoordinator && <Contact name={event.registrationConfig.coordinator.coCoordinator} role="Co-Coordinator"/>}</div>}
+          {event.registrationConfig?.coordinator && <div className="mt-6 border-t border-line pt-5"><h3 className="font-oxanium text-xs font-bold uppercase tracking-wider text-circuit">Event Contact</h3><Contact name={event.registrationConfig.coordinator.name} role="Event Coordinator" email={event.registrationConfig.coordinator.email} phone={event.registrationConfig.coordinator.phone}/>{event.registrationConfig.coordinator.coCoordinator && <Contact name={event.registrationConfig.coordinator.coCoordinator} role="Event Coordinator"/>}</div>}
 
           {/* Protocol & Rules */}
           {!event.exploreSections?.length && event.rules && event.rules.length > 0 && (

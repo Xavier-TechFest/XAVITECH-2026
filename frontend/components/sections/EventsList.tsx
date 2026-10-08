@@ -115,7 +115,7 @@ export default function EventsList() {
                     {/* PRIZE */}
                     <div className="col-span-1 font-oxanium text-base font-bold text-marigold flex justify-between md:block w-full">
                       <span className="md:hidden text-xs text-slate-500 uppercase">Prize Pool:</span>
-                      {event.prize === "TBA" ? "TBA" : event.prize}
+                      {event.prize === "TBA" ? "Exciting Gifts & Prizes" : event.prize}
                     </div>
 
                     {/* ACTION (Desktop) */}

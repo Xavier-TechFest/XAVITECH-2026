@@ -55,7 +55,13 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return Number((baseFee * count).toFixed(2));
   }
 
-  // 3. All other events have standard flat team or individual fee configured in DB
+  // 3. Runtime Rush charges ₹150 for each registered participant.
+  if (event.slug === 'runtime-rush') {
+    const count = participants.length > 0 ? participants.length : 1;
+    return Number((baseFee * count).toFixed(2));
+  }
+
+  // 4. All other events have standard flat team or individual fee configured in DB
   return Number(baseFee.toFixed(2));
 };
 

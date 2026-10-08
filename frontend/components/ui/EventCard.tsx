@@ -39,10 +39,10 @@ export default function EventCard({ event, variant }: EventCardProps) {
         src={event.image}
         alt={event.name}
         loading="lazy"
-        className="absolute inset-0 h-full w-full object-cover opacity-75 transition duration-700 group-hover:scale-[1.04] group-hover:opacity-95"
+        className={`absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04] ${event.id === "hack-the-skill" ? "opacity-[0.85] group-hover:opacity-100" : "opacity-75 group-hover:opacity-95"}`}
         style={cropStyle(imageCrop)}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#03080d]/85 via-[#03080d]/45 via-45% to-[#03080d]/92" />
+      <div className={`absolute inset-0 bg-gradient-to-b ${event.id === "hack-the-skill" ? "from-[#03080d]/55 via-[#03080d]/20 via-45% to-[#03080d]/65" : "from-[#03080d]/85 via-[#03080d]/45 via-45% to-[#03080d]/92"}`} />
       <div className="absolute inset-[1px] border border-[var(--event-accent)]/50 transition-colors group-hover:border-[var(--event-accent)]" />
       <div className="pointer-events-none absolute left-4 top-4 h-5 w-5 border-l-2 border-t-2 border-[var(--event-accent)]" />
       <div className="pointer-events-none absolute right-4 top-4 h-5 w-5 border-r-2 border-t-2 border-[var(--event-accent)]" />
@@ -88,7 +88,7 @@ export default function EventCard({ event, variant }: EventCardProps) {
 
         <div className="mb-3 flex items-center justify-between border bg-black/50 px-3 py-2.5" style={{ borderColor: `${accent}99` }}>
           <span className="font-oxanium text-xs font-bold uppercase tracking-wider text-slate-200">Prize pool</span>
-          <span className="font-oxanium text-lg font-black tracking-wide" style={{ color: accent, textShadow: `0 0 12px ${accent}66` }}>{event.prize === "TBA" ? "TBA" : event.prize}</span>
+          <span className="font-oxanium text-lg font-black tracking-wide" style={{ color: accent, textShadow: `0 0 12px ${accent}66` }}>{event.prize === "TBA" ? "Exciting Gifts & Prizes" : event.prize}</span>
         </div>
 
         <div className="grid grid-cols-5 gap-2">

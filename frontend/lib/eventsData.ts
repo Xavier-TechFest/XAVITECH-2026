@@ -457,7 +457,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "InnoCraft is a team hackathon for school and college participants. Teams register together through one team leader.",
     date: "TBA",
     time: "TBA",
-    prize: "TBA",
+    prize: "Exciting Gifts & Prizes",
     price: "₹800 per school team / ₹1,000 per college team",
     team: "Exactly 4 members",
     venue: "TBA",
@@ -481,8 +481,8 @@ export const EVENTS: EventItem[] = [
       "Every participant must verify email/mobile and upload a valid school/college ID card.",
     ],
     prizeBreakdown: {
-      total: "TBA",
-      note: "Prize details: TBA.",
+      total: "Exciting Gifts & Prizes",
+      note: "Exciting gifts and prizes await participants.",
     },
     documents: [
       {
@@ -564,7 +564,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "WebWeave is a team web development challenge for school students in Class 10 and above and undergraduate students, including BCA students. Teams of two bring their own laptop and charger, then build around one shared theme in a four-hour build phase.",
     date: "TBA",
     time: "TBA",
-    prize: "TBA",
+    prize: "Exciting Gifts & Prizes",
     price: "₹300 registration fee",
     team: "Exactly 2 members",
     venue: "TBA",
@@ -596,7 +596,7 @@ export const EVENTS: EventItem[] = [
       "Basic HTML, CSS, and JavaScript knowledge is required. Bring one laptop and charger per team.",
     ],
     prizeBreakdown: {
-      total: "TBA",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -665,8 +665,8 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Runtime Rush is a coding challenge open to school and college students. Participate individually or register with one teammate. Participants compete using Java, C, C++, Python, or JavaScript.",
     date: "TBA",
     time: "TBA",
-    prize: "TBA",
-    price: "₹300 registration fee",
+    prize: "Exciting Gifts & Prizes",
+    price: "₹150 per participant",
     team: "Individual or 2 participants",
     venue: "TBA",
     accentColor: "#35e0c9",
@@ -694,7 +694,7 @@ export const EVENTS: EventItem[] = [
       "Programming language options: Java, C, C++, Python, and JavaScript.",
     ],
     prizeBreakdown: {
-      total: "TBA",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -717,8 +717,9 @@ export const EVENTS: EventItem[] = [
       eventFormat: "team",
       minTeamSize: 1,
       maxTeamSize: 2,
-      feeAmount: 300,
-      feeDisplay: "₹300 registration fee",
+      feeAmount: 150,
+      feeBasis: "per_participant",
+      feeDisplay: "₹150 per participant",
       deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
@@ -772,7 +773,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "XAVITECH 2026 Data Analytics is a team competition for pairs. Participants should know Excel and Power BI. The event is open to Class 7–12, undergraduate, and postgraduate students over 16 years old.",
     date: "TBA",
     time: "TBA",
-    prize: "TBA",
+    prize: "Exciting Gifts & Prizes",
     price: "₹300 registration fee",
     team: "2 participants",
     venue: "TBA",
@@ -802,7 +803,7 @@ export const EVENTS: EventItem[] = [
       "Prerequisite: knowledge of Excel and Power BI.",
     ],
     prizeBreakdown: {
-      total: "TBA",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1029,8 +1030,8 @@ export const EVENTS: EventItem[] = [
   // ----------------------------------------------------------------------------
   {
     id: "unscripted-nations",
-    name: "MODEL UNITED NATIONS",
-    fullTitle: "XAVITECH 2026 — Model United Nations (MUN)",
+    name: "UNSCRIPTED NATIONS",
+    fullTitle: "XAVITECH 2026 — Unscripted Nations (Model United Nations)",
     badge: "Track D",
     badgeLevel: "Advanced",
     trackId: "track-d",
@@ -1039,14 +1040,14 @@ export const EVENTS: EventItem[] = [
     fullDesc: "XAVITECH 2026 Model United Nations (MUN) is an individual delegate event for the United Nations Commission on Science and Technology for Development (CSTD).",
     date: "TBA",
     time: "TBA",
-    prize: "TBA",
+    prize: "Exciting Gifts & Prizes",
     price: "₹500 per delegate",
     team: "Individual",
     venue: "TBA",
     accentColor: "#34d399",
     glowColor: "rgba(52,211,153,.2)",
     borderColor: "rgba(52,211,153,.4)",
-    image: "/images/events/event-11.jpeg",
+    image: "/events/MUN.jpg",
     highlights: [
       "Expected participation: TBA.",
     ],
@@ -1063,7 +1064,7 @@ export const EVENTS: EventItem[] = [
       "Delegates must follow committee rules, the event code of conduct, and organiser instructions.",
     ],
     prizeBreakdown: {
-      total: "TBA",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1143,7 +1144,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Tech Quiz is a team-based event with fixed two-member teams.",
     date: "TBA",
     time: "TBA",
-    prize: "TBA",
+    prize: "Exciting Gifts & Prizes",
     price: "₹300 per team",
     team: "Exactly 2 members",
     venue: "TBA",
@@ -1168,7 +1169,7 @@ export const EVENTS: EventItem[] = [
       "Valid student identity proof and completion of the online registration form are prerequisites.",
     ],
     prizeBreakdown: {
-      total: "TBA",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1244,7 +1245,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Battle of Bots is an AI prompt battle for individual participants and teams of up to three. Further event details: TBA.",
     date: "TBA",
     time: "TBA",
-    prize: "TBA",
+    prize: "Exciting Gifts & Prizes",
     price: "₹550 registration fee",
     team: "Individual or teams of 2–3",
     venue: "TBA",
@@ -1274,7 +1275,7 @@ export const EVENTS: EventItem[] = [
       "Coordinator access should include participant and team lists, contact details, uploaded ID cards, submitted project/material files, registration and attendance status, and CSV/Excel export.",
     ],
     prizeBreakdown: {
-      total: "TBA",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1335,7 +1336,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "XAVITECH 2026 Ideathon is a team event for groups of two to four. A team leader submits the registration, adds one teammate, and invites any remaining members to join through a link.",
     date: "TBA",
     time: "TBA",
-    prize: "TBA",
+    prize: "Exciting Gifts & Prizes",
     price: "₹500 per team",
     team: "2–4 members",
     venue: "TBA",
@@ -1360,7 +1361,7 @@ export const EVENTS: EventItem[] = [
       "A valid student identity proof and completed online registration are required.",
     ],
     prizeBreakdown: {
-      total: "TBA",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1444,7 +1445,7 @@ export const EVENTS: EventItem[] = [
     accentColor: "#60a5fa",
     glowColor: "rgba(96,165,250,.2)",
     borderColor: "rgba(96,165,250,.4)",
-    image: "/assets/event-images/LootGoblins.png",
+    image: "/events/Bgmi.jpg",
     highlights: [
       "One three-map series · all registered squads play all three maps.",
       "4 main players + 1 optional substitute · ₹200 per registered player · 25-squad cap.",
@@ -1847,7 +1848,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Build. Pilot. Survive the Track. Death Race is a robotic obstacle race that tests engineering, durability, and piloting skill. Teams guide their custom-built robots through rough terrain, a shallow water pit, an incline, and other challenges on one modular course.",
     date: "31 October 2026",
     time: "TBA",
-    prize: "TBA",
+    prize: "Exciting Gifts & Prizes",
     price: "₹700 per team",
     team: "2–4 members",
     venue: "TBA",
@@ -1884,7 +1885,7 @@ export const EVENTS: EventItem[] = [
       "Each competing team must register 2–4 members and bring a robot that passes the safety and technical inspection.",
     ],
     prizeBreakdown: {
-      total: "TBA",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -2046,14 +2047,14 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Hack the Skills is a technical workshop open to students from Class 8 through postgraduate level. Register individually or as a team of two to four. Schedule and venue: TBA.",
     date: "TBA",
     time: "TBA",
-    prize: "₹0",
+    prize: "Exciting Gifts & Prizes",
     price: "₹300 registration fee",
     team: "Individual or teams of 2–4",
     venue: "TBA",
     accentColor: "#f472b6",
     glowColor: "rgba(244,114,182,.2)",
     borderColor: "rgba(244,114,182,.4)",
-    image: "/images/events/event-13.jpeg",
+    image: "/events/hack-the-skill.png",
     highlights: [
       "Technical workshop · Schedule and venue: TBA.",
     ],
