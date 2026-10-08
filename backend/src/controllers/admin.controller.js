@@ -1,4 +1,5 @@
 import adminRegistrationService from '../services/adminRegistration.service.js';
+import eventService from '../services/event.service.js';
 import { sendSuccess, sendError } from '../utils/response.util.js';
 import logger from '../utils/logger.util.js';
 
@@ -211,6 +212,56 @@ export const exportRegistrations = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/admin/events
+ * List all events with track details, live registration count, capacity, and derived status.
+ */
+export const listEvents = async (req, res, next) => {
+  try {
+    const events = await eventService.getAdminEvents();
+    return sendSuccess(res, 'Admin events retrieved successfully', events, 200);
+  } catch (error) {
+    logger.error('Error retrieving admin events:', error);
+    next(error);
+  }
+};
+
+/**
+ * GET /api/admin/events/:eventId/registration-settings
+ * Retrieve registration settings and capacity for an event.
+ */
+export const getEventRegistrationSettings = async (req, res, next) => {
+  try {
+    const { eventId } = req.params;
+    const settings = await eventService.getAdminEventRegistrationSettings(eventId);
+    if (!settings) {
+      return sendError(res, 'Event not found with the provided identifier', null, 404);
+    }
+    return sendSuccess(res, 'Event registration settings retrieved successfully', settings, 200);
+  } catch (error) {
+    logger.error('Error retrieving event registration settings:', error);
+    next(error);
+  }
+};
+
+/**
+ * PATCH /api/admin/events/:eventId/registration-settings
+ * Update registration status, window, and capacity for an event.
+ */
+export const updateEventRegistrationSettings = async (req, res, next) => {
+  try {
+    const { eventId } = req.params;
+    const updatedSettings = await eventService.updateEventRegistrationSettings(eventId, req.body);
+    return sendSuccess(res, 'Event registration settings updated successfully', updatedSettings, 200);
+  } catch (error) {
+    if (error.statusCode) {
+      return sendError(res, error.message, null, error.statusCode);
+    }
+    logger.error('Error updating event registration settings:', error);
+    next(error);
+  }
+};
+
 export default {
   getDashboardStats,
   listRegistrations,
@@ -221,4 +272,7 @@ export default {
   verifyAndCheckIn,
   exportRegistrations,
   exportRegistrationsPreview,
+  listEvents,
+  getEventRegistrationSettings,
+  updateEventRegistrationSettings,
 };

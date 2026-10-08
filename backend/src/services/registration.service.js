@@ -179,6 +179,7 @@ export const registrationService = {
     if (!validation.isValid) {
       const error = new Error(validation.message);
       error.statusCode = validation.statusCode || 400;
+      error.code = validation.code;
       throw error;
     }
 
@@ -485,11 +486,13 @@ export const registrationService = {
     // 4. Validate event status & configuration
     const eventValidation = await eventService.validateEventForRegistration(
       registration.event_id,
-      registration.registration_type
+      registration.registration_type,
+      { excludeRegistrationId: registration.id }
     );
     if (!eventValidation.isValid) {
       const error = new Error(eventValidation.message);
       error.statusCode = eventValidation.statusCode || 400;
+      error.code = eventValidation.code;
       throw error;
     }
     const event = eventValidation.event;
