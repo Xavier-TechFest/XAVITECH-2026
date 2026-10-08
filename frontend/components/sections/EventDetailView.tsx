@@ -4,11 +4,27 @@ import Link from "next/link";
 import { ArrowRight, Calendar, Clock, Download, MapPin, Users, ChevronLeft } from "lucide-react";
 import { EventItem, TRACKS } from "@/lib/eventsData";
 import { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
+import { useEventRegistrationStatus } from "@/lib/hooks/useEventRegistrationStatus";
 
 export default function EventDetailView({ event }: { event: EventItem }) {
   const track = TRACKS.find((item) => item.id === event.trackId);
   const config = event.registrationConfig;
   const imageCrop = useImageCrop(event, "detail");
+  const { status, eventData } = useEventRegistrationStatus(event.id);
+  const effectiveStatus = status || (config ? "OPEN" : "TBA");
+
+  const isAvailable = effectiveStatus === "OPEN";
+  let buttonLabel = "REGISTER NOW";
+  if (effectiveStatus === "COMING_SOON") {
+    buttonLabel = "REGISTRATION OPENS SOON";
+  } else if (effectiveStatus === "CLOSED") {
+    buttonLabel = "REGISTRATION CLOSED";
+  } else if (effectiveStatus === "FULL") {
+    buttonLabel = "REGISTRATION FULL";
+  } else if (effectiveStatus === "DISABLED") {
+    buttonLabel = "REGISTRATION UNAVAILABLE";
+  }
+
   const facts = [
     { label: "Date", value: event.date },
     { label: "Time", value: event.time },
@@ -16,6 +32,9 @@ export default function EventDetailView({ event }: { event: EventItem }) {
     ...(event.team !== "TBA" ? [{ label: event.team === "Individual" ? "Participation Type" : "Team Size", value: event.team }] : []),
     { label: "Registration Fee", value: event.price },
     { label: "Registration Deadline", value: config?.deadline ?? "TBA" },
+    ...(eventData?.capacity !== null && eventData?.capacity !== undefined
+      ? [{ label: "Capacity", value: `${eventData.registeredCount} / ${eventData.capacity} (${eventData.remainingCapacity} remaining)` }]
+      : []),
   ];
   const downloadBrochure = () => {
     const text = [`XAVITECH 2026 — ${event.name}`, `Category: ${track?.name ?? event.trackName}`, ...facts.map((fact) => `${fact.label}: ${fact.value}`), "", event.fullDesc, ...[...(event.eligibility ?? []), ...(event.highlights ?? []), ...(event.registrationInfo ?? []), ...(event.requirements ?? []), ...(event.rules ?? [])].map((item) => `• ${item}`)].join("\n");
@@ -61,7 +80,23 @@ export default function EventDetailView({ event }: { event: EventItem }) {
           <div className="relative flex min-h-[680px] flex-col p-5 sm:min-h-[800px] sm:p-7 lg:h-full lg:min-h-0 lg:justify-between">
             <div className="flex items-center justify-between gap-3 border-b border-white/20 pb-4">
               <span className="font-oxanium text-xs font-bold uppercase tracking-[.15em] text-white/85">{track?.name ?? event.trackName}</span>
-              <span className="flex items-center gap-2 border px-3 py-1.5 font-oxanium text-[10px] font-bold uppercase tracking-widest" style={{ color: event.accentColor, borderColor: `${event.accentColor}bb`, backgroundColor: "rgba(2,8,13,.7)" }}><span className="h-2 w-2 rounded-full" style={{ backgroundColor: event.accentColor, boxShadow: `0 0 10px ${event.accentColor}` }} />{config ? "OPEN" : "TBA"}</span>
+              <span
+                className="flex items-center gap-2 border px-3 py-1.5 font-oxanium text-[10px] font-bold uppercase tracking-widest"
+                style={{
+                  color: effectiveStatus === "CLOSED" ? "#fb7185" : effectiveStatus === "FULL" ? "#f59e0b" : effectiveStatus === "DISABLED" ? "#94a3b8" : event.accentColor,
+                  borderColor: effectiveStatus === "CLOSED" ? "#fb7185bb" : effectiveStatus === "FULL" ? "#f59e0bbb" : effectiveStatus === "DISABLED" ? "#94a3b8bb" : `${event.accentColor}bb`,
+                  backgroundColor: "rgba(2,8,13,.7)",
+                }}
+              >
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{
+                    backgroundColor: effectiveStatus === "CLOSED" ? "#fb7185" : effectiveStatus === "FULL" ? "#f59e0b" : effectiveStatus === "DISABLED" ? "#94a3b8" : event.accentColor,
+                    boxShadow: `0 0 10px ${effectiveStatus === "CLOSED" ? "#fb7185" : effectiveStatus === "FULL" ? "#f59e0b" : effectiveStatus === "DISABLED" ? "#94a3b8" : event.accentColor}`,
+                  }}
+                />
+                {effectiveStatus}
+              </span>
             </div>
             <div className="mt-auto pt-52 sm:pt-64 lg:pt-0">
               <div className="mb-5 flex items-end justify-between gap-4 border-b border-white/20 pb-5">
@@ -75,7 +110,22 @@ export default function EventDetailView({ event }: { event: EventItem }) {
                 {event.team !== "TBA" && <CardFact icon={<Users size={14} />} label={event.team === "Individual" ? "PARTICIPATION" : "TEAM SIZE"} value={event.team} accent={event.accentColor} />}
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                <Link href={`/events/${event.id}/register`} className="flex min-h-14 items-center justify-center gap-2 px-3 py-3 font-oxanium text-xs font-black uppercase tracking-wider text-[#08090b] transition hover:brightness-110" style={{ backgroundColor: event.accentColor, boxShadow: `0 0 22px ${event.accentColor}55` }}>REGISTER NOW <ArrowRight size={17} /></Link>
+                {isAvailable ? (
+                  <Link
+                    href={`/events/${event.id}/register`}
+                    className="flex min-h-14 items-center justify-center gap-2 px-3 py-3 font-oxanium text-xs font-black uppercase tracking-wider text-[#08090b] transition hover:brightness-110"
+                    style={{ backgroundColor: event.accentColor, boxShadow: `0 0 22px ${event.accentColor}55` }}
+                  >
+                    {buttonLabel} <ArrowRight size={17} />
+                  </Link>
+                ) : (
+                  <button
+                    disabled
+                    className="flex min-h-14 items-center justify-center gap-2 px-3 py-3 font-oxanium text-xs font-black uppercase tracking-wider text-slate-400 bg-neutral-900 border border-neutral-700 opacity-70 cursor-not-allowed"
+                  >
+                    {buttonLabel}
+                  </button>
+                )}
                 <button onClick={downloadBrochure} className="flex min-h-14 items-center justify-center gap-2 border border-white/40 bg-[#03080d]/75 px-3 py-3 font-oxanium text-[10px] font-bold uppercase tracking-wide text-white transition hover:border-white/80 hover:bg-[#03080d]/95"><Download size={16} />DOWNLOAD BROCHURE</button>
               </div>
             </div>
@@ -84,7 +134,15 @@ export default function EventDetailView({ event }: { event: EventItem }) {
         </div>
       </aside>
     </div>
-    <Link href={`/events/${event.id}/register`} className="fixed bottom-0 left-0 z-40 flex w-full items-center justify-center gap-2 border-t border-white/10 bg-[#03080e]/95 p-4 font-oxanium text-sm font-bold uppercase tracking-widest text-cyan-200 backdrop-blur lg:hidden">REGISTER NOW <ArrowRight size={16} /></Link>
+    {isAvailable ? (
+      <Link href={`/events/${event.id}/register`} className="fixed bottom-0 left-0 z-40 flex w-full items-center justify-center gap-2 border-t border-white/10 bg-[#03080e]/95 p-4 font-oxanium text-sm font-bold uppercase tracking-widest text-cyan-200 backdrop-blur lg:hidden">
+        {buttonLabel} <ArrowRight size={16} />
+      </Link>
+    ) : (
+      <div className="fixed bottom-0 left-0 z-40 flex w-full items-center justify-center gap-2 border-t border-white/10 bg-[#03080e]/95 p-4 font-oxanium text-sm font-bold uppercase tracking-widest text-slate-400 opacity-80 backdrop-blur lg:hidden">
+        {buttonLabel}
+      </div>
+    )}
   </main>;
 }
 

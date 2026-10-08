@@ -136,6 +136,30 @@ export const teamService = {
       throw error;
     }
 
+    if (event.registration_start_at && new Date() < new Date(event.registration_start_at)) {
+      const error = new Error('Registration for this event has not started yet');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (event.registration_end_at && new Date() > new Date(event.registration_end_at)) {
+      const error = new Error('Registration for this event has closed');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (event.capacity !== null && event.capacity !== undefined) {
+      const cap = Number(event.capacity);
+      if (cap > 0) {
+        const count = await EventModel.getRegistrationCountByEventId(event.id);
+        if (count >= cap) {
+          const error = new Error('Registration for this event is full');
+          error.statusCode = 400;
+          throw error;
+        }
+      }
+    }
+
     // 2. Validate event registration type (Must not be strictly individual)
     if (event.registration_type === 'INDIVIDUAL' && event.max_team_size === 1) {
       const error = new Error('This event is for individual participants only and does not support teams');

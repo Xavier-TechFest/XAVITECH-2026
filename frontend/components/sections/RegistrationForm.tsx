@@ -32,6 +32,26 @@ import {
 } from "@/lib/eventsData";
 import { useAuth } from "@/context/AuthContext";
 import { api, ApiError, CreatedRegistrationResponse } from "@/lib/api";
+import { useEventRegistrationStatus } from "@/lib/hooks/useEventRegistrationStatus";
+
+function formatISTDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
+    return new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(d) + " IST";
+  } catch {
+    return "";
+  }
+}
 
 type ReviewEntry = { label: string; value: string };
 type ParticipantReview = { title: string; entries: ReviewEntry[] };
@@ -137,7 +157,23 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const [errorSummary, setErrorSummary] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const registrationClosed = isPastDeadline(config?.deadlineDate);
+  const { status: liveStatus, eventData: liveEventData } = useEventRegistrationStatus(event.id);
+  const isPastConfigDeadline = isPastDeadline(config?.deadlineDate);
+  const isEventDisabled = liveStatus === "DISABLED";
+  const isEventComingSoon = liveStatus === "COMING_SOON";
+  const isEventFull = liveStatus === "FULL";
+  const isEventClosed = liveStatus === "CLOSED" || isPastConfigDeadline;
+
+  const isRegistrationBlocked = !isContinuation && (isEventDisabled || isEventComingSoon || isEventFull || isEventClosed);
+
+  let blockedButtonText = "Registration Closed";
+  if (isEventDisabled) {
+    blockedButtonText = "Registration Unavailable";
+  } else if (isEventComingSoon) {
+    blockedButtonText = "Registration Opens Soon";
+  } else if (isEventFull) {
+    blockedButtonText = "Registration Full";
+  }
 
   // Fetch existing registration when in continuation mode (explicit registrationId in URL)
   useEffect(() => {
@@ -392,8 +428,16 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
       return;
     }
 
-    if (registrationClosed) {
-      setApiError(`Registration is closed. Deadline: ${config.deadline}.`);
+    if (isRegistrationBlocked) {
+      if (isEventDisabled) {
+        setApiError("This event is currently inactive and not accepting registrations.");
+      } else if (isEventComingSoon) {
+        setApiError(`Registration for this event has not opened yet. Window opens on ${formatISTDate(liveEventData?.registrationStartAt)}.`);
+      } else if (isEventFull) {
+        setApiError("Registration capacity has been reached for this event.");
+      } else {
+        setApiError(`Registration for this event is closed.`);
+      }
       return;
     }
 
@@ -1312,12 +1356,40 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               </section>
             ) : null}
 
-            {registrationClosed && (
+            {isRegistrationBlocked && (
               <div
                 role="status"
-                className="rounded border border-amber-300/30 bg-amber-300/5 p-4 text-sm text-amber-100"
+                className={`rounded border p-4 text-sm ${
+                  isEventDisabled
+                    ? "border-neutral-700 bg-neutral-900/60 text-neutral-300"
+                    : isEventComingSoon
+                    ? "border-cyan-400/40 bg-cyan-400/10 text-cyan-200"
+                    : isEventFull
+                    ? "border-amber-400/40 bg-amber-400/10 text-amber-200"
+                    : "border-rose-400/40 bg-rose-400/10 text-rose-200"
+                }`}
               >
-                Registration for this event is closed. Cutoff date: {config.deadline}.
+                <div className="flex items-center gap-2 font-bold font-oxanium uppercase tracking-wider mb-1">
+                  <AlertCircle size={16} />
+                  <span>
+                    {isEventDisabled
+                      ? "Registration Unavailable"
+                      : isEventComingSoon
+                      ? "Registration Opens Soon"
+                      : isEventFull
+                      ? "Registration Full"
+                      : "Registration Closed"}
+                  </span>
+                </div>
+                <p>
+                  {isEventDisabled
+                    ? "This event is currently inactive and not accepting registrations."
+                    : isEventComingSoon
+                    ? `Registration for this event opens on ${formatISTDate(liveEventData?.registrationStartAt) || "a scheduled date"}. Please check back then.`
+                    : isEventFull
+                    ? `Capacity limit has been reached (${liveEventData?.registeredCount || "Maximum"} of ${liveEventData?.capacity || "All"} slots filled). No additional entries are currently accepted.`
+                    : `Registration for this event is currently closed.`}
+                </p>
               </div>
             )}
 
@@ -1421,12 +1493,40 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               </section>
             ) : null}
 
-            {registrationClosed && (
+            {isRegistrationBlocked && (
               <div
                 role="status"
-                className="rounded border border-amber-300/30 bg-amber-300/5 p-4 text-sm text-amber-100"
+                className={`rounded border p-4 text-sm ${
+                  isEventDisabled
+                    ? "border-neutral-700 bg-neutral-900/60 text-neutral-300"
+                    : isEventComingSoon
+                    ? "border-cyan-400/40 bg-cyan-400/10 text-cyan-200"
+                    : isEventFull
+                    ? "border-amber-400/40 bg-amber-400/10 text-amber-200"
+                    : "border-rose-400/40 bg-rose-400/10 text-rose-200"
+                }`}
               >
-                Registration for this event is closed. Cutoff date: {config.deadline}.
+                <div className="flex items-center gap-2 font-bold font-oxanium uppercase tracking-wider mb-1">
+                  <AlertCircle size={16} />
+                  <span>
+                    {isEventDisabled
+                      ? "Registration Unavailable"
+                      : isEventComingSoon
+                      ? "Registration Opens Soon"
+                      : isEventFull
+                      ? "Registration Full"
+                      : "Registration Closed"}
+                  </span>
+                </div>
+                <p>
+                  {isEventDisabled
+                    ? "This event is currently inactive and not accepting registrations."
+                    : isEventComingSoon
+                    ? `Registration for this event opens on ${formatISTDate(liveEventData?.registrationStartAt) || "a scheduled date"}. Please check back then.`
+                    : isEventFull
+                    ? `Capacity limit has been reached (${liveEventData?.registeredCount || "Maximum"} of ${liveEventData?.capacity || "All"} slots filled). No additional entries are currently accepted.`
+                    : `Registration for this event is currently closed.`}
+                </p>
               </div>
             )}
 
@@ -1746,11 +1846,11 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
             <div className="border-t border-white/10 pt-6">
               <button
                 type="submit"
-                disabled={registrationClosed}
+                disabled={isRegistrationBlocked}
                 className="flex w-full items-center justify-center gap-2 bg-cyan-300 px-6 py-4 font-oxanium text-sm font-bold uppercase tracking-widest text-slate-950 hover:bg-cyan-200 transition disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
-                {registrationClosed ? "Registration Closed" : "Review Details & Continue"}
-                {!registrationClosed && <ArrowRight size={16} />}
+                {isRegistrationBlocked ? blockedButtonText : "Review Details & Continue"}
+                {!isRegistrationBlocked && <ArrowRight size={16} />}
               </button>
               <p className="mt-3 text-xs text-slate-500">
                 You will review all details in the next step before creating the registration.

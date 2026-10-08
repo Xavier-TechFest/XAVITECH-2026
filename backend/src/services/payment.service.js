@@ -139,6 +139,12 @@ export const paymentService = {
       throw error;
     }
 
+    if (event.registration_end_at && new Date() > new Date(event.registration_end_at)) {
+      const error = new Error('Registration window for this event has closed.');
+      error.statusCode = 400;
+      throw error;
+    }
+
     const participants = await RegistrationParticipantModel.getParticipantsByRegistrationId(registration.id);
     const payableAmount = calculatePayableAmount(event, registration, participants);
 
