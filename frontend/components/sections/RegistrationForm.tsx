@@ -49,7 +49,16 @@ type RegistrationReview = {
 
 export default function RegistrationForm({ event }: { event: EventItem }) {
   const config = event.registrationConfig;
-  const { user, isAuthenticated, loading, loginWithGoogle, getIdToken } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    loading,
+    loginWithGoogle,
+    getIdToken,
+    registrationsLoading,
+    refreshRegistrations,
+    getRegistrationForEvent,
+  } = useAuth();
 
   // URL Query Parameters Detection (Continuation / Payment Return)
   const searchParams = useSearchParams();
@@ -183,57 +192,80 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
     };
   }, [activeRegId, activePaymentStatus, isAuthenticated, loading, getIdToken]);
 
-  // Global Registration Detection: Check if authenticated user already has an active registration for this event
+  // Centralized Registration Detection: Determine if authenticated user is registered via the global index
   useEffect(() => {
-    // If explicit registrationId in URL or registration already resolved, skip global lookup
+    // If explicit registrationId in URL or registration already resolved, skip lookup
     if (activeRegId || submitResult) {
       setIsCheckingExistingRegistration(false);
       return;
     }
 
-    // Wait until auth resolves
-    if (loading) return;
+    // Wait until both Firebase auth and centralized registrations index have completed loading
+    if (loading || registrationsLoading) {
+      setIsCheckingExistingRegistration(true);
+      return;
+    }
 
-    // If user is unauthenticated, stop checking so sign-in gate appears
+    // If user is unauthenticated, stop checking so fresh form with sign-in prompt renders
     if (!isAuthenticated) {
       setIsCheckingExistingRegistration(false);
       return;
     }
 
+    // Consult the centralized in-memory index for this event
+    const existingIndexItem = getRegistrationForEvent(event.id);
+    if (!existingIndexItem) {
+      // User is NOT registered for this event -> immediately show fresh form!
+      // ZERO database requests made!
+      setIsCheckingExistingRegistration(false);
+      return;
+    }
+
+    // User IS registered for this event!
+    // Fetch full registration details on demand using the registrationId
     let isMounted = true;
     setIsCheckingExistingRegistration(true);
 
     getIdToken()
       .then((token) => {
         if (!token) throw new Error("Authentication session expired.");
-        return api.fetchMyRegistrationForEvent(token, event.id);
+        return api.fetchRegistrationDetails(token, existingIndexItem.registrationId);
       })
-      .then((existingReg) => {
+      .then((fullReg) => {
         if (!isMounted) return;
-        if (existingReg) {
-          // Existing registration found in PostgreSQL!
-          setSubmitResult(existingReg as CreatedRegistrationResponse);
-          setStep("confirmed");
-          // Keep browser URL cleanly in sync so reload maintains continuation immediately
-          if (typeof window !== "undefined") {
-            const url = new URL(window.location.href);
-            url.searchParams.set("registrationId", existingReg.registrationId || existingReg.id);
-            url.searchParams.set("step", "confirmed");
-            window.history.replaceState(null, "", url.toString());
-          }
+        setSubmitResult(fullReg);
+        setStep("confirmed");
+        // Keep browser URL cleanly in sync so reload maintains continuation immediately
+        if (typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          url.searchParams.set("registrationId", fullReg.registrationId || fullReg.id);
+          url.searchParams.set("step", "confirmed");
+          window.history.replaceState(null, "", url.toString());
         }
         setIsCheckingExistingRegistration(false);
       })
       .catch((err: any) => {
         if (!isMounted) return;
-        console.error("Error checking existing registration for event:", err);
+        console.error("Error fetching full details for existing registration:", err);
         setIsCheckingExistingRegistration(false);
+        setExistingRegistrationError(
+          err.message || "Unable to load existing registration details."
+        );
       });
 
     return () => {
       isMounted = false;
     };
-  }, [activeRegId, submitResult, isAuthenticated, loading, event.id, getIdToken]);
+  }, [
+    activeRegId,
+    submitResult,
+    isAuthenticated,
+    loading,
+    registrationsLoading,
+    event.id,
+    getRegistrationForEvent,
+    getIdToken,
+  ]);
 
   // Reset step if user logs out while on the page
   useEffect(() => {
@@ -770,6 +802,14 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
       setSubmitResult(finalRegistration);
       setStep("confirmed");
       window.scrollTo({ top: 0, behavior: "smooth" });
+      refreshRegistrations().catch(() => {});
+
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("registrationId", finalRegistration.registrationId || finalRegistration.id);
+        url.searchParams.set("step", "confirmed");
+        window.history.replaceState(null, "", url.toString());
+      }
     } catch (err: any) {
       console.error("Registration submission failed:", err);
       if (err.status === 409) {

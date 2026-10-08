@@ -145,6 +145,44 @@ export const RegistrationModel = {
   },
 
   /**
+   * Fetch lightweight registration index for a user.
+   * Excludes participants snapshot, documents, and payment transaction details.
+   *
+   * @param {string} userId - PostgreSQL users.id (UUID)
+   * @returns {Promise<Array>}
+   */
+  getUserRegistrationIndex: async (userId) => {
+    const client = getSupabaseClient();
+    if (!client) {
+      throw new Error('Database client is not available');
+    }
+
+    const { data, error } = await client
+      .from('registrations')
+      .select(`
+        id,
+        registration_id,
+        user_id,
+        event_id,
+        team_id,
+        registration_type,
+        status,
+        created_at,
+        updated_at,
+        event:events(id, name, slug),
+        team:teams(id, team_name)
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  /**
    * Check if user already has an active registration for an event.
    * Used for server-side duplicate prevention.
    *
