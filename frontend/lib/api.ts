@@ -270,8 +270,17 @@ export interface ParticipantRegistration {
   }>;
 }
 
-export async function fetchMyRegistrations(token: string): Promise<ParticipantRegistration[]> {
-  const response = await fetch(`${API_BASE_URL}/registrations/my`, {
+export async function fetchMyRegistrations(
+  token: string,
+  options?: { eventSlug?: string; eventId?: string }
+): Promise<ParticipantRegistration[]> {
+  const query = new URLSearchParams();
+  if (options?.eventSlug) query.append("eventSlug", options.eventSlug);
+  if (options?.eventId) query.append("eventId", options.eventId);
+  const qs = query.toString();
+  const url = `${API_BASE_URL}/registrations/my${qs ? `?${qs}` : ""}`;
+
+  const response = await fetch(url, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -288,6 +297,24 @@ export async function fetchMyRegistrations(token: string): Promise<ParticipantRe
     );
   }
   return json.data || json || [];
+}
+
+/**
+ * Fetch the active or latest registration for a specific event for the authenticated user.
+ * Returns null if no registration exists for the event.
+ */
+export async function fetchMyRegistrationForEvent(
+  token: string,
+  eventIdOrSlug: string
+): Promise<ParticipantRegistration | null> {
+  const list = await fetchMyRegistrations(token, {
+    eventSlug: eventIdOrSlug,
+    eventId: eventIdOrSlug,
+  });
+  if (!Array.isArray(list) || list.length === 0) return null;
+  // If multiple exist (e.g. earlier cancelled one), prioritize active/non-cancelled
+  const active = list.find((r) => r.status !== "CANCELLED");
+  return active || list[0] || null;
 }
 
 export interface RegistrationParticipantInput {
@@ -1860,6 +1887,7 @@ export const api = {
   fetchUserProfile,
   updateUserProfile,
   fetchMyRegistrations,
+  fetchMyRegistrationForEvent,
   createRegistration,
   submitRegistration,
   initiatePayment,

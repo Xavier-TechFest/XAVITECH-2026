@@ -2,6 +2,7 @@
 
 import { FormEvent, useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ArrowLeft,
@@ -50,6 +51,34 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const config = event.registrationConfig;
   const { user, isAuthenticated, loading, loginWithGoogle, getIdToken } = useAuth();
 
+  // URL Query Parameters Detection (Continuation / Payment Return)
+  const searchParams = useSearchParams();
+  const searchRegId = searchParams?.get("registrationId")?.trim() || null;
+  const searchStep = searchParams?.get("step")?.trim() || null;
+  const searchPaymentStatus = searchParams?.get("paymentStatus")?.trim() || null;
+
+  // Window location search fallback (synchronous during client-side hydration)
+  const [windowParams] = useState<{
+    registrationId: string | null;
+    step: string | null;
+    paymentStatus: string | null;
+  }>(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      return {
+        registrationId: p.get("registrationId")?.trim() || null,
+        step: p.get("step")?.trim() || null,
+        paymentStatus: p.get("paymentStatus")?.trim() || null,
+      };
+    }
+    return { registrationId: null, step: null, paymentStatus: null };
+  });
+
+  const activeRegId = searchRegId || windowParams.registrationId;
+  const activeStep = searchStep || windowParams.step;
+  const activePaymentStatus = searchPaymentStatus || windowParams.paymentStatus;
+  const isContinuation = Boolean(activeRegId);
+
   // Form State
   const [teamSize, setTeamSize] = useState(config?.minTeamSize ?? 1);
   const [participantPool, setParticipantPool] = useState(
@@ -59,12 +88,28 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const [fileDataState, setFileDataState] = useState<Record<string, File>>({});
   
   // Navigation & Submission State
-  const [step, setStep] = useState<"form" | "review" | "confirmed">("form");
+  // Crucial: If in continuation mode, step MUST NOT initialize to "form"
+  const [step, setStep] = useState<"form" | "review" | "confirmed">(() => {
+    return isContinuation ? "confirmed" : "form";
+  });
   const [review, setReview] = useState<RegistrationReview | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadStatusMessage, setUploadStatusMessage] = useState<string | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [submitResult, setSubmitResult] = useState<CreatedRegistrationResponse | null>(null);
+
+  // Continuation Loading State
+  const [isLoadingExistingRegistration, setIsLoadingExistingRegistration] = useState(isContinuation);
+  const [existingRegistrationError, setExistingRegistrationError] = useState<string | null>(null);
+
+  // Global Existing-Registration Detection State (when NO registrationId in URL)
+  // Ensures logged-in users who already registered for this event NEVER see the fresh form
+  const [isCheckingExistingRegistration, setIsCheckingExistingRegistration] = useState<boolean>(() => {
+    // If activeRegId is provided in URL, handled by explicit continuation loader
+    if (activeRegId) return false;
+    // Otherwise, assume checking is required until auth state is confirmed
+    return true;
+  });
 
   // Payment Gateway State
   const [isInitiatingPayment, setIsInitiatingPayment] = useState(false);
@@ -85,41 +130,120 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
 
   const registrationClosed = isPastDeadline(config?.deadlineDate);
 
-  // Check URL query parameters for return from Easebuzz gateway
+  // Fetch existing registration when in continuation mode (explicit registrationId in URL)
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const paymentStatus = params.get("paymentStatus");
-    const regId = params.get("registrationId");
-
-    if (regId && isAuthenticated) {
-      getIdToken().then((token) => {
-        if (token) {
-          api
-            .fetchRegistrationDetails(token, regId)
-            .then((details) => {
-              setSubmitResult(details);
-              setStep("confirmed");
-              if (paymentStatus === "success") {
-                setPaymentInfo(null);
-              } else if (paymentStatus === "cancelled") {
-                setPaymentError("Payment checkout was cancelled. You may retry payment when ready.");
-              } else if (paymentStatus === "failed") {
-                setPaymentError("Payment transaction failed. Please retry or contact support.");
-              }
-            })
-            .catch(console.error);
-        }
-      });
+    if (!activeRegId) {
+      setIsLoadingExistingRegistration(false);
+      return;
     }
-  }, [isAuthenticated]);
+
+    // Wait until auth resolves
+    if (loading) return;
+
+    // If user is unauthenticated, stop loader so sign-in gate appears
+    if (!isAuthenticated) {
+      setIsLoadingExistingRegistration(false);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingExistingRegistration(true);
+    setExistingRegistrationError(null);
+
+    getIdToken()
+      .then((token) => {
+        if (!token) throw new Error("Authentication session expired. Please sign in again.");
+        return api.fetchRegistrationDetails(token, activeRegId);
+      })
+      .then((details) => {
+        if (!isMounted) return;
+        setSubmitResult(details);
+        setStep("confirmed");
+        setIsLoadingExistingRegistration(false);
+
+        if (activePaymentStatus === "success") {
+          setPaymentInfo(null);
+        } else if (activePaymentStatus === "cancelled") {
+          setPaymentError("Payment checkout was cancelled. You may retry payment when ready.");
+        } else if (activePaymentStatus === "failed") {
+          setPaymentError("Payment transaction failed. Please retry or contact support.");
+        }
+      })
+      .catch((err: any) => {
+        if (!isMounted) return;
+        console.error("Failed to load existing registration:", err);
+        setIsLoadingExistingRegistration(false);
+        setExistingRegistrationError(
+          err.message || "Unable to load existing registration. Please verify your account or try again."
+        );
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeRegId, activePaymentStatus, isAuthenticated, loading, getIdToken]);
+
+  // Global Registration Detection: Check if authenticated user already has an active registration for this event
+  useEffect(() => {
+    // If explicit registrationId in URL or registration already resolved, skip global lookup
+    if (activeRegId || submitResult) {
+      setIsCheckingExistingRegistration(false);
+      return;
+    }
+
+    // Wait until auth resolves
+    if (loading) return;
+
+    // If user is unauthenticated, stop checking so sign-in gate appears
+    if (!isAuthenticated) {
+      setIsCheckingExistingRegistration(false);
+      return;
+    }
+
+    let isMounted = true;
+    setIsCheckingExistingRegistration(true);
+
+    getIdToken()
+      .then((token) => {
+        if (!token) throw new Error("Authentication session expired.");
+        return api.fetchMyRegistrationForEvent(token, event.id);
+      })
+      .then((existingReg) => {
+        if (!isMounted) return;
+        if (existingReg) {
+          // Existing registration found in PostgreSQL!
+          setSubmitResult(existingReg as CreatedRegistrationResponse);
+          setStep("confirmed");
+          // Keep browser URL cleanly in sync so reload maintains continuation immediately
+          if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.set("registrationId", existingReg.registrationId || existingReg.id);
+            url.searchParams.set("step", "confirmed");
+            window.history.replaceState(null, "", url.toString());
+          }
+        }
+        setIsCheckingExistingRegistration(false);
+      })
+      .catch((err: any) => {
+        if (!isMounted) return;
+        console.error("Error checking existing registration for event:", err);
+        setIsCheckingExistingRegistration(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeRegId, submitResult, isAuthenticated, loading, event.id, getIdToken]);
 
   // Reset step if user logs out while on the page
   useEffect(() => {
     if (!isAuthenticated && !loading) {
-      if (step !== "form") setStep("form");
+      if (!isContinuation) {
+        setSubmitResult(null);
+        if (step !== "form") setStep("form");
+      }
     }
-  }, [isAuthenticated, loading, step]);
+  }, [isAuthenticated, loading, isContinuation, step]);
 
   // Pre-fill leader details (index 0) from authenticated user profile
   useEffect(() => {
@@ -672,7 +796,14 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
     try {
       const token = await getIdToken();
       if (!token) throw new Error("Authentication session expired. Please sign in again.");
-      const regId = submitResult.id || submitResult.registrationId;
+      let currentResult = submitResult;
+      // If in DRAFT status, finalize to PAYMENT_PENDING before initiating payment
+      if (currentResult.status === "DRAFT") {
+        const submitted = await api.submitRegistration(token, currentResult.registrationId || currentResult.id);
+        currentResult = submitted;
+        setSubmitResult(submitted);
+      }
+      const regId = currentResult.id || currentResult.registrationId;
       const res = await api.initiatePayment(token, regId);
       setPaymentInfo(res);
       if (res.liveMode && res.paymentUrl) {
@@ -684,6 +815,306 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
     } finally {
       setIsInitiatingPayment(false);
     }
+  };
+
+  // Render Confirmed / Payment Continuation View
+  const renderConfirmedView = () => {
+    if (!submitResult) return null;
+    return (
+      <section className="space-y-8 p-6 sm:p-10 text-center" aria-labelledby="confirmed-heading">
+        <div
+          className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full border ${
+            submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS"
+              ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-400"
+              : submitResult.status === "PAYMENT_FAILED"
+              ? "border-rose-400/40 bg-rose-500/10 text-rose-400"
+              : submitResult.status === "CANCELLED"
+              ? "border-slate-500/40 bg-slate-500/10 text-slate-400"
+              : "border-amber-400/40 bg-amber-500/10 text-amber-400"
+          }`}
+        >
+          {submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS" ? (
+            <CheckCircle2 size={36} />
+          ) : submitResult.status === "PAYMENT_FAILED" ? (
+            <AlertCircle size={36} />
+          ) : submitResult.status === "CANCELLED" ? (
+            <AlertCircle size={36} />
+          ) : (
+            <Clock size={36} />
+          )}
+        </div>
+
+        <div>
+          <p className="font-oxanium text-xs uppercase tracking-[.25em] text-cyan-300">
+            Registration {
+              submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS"
+                ? "Confirmed"
+                : submitResult.status === "CANCELLED"
+                ? "Cancelled"
+                : submitResult.status === "DRAFT"
+                ? "Draft Saved"
+                : "Received"
+            } · {event.trackName}
+          </p>
+          <h2 id="confirmed-heading" className="mt-2 font-space text-3xl font-black uppercase text-white sm:text-4xl">
+            {submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS"
+              ? "Registration Confirmed"
+              : submitResult.status === "PAYMENT_FAILED"
+              ? "Payment Incomplete"
+              : submitResult.status === "CANCELLED"
+              ? "Registration Cancelled"
+              : submitResult.status === "DRAFT"
+              ? "Draft Registration Saved"
+              : "Registration Created"}
+          </h2>
+          <p className="mt-3 text-sm text-slate-300 max-w-lg mx-auto">
+            {submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS" ? (
+              <>Your registration for <span className="font-bold text-white">{event.name}</span> is confirmed. See you at the festival!</>
+            ) : submitResult.status === "PAYMENT_FAILED" ? (
+              <>Your registration for <span className="font-bold text-white">{event.name}</span> requires fee payment to be confirmed.</>
+            ) : submitResult.status === "CANCELLED" ? (
+              <>This registration for <span className="font-bold text-white">{event.name}</span> has been cancelled.</>
+            ) : submitResult.status === "DRAFT" ? (
+              <>Your registration draft for <span className="font-bold text-white">{event.name}</span> is safely preserved. Continue to payment to complete enrollment.</>
+            ) : (
+              <>Your registration for <span className="font-bold text-white">{event.name}</span> has been successfully submitted.</>
+            )}
+          </p>
+        </div>
+
+        {/* Registration Code Badge */}
+        <div className="mx-auto max-w-md rounded border border-white/15 bg-white/[.03] p-6 text-left space-y-3">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
+              Registration Code
+            </span>
+            <span className="font-mono text-base font-bold text-cyan-300">
+              {submitResult.registrationId}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
+              Registration Status
+            </span>
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS"
+                  ? "bg-emerald-400/10 border border-emerald-400/30 text-emerald-300"
+                  : submitResult.status === "PAYMENT_FAILED"
+                  ? "bg-rose-400/10 border border-rose-400/30 text-rose-300"
+                  : submitResult.status === "CANCELLED"
+                  ? "bg-slate-400/10 border border-slate-400/30 text-slate-300"
+                  : "bg-amber-400/10 border border-amber-400/30 text-amber-200"
+              }`}
+            >
+              {submitResult.status || "PAYMENT_PENDING"}
+            </span>
+          </div>
+
+          {submitResult.team?.teamName && (
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
+                Team Name
+              </span>
+              <span className="text-sm font-semibold text-white">
+                {submitResult.team.teamName}
+              </span>
+            </div>
+          )}
+
+          {submitResult.participants && submitResult.participants.length > 0 && (
+            <div className="border-b border-white/10 pb-3 space-y-2">
+              <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400 block">
+                Registered Participants ({submitResult.participants.length})
+              </span>
+              <div className="space-y-1.5">
+                {submitResult.participants.map((p: any, pIdx: number) => (
+                  <div key={p.id || pIdx} className="flex items-center justify-between text-xs text-slate-300">
+                    <span className="truncate max-w-[240px]">
+                      {p.participantOrder ? `${p.participantOrder}. ` : ""}{p.fullName || p.name || `Participant ${pIdx + 1}`}
+                      {p.participantRole === "LEADER" ? " (Leader)" : ""}
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {p.idCardUrl && (
+                        <span className="rounded bg-cyan-400/10 text-cyan-300 px-1.5 py-0.5 text-[10px] font-mono border border-cyan-400/20">
+                          ID Card
+                        </span>
+                      )}
+                      {p.profilePhotoUrl && (
+                        <span className="rounded bg-purple-400/10 text-purple-300 px-1.5 py-0.5 text-[10px] font-mono border border-purple-400/20">
+                          Photo
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
+              Verification Documents
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
+              <CheckCircle2 size={12} /> Stored in Cloud
+            </span>
+          </div>
+
+          {/* Payment Status & Action Card */}
+          <div className="rounded border border-amber-400/20 bg-amber-400/[.03] p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div>
+                <span className="font-oxanium text-[10px] uppercase tracking-widest text-slate-400">
+                  Payment Status
+                </span>
+                <div className="mt-1 flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS"
+                        ? "bg-emerald-400/10 border border-emerald-400/30 text-emerald-300"
+                        : submitResult.status === "PAYMENT_FAILED"
+                        ? "bg-rose-400/10 border border-rose-400/30 text-rose-300"
+                        : submitResult.status === "CANCELLED"
+                        ? "bg-slate-400/10 border border-slate-400/30 text-slate-300"
+                        : "bg-amber-400/10 border border-amber-400/30 text-amber-200"
+                    }`}
+                  >
+                    {submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS" ? (
+                      <>
+                        <CheckCircle2 size={12} /> Confirmed & Paid
+                      </>
+                    ) : submitResult.status === "PAYMENT_FAILED" ? (
+                      <>
+                        <AlertCircle size={12} /> Payment Failed
+                      </>
+                    ) : submitResult.status === "CANCELLED" ? (
+                      <>
+                        <AlertCircle size={12} /> Registration Cancelled
+                      </>
+                    ) : submitResult.status === "DRAFT" ? (
+                      <>
+                        <Clock size={12} /> Draft Saved
+                      </>
+                    ) : (
+                      <>
+                        <Clock size={12} /> Payment Pending
+                      </>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-left sm:text-right">
+                <span className="font-oxanium text-[10px] uppercase tracking-widest text-slate-400">
+                  Total Payable
+                </span>
+                <p className="font-space text-lg font-bold text-cyan-300">
+                  {paymentInfo?.amount != null
+                    ? `₹${Number(paymentInfo.amount).toFixed(2)}`
+                    : submitResult?.payableAmount != null
+                    ? `₹${Number(submitResult.payableAmount).toFixed(2)}`
+                    : event.id === "velocityx" || submitResult?.payableAmount === null
+                    ? "Amount TBA"
+                    : config.feeDisplay || `₹${config.feeAmount ?? 0}`}
+                </p>
+              </div>
+            </div>
+
+            {submitResult.status === "CANCELLED" ? (
+              <div className="pt-2 flex flex-col items-center justify-center gap-3">
+                <div className="rounded border border-slate-500/30 bg-slate-900/40 p-4 text-center text-xs text-slate-300 max-w-md">
+                  <p className="font-semibold text-white">Registration Cancelled</p>
+                  <p className="mt-1 text-slate-400 leading-relaxed">
+                    This registration has been marked as cancelled. If you believe this is an error or would like to re-register, please contact festival coordinators or support.
+                  </p>
+                </div>
+              </div>
+            ) : submitResult.status !== "CONFIRMED" && submitResult.status !== "PAYMENT_SUCCESS" ? (
+              <div className="pt-2 flex flex-col items-center justify-center gap-3">
+                {event.id === "velocityx" ? (
+                  <div className="rounded border border-amber-400/30 bg-amber-950/20 p-4 text-center text-xs text-amber-200 max-w-md">
+                    <p className="font-semibold text-white">Fee Pending Coordinator Confirmation</p>
+                    <p className="mt-1 text-slate-300 leading-relaxed">
+                      Online payment for Death Race will open once event coordinators finalize the entry fee. Your team registration is safely reserved in{" "}
+                      <span className="text-amber-300 font-semibold">PAYMENT_PENDING</span> status.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handlePayNow}
+                      disabled={isInitiatingPayment}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded bg-amber-400 px-8 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-slate-950 hover:bg-amber-300 transition shadow-lg shadow-amber-950/40 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isInitiatingPayment ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          <span>CONNECTING TO GATEWAY...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard size={16} />
+                          <span>
+                            {submitResult.status === "PAYMENT_FAILED"
+                              ? "RETRY PAYMENT"
+                              : submitResult.status === "DRAFT"
+                              ? "SUBMIT & PAY NOW"
+                              : "PAY NOW"}
+                          </span>
+                        </>
+                      )}
+                    </button>
+
+                    {paymentError ? (
+                      <p role="alert" className="text-center text-xs text-rose-300">
+                        {paymentError}
+                      </p>
+                    ) : submitResult?.status === "PAYMENT_FAILED" ? (
+                      <p role="alert" className="text-center text-xs text-rose-300">
+                        Previous payment attempt failed. Click above to retry payment.
+                      </p>
+                    ) : null}
+
+                    {paymentInfo && !paymentInfo.liveMode && (
+                      <div className="rounded border border-cyan-400/30 bg-cyan-950/30 p-3 text-center text-xs text-cyan-200 max-w-md">
+                        <p className="font-semibold text-white">Integration Mode Active</p>
+                        <p className="mt-1 text-slate-300">
+                          Transaction reference <code className="text-cyan-300">{paymentInfo.transactionId}</code> initialized for ₹{Number(paymentInfo.amount).toFixed(2)}. Live payments will open following coordinator verification.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="text-center pt-2 text-xs text-emerald-300 flex items-center justify-center gap-1.5 font-medium">
+                <CheckCircle2 size={14} />
+                <span>Your festival seat has been confirmed. You will receive an official entry pass.</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Action Links */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <Link
+            href="/profile"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-cyan-300 px-6 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-slate-950 hover:bg-cyan-200 transition"
+          >
+            View My Profile & Registrations
+          </Link>
+          <Link
+            href="/events"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded border border-white/20 px-6 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-white hover:border-cyan-300 hover:text-cyan-200 transition"
+          >
+            Browse Other Events
+          </Link>
+        </div>
+      </section>
+    );
   };
 
   return (
@@ -734,24 +1165,51 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
         )}
 
         {/* ==================================================================== */}
-        {/* AUTHENTICATION STATE & REGISTRATION WORKFLOW                         */}
+        {/* WORKFLOW DISPATCH: UNIFIED STATE MACHINE                             */}
         {/* ==================================================================== */}
-        {loading ? (
+        {loading || isLoadingExistingRegistration || isCheckingExistingRegistration ? (
+          /* 1. LOADING SKELETON: Displayed while checking authentication or existing registrations */
           <div className="flex flex-col items-center justify-center py-24 px-6 text-center space-y-4">
             <Loader2 size={36} className="animate-spin text-cyan-300" />
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <p className="font-oxanium text-xs uppercase tracking-[0.2em] text-cyan-300">
-                Checking Authentication
+                {activeRegId
+                  ? "Loading Existing Registration"
+                  : "Checking Registration Status"}
               </p>
-              <p className="text-sm text-slate-400">
-                Verifying account session before opening registration...
+              <p className="text-sm text-slate-300">
+                {activeRegId ? (
+                  <>Retrieving registration records for <span className="font-mono text-cyan-200 font-semibold">{activeRegId}</span>...</>
+                ) : (
+                  <>Verifying registration records for <span className="font-bold text-white">{event.name}</span>...</>
+                )}
               </p>
+              <p className="text-xs text-slate-500">
+                Checking official database records and fee details...
+              </p>
+            </div>
+
+            {/* Branded skeleton preview card */}
+            <div className="w-full max-w-md mt-6 rounded border border-white/10 bg-white/[0.02] p-6 space-y-4 text-left">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="h-3 w-28 bg-white/10 rounded animate-pulse" />
+                <div className="h-4 w-32 bg-cyan-400/20 rounded animate-pulse" />
+              </div>
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="h-3 w-24 bg-white/10 rounded animate-pulse" />
+                <div className="h-5 w-24 bg-amber-400/20 rounded-full animate-pulse" />
+              </div>
+              <div className="rounded border border-amber-400/20 bg-amber-400/[.03] p-4 space-y-3">
+                <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                  <div className="h-3 w-20 bg-white/10 rounded animate-pulse" />
+                  <div className="h-4 w-16 bg-cyan-400/20 rounded animate-pulse" />
+                </div>
+                <div className="h-9 w-32 mx-auto bg-amber-400/20 rounded animate-pulse" />
+              </div>
             </div>
           </div>
         ) : !isAuthenticated ? (
-          /* ==================================================================== */
-          /* AUTHENTICATION REQUIRED GATE (MANDATORY FOR REGISTRATION)            */
-          /* ==================================================================== */
+          /* 2. AUTHENTICATION REQUIRED GATE (MANDATORY FOR REGISTRATION) */
           <div className="p-6 sm:p-9 space-y-8">
             <div className="rounded border border-cyan-300/30 bg-cyan-950/30 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div className="flex items-start gap-4">
@@ -760,10 +1218,19 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                 </div>
                 <div>
                   <h2 className="font-space text-xl font-bold uppercase tracking-wide text-white">
-                    Google Sign-In Required
+                    {activeRegId ? "Sign In Required to Access Registration" : "Google Sign-In Required"}
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-slate-300 max-w-xl">
-                    Sign in with Google to continue with event registration. Your account will be used to identify the registration leader.
+                    {activeRegId ? (
+                      <>
+                        Please sign in with the Google account used to register{" "}
+                        <span className="font-mono text-cyan-300 font-semibold">{activeRegId}</span> to view status or continue payment.
+                      </>
+                    ) : (
+                      <>
+                        Sign in with Google to continue with event registration. Your account will be used to identify the registration leader.
+                      </>
+                    )}
                   </p>
                   <p className="mt-2 text-xs text-slate-400">
                     Please sign in with Google to continue with registration.
@@ -821,7 +1288,46 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               <Summary label="Event Date" value={event.date} />
             </div>
           </div>
+        ) : existingRegistrationError ? (
+          /* 3. ERROR LOADING EXISTING REGISTRATION */
+          <div className="p-6 sm:p-9 space-y-6">
+            <div className="rounded border border-rose-400/40 bg-rose-400/10 p-6 sm:p-8 flex items-start gap-4">
+              <AlertCircle className="mt-0.5 shrink-0 text-rose-400" size={24} />
+              <div className="space-y-2">
+                <h2 className="font-space text-lg font-bold uppercase text-white">
+                  Unable to Load Registration
+                </h2>
+                <p className="text-sm text-slate-200">
+                  {existingRegistrationError}
+                </p>
+                {activeRegId && (
+                  <p className="text-xs text-slate-400">
+                    Registration reference: <span className="font-mono text-rose-300">{activeRegId}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+              <Link
+                href="/profile"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-cyan-300 px-6 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-slate-950 hover:bg-cyan-200 transition"
+              >
+                View My Profile & Registrations
+              </Link>
+              <Link
+                href={`/events/${event.id}/register`}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded border border-white/20 px-6 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-white hover:border-cyan-300 hover:text-cyan-200 transition"
+              >
+                Start New Registration
+              </Link>
+            </div>
+          </div>
+        ) : submitResult ? (
+          /* 4. EXISTING REGISTRATION VIEW (DRAFT / PAYMENT_PENDING / PAYMENT_FAILED / CONFIRMED / CANCELLED) */
+          renderConfirmedView()
         ) : (
+          /* 5. FRESH REGISTRATION FORM (AUTHENTICATED USER WITH NO REGISTRATION FOR THIS EVENT) */
           <>
             {/* ==================================================================== */}
             {/* STEP 1: DYNAMIC REGISTRATION FORM                                    */}
@@ -1245,7 +1751,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                     <FileText size={16} /> Attached Identity Documents ({review.documents.length})
                   </h3>
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-oxanium uppercase tracking-wider text-emerald-400">
-                    <CheckCircle2 size={13} /> Ready for Cloudinary upload
+                    <CheckCircle2 size={13} /> Ready for upload
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1334,216 +1840,6 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
           </section>
         )}
 
-        {/* ==================================================================== */}
-        {/* STEP 3: REGISTRATION CONFIRMED (DRAFT STATE)                         */}
-        {/* ==================================================================== */}
-        {step === "confirmed" && submitResult && (
-          <section className="space-y-8 p-6 sm:p-10 text-center" aria-labelledby="confirmed-heading">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-400">
-              <CheckCircle2 size={36} />
-            </div>
-
-            <div>
-              <p className="font-oxanium text-xs uppercase tracking-[.25em] text-cyan-300">
-                Registration Received · {event.trackName}
-              </p>
-              <h2 id="confirmed-heading" className="mt-2 font-space text-3xl font-black uppercase text-white sm:text-4xl">
-                Registration Created
-              </h2>
-              <p className="mt-3 text-sm text-slate-300 max-w-lg mx-auto">
-                Your registration for <span className="font-bold text-white">{event.name}</span> has been
-                successfully submitted.
-              </p>
-            </div>
-
-            {/* Registration Code Badge */}
-            <div className="mx-auto max-w-md rounded border border-white/15 bg-white/[.03] p-6 text-left space-y-3">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
-                  Registration Code
-                </span>
-                <span className="font-mono text-base font-bold text-cyan-300">
-                  {submitResult.registrationId}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
-                  Registration Status
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 px-2.5 py-0.5 text-xs font-semibold text-amber-200">
-                  {submitResult.status || "PAYMENT_PENDING"}
-                </span>
-              </div>
-
-              {submitResult.team?.teamName && (
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
-                    Team Name
-                  </span>
-                  <span className="text-sm font-semibold text-white">
-                    {submitResult.team.teamName}
-                  </span>
-                </div>
-              )}
-
-              {submitResult.participants && submitResult.participants.length > 0 && (
-                <div className="border-b border-white/10 pb-3 space-y-2">
-                  <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400 block">
-                    Registered Participants ({submitResult.participants.length})
-                  </span>
-                  <div className="space-y-1.5">
-                    {submitResult.participants.map((p: any, pIdx: number) => (
-                      <div key={p.id || pIdx} className="flex items-center justify-between text-xs text-slate-300">
-                        <span className="truncate max-w-[240px]">
-                          {p.participantOrder ? `${p.participantOrder}. ` : ""}{p.fullName || p.name || `Participant ${pIdx + 1}`}
-                          {p.participantRole === "LEADER" ? " (Leader)" : ""}
-                        </span>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {p.idCardUrl && (
-                            <span className="rounded bg-cyan-400/10 text-cyan-300 px-1.5 py-0.5 text-[10px] font-mono border border-cyan-400/20">
-                              ID Card
-                            </span>
-                          )}
-                          {p.profilePhotoUrl && (
-                            <span className="rounded bg-purple-400/10 text-purple-300 px-1.5 py-0.5 text-[10px] font-mono border border-purple-400/20">
-                              Photo
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
-                  Verification Documents
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
-                  <CheckCircle2 size={12} /> Stored in Cloudinary
-                </span>
-              </div>
-
-              {/* Payment Status & Action Card */}
-              <div className="rounded border border-amber-400/20 bg-amber-400/[.03] p-5 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
-                  <div>
-                    <span className="font-oxanium text-[10px] uppercase tracking-widest text-slate-400">
-                      Payment Status
-                    </span>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS"
-                            ? "bg-emerald-400/10 border border-emerald-400/30 text-emerald-300"
-                            : "bg-amber-400/10 border border-amber-400/30 text-amber-200"
-                        }`}
-                      >
-                        {submitResult.status === "CONFIRMED" || submitResult.status === "PAYMENT_SUCCESS" ? (
-                          <>
-                            <CheckCircle2 size={12} /> Confirmed & Paid
-                          </>
-                        ) : (
-                          <>
-                            <Clock size={12} /> Payment Pending
-                          </>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="text-left sm:text-right">
-                    <span className="font-oxanium text-[10px] uppercase tracking-widest text-slate-400">
-                      Total Payable
-                    </span>
-                    <p className="font-space text-lg font-bold text-cyan-300">
-                      {paymentInfo?.amount != null
-                        ? `₹${Number(paymentInfo.amount).toFixed(2)}`
-                        : submitResult?.payableAmount != null
-                        ? `₹${Number(submitResult.payableAmount).toFixed(2)}`
-                        : event.id === "velocityx" || submitResult?.payableAmount === null
-                        ? "Amount TBA"
-                        : config.feeDisplay || `₹${config.feeAmount ?? 0}`}
-                    </p>
-                  </div>
-                </div>
-
-                {submitResult.status === "PAYMENT_PENDING" ? (
-                  <div className="pt-2 flex flex-col items-center justify-center gap-3">
-                    {event.id === "velocityx" ? (
-                      <div className="rounded border border-amber-400/30 bg-amber-950/20 p-4 text-center text-xs text-amber-200 max-w-md">
-                        <p className="font-semibold text-white">Fee Pending Coordinator Confirmation</p>
-                        <p className="mt-1 text-slate-300 leading-relaxed">
-                          Online payment for Death Race will open once event coordinators finalize the entry fee. Your team registration is safely reserved in{" "}
-                          <span className="text-amber-300 font-semibold">PAYMENT_PENDING</span> status.
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={handlePayNow}
-                          disabled={isInitiatingPayment}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded bg-amber-400 px-8 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-slate-950 hover:bg-amber-300 transition shadow-lg shadow-amber-950/40 disabled:opacity-50 cursor-pointer"
-                        >
-                          {isInitiatingPayment ? (
-                            <>
-                              <Loader2 size={16} className="animate-spin" />
-                              <span>CONNECTING TO GATEWAY...</span>
-                            </>
-                          ) : (
-                            <>
-                              <CreditCard size={16} />
-                              <span>PAY NOW</span>
-                            </>
-                          )}
-                        </button>
-
-                        {paymentError && (
-                          <p role="alert" className="text-center text-xs text-rose-300">
-                            {paymentError}
-                          </p>
-                        )}
-
-                        {paymentInfo && !paymentInfo.liveMode && (
-                          <div className="rounded border border-cyan-400/30 bg-cyan-950/30 p-3 text-center text-xs text-cyan-200 max-w-md">
-                            <p className="font-semibold text-white">Integration Mode Active</p>
-                            <p className="mt-1 text-slate-300">
-                              Transaction reference <code className="text-cyan-300">{paymentInfo.transactionId}</code> initialized for ₹{Number(paymentInfo.amount).toFixed(2)}. Live payments will open following coordinator verification.
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center pt-2 text-xs text-emerald-300 flex items-center justify-center gap-1.5 font-medium">
-                    <CheckCircle2 size={14} />
-                    <span>Your festival seat has been confirmed. You will receive an official entry pass.</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Action Links */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link
-                href="/profile"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-cyan-300 px-6 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-slate-950 hover:bg-cyan-200 transition"
-              >
-                View My Profile & Registrations
-              </Link>
-              <Link
-                href="/events"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded border border-white/20 px-6 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-white hover:border-cyan-300 hover:text-cyan-200 transition"
-              >
-                Browse Other Events
-              </Link>
-            </div>
-          </section>
-        )}
           </>
         )}
       </div>
@@ -1856,7 +2152,7 @@ function FileInputField({
           <p className="mt-1 text-[11px] text-slate-400">
             {id.toLowerCase().includes("photo")
               ? "JPG, PNG, or WEBP image (Max 5MB)"
-              : "PDF or clear Image (Max 5MB)"}
+              : "clear file (JPG, PNG or PDF) (Max 5MB)"}
           </p>
         </div>
       )}
@@ -2031,4 +2327,33 @@ function getEligibleMaxBirthDate(minAge: number) {
 function isPastDeadline(deadlineDate?: string): boolean {
   if (!deadlineDate) return false;
   return Date.now() >= new Date(`${deadlineDate}T23:59:59.999+05:30`).getTime();
+}
+
+export function RegistrationLoadingSkeleton({ event }: { event: EventItem }) {
+  return (
+    <main className="mx-auto min-h-screen max-w-4xl px-5 pb-28 pt-28 sm:px-8">
+      <div className="h-4 w-36 bg-cyan-300/20 rounded animate-pulse" />
+      <div className="mt-7 overflow-hidden rounded border border-white/10 bg-[#050b12]/95 shadow-2xl backdrop-blur-md">
+        <div className="relative border-b border-white/10 px-6 py-7 sm:px-9">
+          <p className="font-oxanium text-xs uppercase tracking-[.2em] text-cyan-300">
+            XAVITECH 2026 · {event.trackName} · Registration
+          </p>
+          <h1 className="mt-3 font-space text-3xl font-black uppercase text-white sm:text-5xl">
+            {event.name}
+          </h1>
+        </div>
+        <div className="flex flex-col items-center justify-center py-24 px-6 text-center space-y-4">
+          <Loader2 size={36} className="animate-spin text-cyan-300" />
+          <div className="space-y-1">
+            <p className="font-oxanium text-xs uppercase tracking-[0.2em] text-cyan-300">
+              Loading Registration
+            </p>
+            <p className="text-sm text-slate-400">
+              Initializing registration environment...
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }

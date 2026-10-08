@@ -26,7 +26,7 @@ export const createRegistration = async (req, res, next) => {
  */
 export const listMyRegistrations = async (req, res, next) => {
   try {
-    const registrations = await registrationService.getUserRegistrations(req.user);
+    const registrations = await registrationService.getUserRegistrations(req.user, req.query);
     return sendSuccess(res, 'User registrations retrieved successfully', registrations);
   } catch (error) {
     next(error);

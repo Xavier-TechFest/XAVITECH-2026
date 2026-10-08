@@ -1,8 +1,9 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { EVENTS } from "@/lib/eventsData";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import RegistrationForm from "@/components/sections/RegistrationForm";
+import RegistrationForm, { RegistrationLoadingSkeleton } from "@/components/sections/RegistrationForm";
 import ShardsBackdrop from "@/components/experience/ShardsBackdrop";
 
 interface RegisterPageProps {
@@ -42,7 +43,9 @@ export default function RegisterPage({ params }: RegisterPageProps) {
 
       <div className="relative z-10">
         <main>
-          <RegistrationForm event={event} />
+          <Suspense fallback={<RegistrationLoadingSkeleton event={event} />}>
+            <RegistrationForm event={event} />
+          </Suspense>
         </main>
         <Footer />
       </div>
