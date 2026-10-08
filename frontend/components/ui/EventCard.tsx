@@ -88,7 +88,7 @@ export default function EventCard({ event, variant }: EventCardProps) {
 
         <div className="mb-3 flex items-center justify-between border bg-black/50 px-3 py-2.5" style={{ borderColor: `${accent}99` }}>
           <span className="font-oxanium text-xs font-bold uppercase tracking-wider text-slate-200">Prize pool</span>
-          <span className="font-oxanium text-lg font-black tracking-wide" style={{ color: accent, textShadow: `0 0 12px ${accent}66` }}>{event.prize === "TBA" ? "To Be Announced" : event.prize}</span>
+          <span className="font-oxanium text-lg font-black tracking-wide" style={{ color: accent, textShadow: `0 0 12px ${accent}66` }}>{event.prize === "TBA" ? "TBA" : event.prize}</span>
         </div>
 
         <div className="grid grid-cols-5 gap-2">

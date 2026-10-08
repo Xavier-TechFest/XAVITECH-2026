@@ -174,7 +174,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
           <h1 className="mt-3 font-space text-3xl font-black uppercase text-white sm:text-5xl">
             {event.name}
           </h1>
-          <p className="mt-5 text-slate-300">Registration details will be announced soon.</p>
+          <p className="mt-5 text-slate-300">Registration details: TBA.</p>
           <p className="mt-6 rounded border border-amber-300/20 bg-amber-300/5 p-4 text-sm text-amber-100">
             Participation: TBA <span className="px-2 text-amber-100/40">·</span> Fee: TBA{" "}
             <span className="px-2 text-amber-100/40">·</span> Deadline: TBA
@@ -1980,7 +1980,7 @@ function BillSummary({
         <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-3">
           <span className="text-white font-semibold">Total Payable</span>
           <span className="font-space text-xl font-bold text-cyan-300">
-            {total === null ? "To Be Announced" : `₹${total.toLocaleString("en-IN")}`}
+            {total === null ? "TBA" : `₹${total.toLocaleString("en-IN")}`}
           </span>
         </div>
         {total === null && (

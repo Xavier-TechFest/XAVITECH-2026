@@ -457,7 +457,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "InnoCraft is a team hackathon for school and college participants. Teams register together through one team leader.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "TBA",
     price: "₹800 per school team / ₹1,000 per college team",
     team: "Exactly 4 members",
     venue: "TBA",
@@ -481,8 +481,8 @@ export const EVENTS: EventItem[] = [
       "Every participant must verify email/mobile and upload a valid school/college ID card.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
-      note: "Prizes will be announced closer to the event date.",
+      total: "TBA",
+      note: "Prize details: TBA.",
     },
     documents: [
       {
@@ -564,7 +564,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "WebWeave is a team web development challenge for school students in Class 10 and above and undergraduate students, including BCA students. Teams of two bring their own laptop and charger, then build around one shared theme in a four-hour build phase.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "TBA",
     price: "₹300 registration fee",
     team: "Exactly 2 members",
     venue: "TBA",
@@ -596,7 +596,7 @@ export const EVENTS: EventItem[] = [
       "Basic HTML, CSS, and JavaScript knowledge is required. Bring one laptop and charger per team.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "TBA",
     },
     documents: [
       {
@@ -665,7 +665,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Runtime Rush is a coding challenge open to school and college students. Participate individually or register with one teammate. Participants compete using Java, C, C++, Python, or JavaScript.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "TBA",
     price: "₹300 registration fee",
     team: "Individual or 2 participants",
     venue: "TBA",
@@ -694,7 +694,7 @@ export const EVENTS: EventItem[] = [
       "Programming language options: Java, C, C++, Python, and JavaScript.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "TBA",
     },
     documents: [
       {
@@ -719,7 +719,7 @@ export const EVENTS: EventItem[] = [
       maxTeamSize: 2,
       feeAmount: 300,
       feeDisplay: "₹300 registration fee",
-      deadline: "To be decided by Overall Coordinators",
+      deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
         { id: "teamName", label: "Team name", type: "text", required: true },
@@ -772,7 +772,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "XAVITECH 2026 Data Analytics is a team competition for pairs. Participants should know Excel and Power BI. The event is open to Class 7–12, undergraduate, and postgraduate students over 16 years old.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "TBA",
     price: "₹300 registration fee",
     team: "2 participants",
     venue: "TBA",
@@ -802,7 +802,7 @@ export const EVENTS: EventItem[] = [
       "Prerequisite: knowledge of Excel and Power BI.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "TBA",
     },
     documents: [
       {
@@ -828,7 +828,7 @@ export const EVENTS: EventItem[] = [
       feeAmount: 300,
       feeBasis: "per_team",
       feeDisplay: "₹300 registration fee",
-      deadline: "To be decided by overall coordinators",
+      deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
         { id: "teamName", label: "Team name", type: "text", required: true },
@@ -883,7 +883,7 @@ export const EVENTS: EventItem[] = [
     prize: "₹3,000",
     price: "₹150 per participant",
     team: "Individual",
-    venue: "Library (subject to capacity-based relocation)",
+    venue: "TBA",
     accentColor: "#35e0c9",
     glowColor: "rgba(53,224,201,.2)",
     borderColor: "rgba(53,224,201,.4)",
@@ -909,7 +909,7 @@ export const EVENTS: EventItem[] = [
     requirements: [
       "Required: full name, current school/college/university, class/course, mobile number, email, valid school/college ID, HackerRank username/account email, and a programming language enabled for the contest.",
       "Year/semester, profile photo, and city are optional.",
-      "Know at least one programming language enabled for the HackerRank contest. The final supported-language list will be announced before the competition.",
+      "Know at least one programming language. Supported languages: TBA.",
     ],
     exploreSections: [
       { title: "Who can participate?", items: [
@@ -931,12 +931,12 @@ export const EVENTS: EventItem[] = [
       { title: "Round 2: Code Rescue", items: [
         "Time: 10:25 AM–11:25 AM, followed by submission closure from 11:25 AM–11:30 AM.",
         "Problems may cover complex logic and runtime errors, array indexing, string manipulation, nested loops, algorithms, edge cases, and programs with multiple bugs.",
-        "Submit all Round 2 solutions through HackerRank. Only languages enabled for the contest may be used; the final list will be announced before the competition.",
+        "Submit all Round 2 solutions through HackerRank. Supported languages: TBA.",
       ] },
       { title: "How are results decided?", items: [
         "Round 1 is evaluated from the MCQ answers on the provided sheet. Round 2 is evaluated using HackerRank test cases and automated scoring.",
-        "The final marking distribution for both rounds will be announced before the competition begins.",
-        "For a tie, completely solved questions are considered first, followed by successful submission time. If needed, a short tie-breaker problem may be conducted.",
+        "Marking distribution: TBA.",
+        "For a tie, completely solved questions are considered first, followed by successful submission time. Additional tie-breaker: TBA.",
         "Prizes: 1st ₹3,000, 2nd ₹2,000, and 3rd ₹1,000.",
       ] },
       { title: "How do I register?", items: [
@@ -946,7 +946,7 @@ export const EVENTS: EventItem[] = [
       ] },
       { title: "When and where is the event?", items: [
         "Date: 31 October 2026. Competition hours: 09:30 AM–11:30 AM.",
-        "Venue: Library. The venue may be relocated depending on capacity.",
+        "Venue: TBA.",
         "09:30–10:15 AM: Bug Hunt · 10:15–10:25 AM: evaluation and qualification · 10:25–11:25 AM: Code Rescue · 11:25–11:30 AM: submission closure and conclusion.",
       ] },
       { title: "Full rules and participant guide", items: [
@@ -955,7 +955,7 @@ export const EVENTS: EventItem[] = [
         "Do not access another participant’s system or account, interfere with another participant’s computer or HackerRank account, or violate any competition rule. Violations may result in disqualification.",
         "Follow coordinator and invigilator instructions, stop when time is called, respect other participants, and keep your assigned workspace clean. Event coordinators/faculty make the final decision on rule violations.",
         "Bring a valid student ID, a pen, registration confirmation/details, and your HackerRank login credentials.",
-        "If a computer or internet problem occurs during Round 2, tell an invigilator immediately and do not make unauthorized system changes. The event team will verify the issue; a backup system may be provided for confirmed event/system failures. Verified time lost to event infrastructure or platform failure may be compensated under event policy.",
+        "If a computer or internet problem occurs during Round 2, tell an invigilator immediately and do not make unauthorized system changes. The event team will verify the issue. Backup system and time compensation: TBA.",
       ] },
     ],
     prizeBreakdown: {
@@ -988,7 +988,7 @@ export const EVENTS: EventItem[] = [
       feeAmount: 150,
       feeBasis: "per_participant",
       feeDisplay: "₹150 per participant",
-      deadline: "As announced by the Tech Fest organizers",
+      deadline: "TBA",
       participantFields: debugDerbyFields,
       coordinator: {
         name: "Priyanshu Kumar",
@@ -1039,7 +1039,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "XAVITECH 2026 Model United Nations (MUN) is an individual delegate event for the United Nations Commission on Science and Technology for Development (CSTD).",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "TBA",
     price: "₹500 per delegate",
     team: "Individual",
     venue: "TBA",
@@ -1048,12 +1048,11 @@ export const EVENTS: EventItem[] = [
     borderColor: "rgba(52,211,153,.4)",
     image: "/images/events/event-11.jpeg",
     highlights: [
-      "Expected participation: 60–70 delegates.",
+      "Expected participation: TBA.",
     ],
     rules: [],
     eligibility: [
-      "Open to eligible college/university students. All courses and academic years/semesters are eligible unless restricted by the final event policy.",
-      "External participants are allowed subject to final Techfest eligibility and organiser approval. No separate age restriction is proposed.",
+      "Open to college/university students. Course, academic-year, external-participant, and age restrictions: TBA.",
     ],
     registrationInfo: [
       "Individual delegate registration; one registration per delegate.",
@@ -1064,7 +1063,7 @@ export const EVENTS: EventItem[] = [
       "Delegates must follow committee rules, the event code of conduct, and organiser instructions.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "TBA",
     },
     documents: [
       {
@@ -1144,7 +1143,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Tech Quiz is a team-based event with fixed two-member teams.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "TBA",
     price: "₹300 per team",
     team: "Exactly 2 members",
     venue: "TBA",
@@ -1153,12 +1152,11 @@ export const EVENTS: EventItem[] = [
     borderColor: "rgba(52,211,153,.4)",
     image: "/images/events/event-09.jpeg",
     highlights: [
-      "Expected participation: 20–30 teams (approximately 40–60 participants).",
+      "Expected participation: TBA.",
     ],
     rules: [],
     eligibility: [
-      "Open to eligible college/university students. All courses and academic years/semesters are eligible unless restricted by final event policy.",
-      "External participants are allowed subject to final XAVITECH eligibility rules and organiser approval. No separate age restriction has been proposed.",
+      "Open to college/university students. Course, academic-year, external-participant, and age restrictions: TBA.",
     ],
     registrationInfo: [
       "One team member submits a single registration for the team and enters the second member’s details during the same form.",
@@ -1170,7 +1168,7 @@ export const EVENTS: EventItem[] = [
       "Valid student identity proof and completion of the online registration form are prerequisites.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "TBA",
     },
     documents: [
       {
@@ -1243,10 +1241,10 @@ export const EVENTS: EventItem[] = [
     trackId: "track-b",
     trackName: "TRACK B — CODING & DEVELOPMENT",
     shortDesc: "An AI prompt battle for individual participants and small teams.",
-    fullDesc: "Battle of Bots is an AI prompt battle open to individual participants and teams of up to three. Event rules will be shared by the organizers. Further event details are to be announced.",
+    fullDesc: "Battle of Bots is an AI prompt battle for individual participants and teams of up to three. Further event details: TBA.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "TBA",
     price: "₹550 registration fee",
     team: "Individual or teams of 2–3",
     venue: "TBA",
@@ -1256,7 +1254,7 @@ export const EVENTS: EventItem[] = [
     image: "/images/events/event-10.jpeg",
     highlights: [],
     rules: [
-      "Event rules and regulations will be shared by the organizers.",
+      "Event rules and regulations: TBA.",
       "Team leaders are responsible for the accuracy of submitted team information and must follow the event rules.",
     ],
     eligibility: [
@@ -1266,7 +1264,7 @@ export const EVENTS: EventItem[] = [
     registrationInfo: [
       "Choose individual registration or a team of up to three. A team leader submits team registration and enters all members during registration.",
       "A team name and team leader are required for teams. Separate member registrations and joining multiple teams are not allowed.",
-      "Registration deadline: 27 October 2026. Registration fee: ₹550; the source does not specify whether this is charged per participant or per team.",
+      "Registration deadline: 27 October 2026. Registration fee: ₹550. Fee basis: TBA.",
     ],
     requirements: [
       "Each participant must provide full name, institution, department/course, year/semester, mobile number, email address, and a valid college ID card.",
@@ -1276,7 +1274,7 @@ export const EVENTS: EventItem[] = [
       "Coordinator access should include participant and team lists, contact details, uploaded ID cards, submitted project/material files, registration and attendance status, and CSV/Excel export.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "TBA",
     },
     documents: [
       {
@@ -1337,7 +1335,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "XAVITECH 2026 Ideathon is a team event for groups of two to four. A team leader submits the registration, adds one teammate, and invites any remaining members to join through a link.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "TBA",
     price: "₹500 per team",
     team: "2–4 members",
     venue: "TBA",
@@ -1347,12 +1345,10 @@ export const EVENTS: EventItem[] = [
     image: "/images/events/event-12.jpeg",
     highlights: [],
     rules: [
-      "Participants must follow the event rules and code of conduct. No additional restriction is proposed unless required by the final event policy.",
+      "Follow the event rules and code of conduct. Additional restrictions: TBA.",
     ],
     eligibility: [
-      "Open to eligible college/university students, subject to final event eligibility rules.",
-      "All courses/departments and academic years/semesters are eligible unless restricted by the final policy. No separate age restriction is proposed.",
-      "External participants are allowed, subject to applicable event eligibility requirements.",
+      "Eligible participants: college/university students. Course, academic-year, external-participant, and age restrictions: TBA.",
     ],
     registrationInfo: [
       "Team name and team leader are required. One team leader submits the registration and enters one additional member; remaining members join through an invite/link workflow.",
@@ -1364,7 +1360,7 @@ export const EVENTS: EventItem[] = [
       "A valid student identity proof and completed online registration are required.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "TBA",
     },
     documents: [
       {
@@ -1653,7 +1649,7 @@ export const EVENTS: EventItem[] = [
     prize: "₹4,000",
     price: "₹400 per team",
     team: "Exactly 4 members",
-    venue: "De Nobili Hall or an assigned campus venue (To Be Announced)",
+    venue: "TBA",
     accentColor: "#60a5fa",
     glowColor: "rgba(96,165,250,.2)",
     borderColor: "rgba(96,165,250,.4)",
@@ -1724,7 +1720,7 @@ export const EVENTS: EventItem[] = [
         items: [
           "Mind Game: all 6 remaining teams compete and are evaluated by score. The team with the lowest score is eliminated; the other 5 advance.",
           "Physical Game: the qualified teams take part in a Physical/Run-to-Hunt challenge.",
-          "The Physical Game’s detailed rules, scoring system, and elimination criteria will be announced separately.",
+          "Physical Game rules, scoring, and elimination criteria: TBA.",
           "The overall winning team receives the ₹4,000 prize.",
         ],
       },
@@ -1743,13 +1739,13 @@ export const EVENTS: EventItem[] = [
         items: [
           "The winning team receives a prize of ₹4,000 and a winning certificate. A trophy is optional.",
           "Participants receive participation certificates.",
-          "Participation ID and refreshments: To Be Announced.",
+          "Participation ID and refreshments: TBA.",
         ],
       },
       {
         title: "When and where is it happening?",
         items: [
-          "Venue: De Nobili Hall or another assigned campus venue. Final venue and event time: To Be Announced.",
+          "Venue and event time: TBA.",
           "The event takes place on campus. Follow your club's clue set and proceed only to the locations assigned to your team.",
         ],
       },
@@ -1762,7 +1758,7 @@ export const EVENTS: EventItem[] = [
           "Teams may visit campus before their assigned time to become familiar with it, but must not search for clues. Anyone caught searching for clues early is immediately eliminated.",
           "Follow organizers’ and volunteers’ instructions and your team’s clues at every stage. Qualification and elimination decisions made by the organizing committee are final.",
           "Do not tamper with clues, QR codes, Green Cards, or other game materials. Disrupting the game or obstructing other teams may lead to disqualification.",
-          "The detailed rules, scoring system, and elimination criteria for the Physical/Run-to-Hunt challenge will be announced separately. The organizing committee may make necessary changes to the format; its decision is final.",
+          "Physical/Run-to-Hunt rules, scoring, and elimination criteria: TBA. The organizing committee may make necessary changes to the format; its decision is final.",
         ],
       },
     ],
@@ -1850,18 +1846,18 @@ export const EVENTS: EventItem[] = [
     shortDesc: "Build and pilot a robot through a timed obstacle course.",
     fullDesc: "Build. Pilot. Survive the Track. Death Race is a robotic obstacle race that tests engineering, durability, and piloting skill. Teams guide their custom-built robots through rough terrain, a shallow water pit, an incline, and other challenges on one modular course.",
     date: "31 October 2026",
-    time: "9:00 AM–12:00 PM",
-    prize: "To Be Announced",
+    time: "TBA",
+    prize: "TBA",
     price: "₹700 per team",
     team: "2–4 members",
-    venue: "Track C Area (courtyard / De Nobili Hall; final location To Be Announced)",
+    venue: "TBA",
     accentColor: "#60a5fa",
     glowColor: "rgba(96,165,250,.2)",
     borderColor: "rgba(96,165,250,.4)",
     image: "/images/events/event-08.jpeg",
     highlights: [
       "Pilot a custom robot through a timed, five-zone obstacle course.",
-      "Teams of 2–4 · ₹700 per team · 31 October 2026, 9:00 AM–12:00 PM.",
+      "Teams of 2–4 · ₹700 per team · 31 October 2026.",
       "The course tests robot control, traction, durability, and driving precision.",
     ],
     rules: [
@@ -1878,7 +1874,7 @@ export const EVENTS: EventItem[] = [
       "The fee is ₹700 per team.",
     ],
     requirements: [
-      "Bring a custom-built, terrestrial robot no larger than 30 cm long × 30 cm wide × 30 cm high. Its maximum weight must fall within the 4.0–5.0 kg limit confirmed at technical inspection.",
+      "Bring a custom-built terrestrial robot no larger than 30 cm long × 30 cm wide × 30 cm high. Maximum weight: TBA.",
       "Robots must use onboard rechargeable batteries only (LiPo, NiMH, or sealed lead-acid), at no more than 24 V.",
       "Manual wired, manual wireless (RF, Bluetooth, Wi-Fi), or fully autonomous control is allowed.",
       "Each member provides their name, institution, mobile number, and student ID/roll number; each uploads a valid college ID and verifies email/mobile.",
@@ -1888,7 +1884,7 @@ export const EVENTS: EventItem[] = [
       "Each competing team must register 2–4 members and bring a robot that passes the safety and technical inspection.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "TBA",
     },
     documents: [
       {
@@ -1918,10 +1914,9 @@ export const EVENTS: EventItem[] = [
         title: "How does the competition work?",
         items: [
           "Qualifiers: each team completes an individual timed run. Time begins at the green start signal, and penalties are added to the run time.",
-          "Knockouts: the fastest 8 or 16 teams advance to elimination heats. Losing teams are eliminated; winners progress through the semifinals and final. The bracket size is To Be Announced.",
-          "For a course at least 1.2 m wide, teams race in parallel lanes. For a course under 1 m wide, teams make back-to-back timed runs. The format for a course between 1 m and 1.2 m is To Be Announced.",
-          "Final: the top 2 or 3 teams (final number To Be Announced) compete in a two-lap endurance run.",
-          "The race-day schedule lists knockout heats for the top 4 teams and a two-lap final for the top 2. How these stages align with the 8- or 16-team knockout bracket will be confirmed before the event.",
+          "Knockouts: teams advance through elimination heats, semifinals, and a final. Number of qualifying teams and knockout bracket size: TBA.",
+          "For a course at least 1.2 m wide, teams race in parallel lanes. For a course under 1 m wide, teams make back-to-back timed runs. Lane format for a course between 1 m and 1.2 m: TBA.",
+          "Final: two-lap endurance run. Number of finalists: TBA.",
         ],
       },
       {
@@ -1938,7 +1933,7 @@ export const EVENTS: EventItem[] = [
         title: "What robot can I bring?",
         items: [
           "Robot type: custom-built terrestrial robot. Maximum dimensions: 30 cm long × 30 cm wide × 30 cm high.",
-          "Weight limit: 4.0–5.0 kg; the exact limit will be confirmed at technical inspection.",
+          "Maximum weight: TBA.",
           "Power: onboard rechargeable batteries only (LiPo, NiMH, or sealed lead-acid), at a maximum of 24 V.",
           "Control: manual wired, manual wireless (RF, Bluetooth, or Wi-Fi), or fully autonomous.",
         ],
@@ -1969,17 +1964,15 @@ export const EVENTS: EventItem[] = [
           "Register one team of 2–4 members. One team leader submits a single registration with every member’s details; a team name is required.",
           "Each member provides their name, institution, mobile number, and student ID or roll number, and uploads a valid college ID.",
           "The fee is ₹700 per team. Verify the email address and mobile number provided during registration.",
-          "Registration deadline: To Be Announced.",
+          "Registration deadline: TBA.",
         ],
       },
       {
         title: "When and where is it happening?",
         items: [
-          "Date: 31 October 2026 · Event time: 9:00 AM–12:00 PM.",
-          "Venue: Track C area, either the outdoor covered courtyard or De Nobili Hall floor. Final location: To Be Announced.",
-          "9:00 AM: team registration and robot technical inspection · 9:30 AM: track orientation and pilot briefing · 9:45 AM: qualifying time trials.",
-          "11:00 AM: leaderboard announcement and pit break · 11:15 AM: knockout heats listed for the top four teams · 11:45 AM: two-lap grand final listed for the top two teams · 12:00 PM: results and winner announcement.",
-          "The bracket size and its alignment with the published race-day schedule will be confirmed before the event.",
+          "Date: 31 October 2026 · Event time: TBA.",
+          "Venue: TBA.",
+          "Event schedule: TBA.",
         ],
       },
       {
@@ -1991,7 +1984,7 @@ export const EVENTS: EventItem[] = [
           "The pit area has workbenches, extension power boards, multi-plug extension cords, and a battery-charging mat. Spectator seating is provided.",
           "Seven event volunteers support the race: two track marshals monitor zones and penalties; one controller manages starts and lap times; one safety controller oversees hazards and cutoff; two registration/pit managers manage the queue; and one crowd manager guides spectators. Volunteers also build the track before the event.",
           "A manual reset may be requested if a robot is permanently trapped. The reset adds 15 seconds; team members must not touch the robot without requesting it.",
-          "Knockout heats use parallel lanes when the track is at least 1.2 m wide and back-to-back timed runs when it is under 1 m wide. The format for widths between 1 m and 1.2 m is To Be Announced.",
+          "Knockout heats use parallel lanes when the track is at least 1.2 m wide and back-to-back timed runs when it is under 1 m wide. Lane format for widths between 1 m and 1.2 m: TBA.",
           "Spectators must remain in the designated viewing area and follow marshal instructions.",
         ],
       },
@@ -2003,7 +1996,7 @@ export const EVENTS: EventItem[] = [
       feeAmount: 700,
       feeBasis: "per_team",
       feeDisplay: "₹700 per team",
-      deadline: "To Be Announced",
+      deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
         { id: "teamName", label: "Team name", type: "text", required: true },
@@ -2050,7 +2043,7 @@ export const EVENTS: EventItem[] = [
     trackId: "track-e",
     trackName: "TRACK E — WORKSHOPS & KNOWLEDGE",
     shortDesc: "A hands-on technical workshop for school and college students.",
-    fullDesc: "Hack the Skills is a technical workshop open to students from Class 8 through postgraduate level. Register individually or as a team of two to four. Workshop schedule and venue details will be announced later.",
+    fullDesc: "Hack the Skills is a technical workshop open to students from Class 8 through postgraduate level. Register individually or as a team of two to four. Schedule and venue: TBA.",
     date: "TBA",
     time: "TBA",
     prize: "₹0",
@@ -2062,7 +2055,7 @@ export const EVENTS: EventItem[] = [
     borderColor: "rgba(244,114,182,.4)",
     image: "/images/events/event-13.jpeg",
     highlights: [
-      "Technical workshop · Schedule and venue to be announced.",
+      "Technical workshop · Schedule and venue: TBA.",
     ],
     rules: [],
     eligibility: [

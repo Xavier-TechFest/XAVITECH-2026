@@ -98,7 +98,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
             </div>
             <div>
               <span className="text-muted block text-[10px] uppercase tracking-wider">Prize Pool</span>
-              <span className="mt-1 block font-extrabold text-marigold text-sm">{event.prize === "TBA" ? "To Be Announced" : event.prize}</span>
+              <span className="mt-1 block font-extrabold text-marigold text-sm">{event.prize === "TBA" ? "TBA" : event.prize}</span>
             </div>
             {event.team !== "TBA" && <div>
               <span className="text-muted block text-[10px] uppercase tracking-wider">{event.team === "Individual" ? "Participation Type" : "Team Size"}</span>
