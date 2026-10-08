@@ -1650,7 +1650,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Cipher Chase is a team-based campus treasure hunt built around clues, search challenges, and an elimination format. Teams follow club-specific clue sets, compete through multiple activities, and advance toward a final treasure challenge.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "₹4,000 for the winning team",
     price: "₹400 per team",
     team: "Exactly 4 members",
     venue: "De Nobili Hall or an assigned campus venue (To Be Announced)",
@@ -1661,6 +1661,7 @@ export const EVENTS: EventItem[] = [
     highlights: [
       "Teams of 4 · ₹400 per team.",
       "Club groupings organize elimination rounds; teams in a club do not play as one combined team.",
+      "Winning team prize: ₹4,000. Participants receive participation certificates.",
       "Clues may use QR codes, Morse code, binary code, and other puzzle formats.",
     ],
     rules: [
@@ -1736,6 +1737,14 @@ export const EVENTS: EventItem[] = [
         ],
       },
       {
+        title: "What prizes and certificates are provided?",
+        items: [
+          "The winning team receives a prize of ₹4,000 and a winning certificate. A trophy is optional.",
+          "Participants receive participation certificates.",
+          "Participation ID and refreshments: To Be Announced.",
+        ],
+      },
+      {
         title: "When and where is it happening?",
         items: [
           "Venue: De Nobili Hall or another assigned campus venue. Final venue and event time: To Be Announced.",
@@ -1759,7 +1768,9 @@ export const EVENTS: EventItem[] = [
       "Provide coordinators with team-wise participant lists, contact details, uploaded ID cards, registration/payment/check-in status, and records for cancelled teams.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "₹4,000 for the winning team",
+      first: "₹4,000",
+      note: "The winning team receives a certificate; a trophy is optional. Participants receive participation certificates.",
     },
     documents: [
       {
