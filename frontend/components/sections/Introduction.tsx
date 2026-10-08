@@ -199,7 +199,7 @@ export default function Introduction() {
               {slide && (
                 <motion.img
                   key={slide.file}
-                  src={`/assets/event-images/${slide.file}`}
+                  src={`/events/${slide.file}`}
                   alt={`${slide.title} — XAVITECH 2026`}
                   decoding="async"
                   initial={{ opacity: 0 }}
@@ -301,20 +301,16 @@ export default function Introduction() {
                 <>
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 translate-x-[3px] font-display text-[1.4rem] font-bold uppercase leading-[0.98] tracking-[-0.025em] sm:text-3xl lg:text-5xl text-cyan-300/70"
+                    className="pointer-events-none absolute inset-0 translate-x-[3px] font-display text-[1.35rem] font-medium leading-snug sm:text-3xl lg:text-4xl text-cyan-300/70"
                   >
-                    Five tracks, dozens of events, one campus, one day. Teams
-                    build through the morning, judging runs through the afternoon,
-                    and results go up before the evening is out.
+                    Five tracks, dozens of events, one campus, one day.
                   </span>
 
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 -translate-x-[3px] font-display text-[1.4rem] font-bold uppercase leading-[0.98] tracking-[-0.025em] sm:text-3xl lg:text-5xl text-marigold/60"
+                    className="pointer-events-none absolute inset-0 -translate-x-[3px] font-display text-[1.35rem] font-medium leading-snug sm:text-3xl lg:text-4xl text-marigold/60"
                   >
-                    Five tracks, dozens of events, one campus, one day. Teams
-                    build through the morning, judging runs through the afternoon,
-                    and results go up before the evening is out.
+                    Five tracks, dozens of events, one campus, one day.
                   </span>
                 </>
               )}

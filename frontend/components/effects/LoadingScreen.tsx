@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 /** How long the logos stay fully visible before the dissolve starts. */
-const HOLD_MS = 2000;
+const HOLD_MS = 2800;
 /** How long the pixel dissolve takes. */
 const DISSOLVE_MS = 950;
 const BG = "#07080B";
@@ -32,6 +32,8 @@ export default function LoadingScreen() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const uniRef = useRef<HTMLImageElement>(null);
   const xaviRef = useRef<HTMLImageElement>(null);
+  const barRef = useRef<HTMLSpanElement>(null);
+  const pctRef = useRef<HTMLSpanElement>(null);
 
   // Every time the route becomes "/" (first load, or navigating back to it),
   // start a fresh run of the sequence.
@@ -48,6 +50,7 @@ export default function LoadingScreen() {
     let cancelled = false;
     let holdTimer = 0;
     let raf = 0;
+    let progRaf = 0;
     document.documentElement.style.overflow = "hidden";
 
     const finish = () => {
@@ -147,13 +150,26 @@ export default function LoadingScreen() {
     );
     const cap = new Promise<void>((res) => window.setTimeout(res, 4000));
     Promise.race([loaded, cap]).then(() => {
-      if (!cancelled) holdTimer = window.setTimeout(dissolve, HOLD_MS);
+      if (cancelled) return;
+      holdTimer = window.setTimeout(dissolve, HOLD_MS);
+      // boot progress readout: eases 0 -> 100 across the hold
+      const t0 = performance.now();
+      const tick = (now: number) => {
+        if (cancelled) return;
+        const p = Math.min(1, (now - t0) / (HOLD_MS - 150));
+        const e = 1 - Math.pow(1 - p, 2.2);
+        if (barRef.current) barRef.current.style.transform = `scaleX(${e})`;
+        if (pctRef.current) pctRef.current.textContent = String(Math.round(e * 100)).padStart(3, "0");
+        if (p < 1) progRaf = requestAnimationFrame(tick);
+      };
+      progRaf = requestAnimationFrame(tick);
     });
 
     return () => {
       cancelled = true;
       window.clearTimeout(holdTimer);
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(progRaf);
       document.documentElement.style.overflow = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -183,6 +199,17 @@ export default function LoadingScreen() {
           stage === "hold" ? "splash-content-in" : ""
         }`}
       >
+        {/* pulse rings + scan line + HUD corners (live DOM only; hidden when the dissolve starts) */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+          <span className="splash-ring" />
+          <span className="splash-ring splash-ring-2" />
+          <span className="splash-scan" />
+          <span className="splash-corner left-4 top-4 border-l-2 border-t-2 sm:left-8 sm:top-8" />
+          <span className="splash-corner right-4 top-4 border-r-2 border-t-2 sm:right-8 sm:top-8" />
+          <span className="splash-corner bottom-4 left-4 border-b-2 border-l-2 sm:bottom-8 sm:left-8" />
+          <span className="splash-corner bottom-4 right-4 border-b-2 border-r-2 sm:bottom-8 sm:right-8" />
+        </div>
+
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           ref={uniRef}
@@ -212,6 +239,22 @@ export default function LoadingScreen() {
         <p className="splash-caption font-mono text-[10px] uppercase tracking-[0.3em] text-muted sm:text-[11px]">
           Xavier University · Patna
         </p>
+
+        <div className="splash-boot w-[min(70vw,300px)]">
+          <div className="mb-1.5 flex justify-between font-mono text-[9px] uppercase tracking-[0.22em] text-circuit/80 sm:text-[10px]">
+            <span>Initialising</span>
+            <span>
+              <span ref={pctRef}>000</span>%
+            </span>
+          </div>
+          <span className="block h-[2px] w-full overflow-hidden bg-line">
+            <span
+              ref={barRef}
+              className="block h-full origin-left bg-gradient-to-r from-circuit via-circuit to-marigold shadow-[0_0_10px_rgba(53,224,201,0.8)]"
+              style={{ transform: "scaleX(0)" }}
+            />
+          </span>
+        </div>
       </div>
 
       <canvas ref={canvasRef} className="absolute left-0 top-0 hidden" />

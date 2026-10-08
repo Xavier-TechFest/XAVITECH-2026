@@ -50,4 +50,27 @@ export function makeSpriteTexture() {
 export const isPhone = () =>
   typeof window !== "undefined" && window.innerWidth < 768;
 
+/**
+ * Three performance tiers for the 3D backdrop, per the "High: Desktop /
+ * Medium: Tablet & normal laptops / Low: Mobile & weaker devices" brief.
+ * Read once at mount (device class doesn't change mid-session) from
+ * viewport width, pointer type, and — where the browser exposes them —
+ * core count and device memory. Both of the latter are optional Chrome-only
+ * APIs, so their absence is treated as neutral, never as "weak".
+ */
+export type QualityTier = "low" | "medium" | "high";
+
+export function getQualityTier(): QualityTier {
+  if (typeof window === "undefined") return "high";
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const w = window.innerWidth;
+  const nav = navigator as Navigator & { deviceMemory?: number };
+  const cores = nav.hardwareConcurrency ?? 8;
+  const mem = nav.deviceMemory ?? 8;
+
+  if (coarse && (w < 820 || cores <= 4 || mem <= 4)) return "low";
+  if (coarse || w < 1100 || cores <= 6) return "medium";
+  return "high";
+}
+
 export { PULSE_EVENT, type PulseDetail } from "@/lib/pulse";
