@@ -19,6 +19,8 @@ const parseCorsOrigins = (...inputs) => {
     'https://xavitech.in',
     'https://www.xavitech.in',
     'https://xavitech-2026.vercel.app',
+    'https://pay.easebuzz.in',
+    'https://testpay.easebuzz.in',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
   ];
