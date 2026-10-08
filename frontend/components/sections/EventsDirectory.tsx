@@ -1,14 +1,27 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { EVENTS, TRACKS, EventItem, TrackItem } from "@/lib/eventsData";
 import EventCard from "@/components/ui/EventCard";
 import EventModal from "@/components/ui/EventModal";
 
 export default function EventsDirectory() {
-  const [selectedTrack, setSelectedTrack] = useState<string>("all");
+  const searchParams = useSearchParams();
+  const requestedTrack = searchParams.get("track") || "all";
+  const initialTrack = TRACKS.some((track) => track.id === requestedTrack) ? requestedTrack : "all";
+  const [selectedTrack, setSelectedTrack] = useState<string>(initialTrack);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedModalEvent, setSelectedModalEvent] = useState<EventItem | null>(null);
+
+  useEffect(() => {
+    setSelectedTrack(initialTrack);
+    if (initialTrack === "all") return;
+    const timer = window.setTimeout(() => {
+      document.getElementById(`track-${initialTrack}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [initialTrack]);
   // Filter and group events by track
   const groupedTracks = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();

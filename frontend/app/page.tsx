@@ -5,9 +5,11 @@ import Introduction from "@/components/sections/Introduction";
 import Tracks from "@/components/sections/Tracks";
 import EventsPreview from "@/components/sections/EventsPreview";
 import Schedule from "@/components/sections/Schedule";
+import Sponsors from "@/components/sections/Sponsors";
 import CosmosBackdrop from "@/components/experience/CosmosBackdrop";
 import HudFrame from "@/components/effects/HudFrame";
 import DataStreams from "@/components/effects/DataStreams";
+import Ticker from "@/components/effects/Ticker";
 
 export default function Home() {
   return (
@@ -23,10 +25,12 @@ export default function Home() {
       <div className="relative z-10">
         <main>
           <Hero />
+          <Ticker />
           <Introduction />
           <Tracks />
           <EventsPreview />
           <Schedule />
+          <Sponsors />
         </main>
         <Footer />
       </div>

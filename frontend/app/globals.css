@@ -434,6 +434,279 @@
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Splash entrance (components/effects/LoadingScreen.tsx)              */
+/* ------------------------------------------------------------------ */
+.splash-uni {
+  opacity: 0;
+  filter: blur(6px);
+  animation: splash-logo-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+.splash-rule {
+  opacity: 0;
+  animation: splash-fade-in 0.3s ease-out 0.55s both;
+}
+.splash-rule > span {
+  animation: splash-rule-draw 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+.splash-xavi {
+  opacity: 0;
+  filter: blur(6px);
+  animation: splash-logo-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+}
+.splash-caption {
+  opacity: 0;
+  animation: splash-fade-in 0.5s ease-out 1s both;
+}
+.splash-boot {
+  opacity: 0;
+  animation: splash-fade-in 0.4s ease-out 0.7s both;
+}
+/* XAVITECH wordmark: a quick RGB-split glitch after it lands, then a slow glow pulse */
+.splash-xavi {
+  animation:
+    splash-logo-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both,
+    splash-glitch 0.55s steps(1, end) 1.25s 1;
+}
+.splash-uni {
+  animation:
+    splash-logo-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+@keyframes splash-glitch {
+  0%   { transform: translate(0, 0); filter: drop-shadow(3px 0 0 rgba(226,63,126,0.85)) drop-shadow(-3px 0 0 rgba(53,224,201,0.85)); }
+  20%  { transform: translate(-4px, 1px) skewX(-6deg); filter: drop-shadow(-4px 0 0 rgba(226,63,126,0.85)) drop-shadow(4px 0 0 rgba(53,224,201,0.85)); }
+  40%  { transform: translate(3px, -1px); filter: drop-shadow(2px 0 0 rgba(226,63,126,0.7)) drop-shadow(-2px 0 0 rgba(53,224,201,0.7)); }
+  60%  { transform: translate(-2px, 0) skewX(4deg); filter: drop-shadow(-3px 0 0 rgba(226,63,126,0.7)) drop-shadow(3px 0 0 rgba(53,224,201,0.7)); }
+  80%  { transform: translate(1px, 0); filter: drop-shadow(1px 0 0 rgba(226,63,126,0.5)) drop-shadow(-1px 0 0 rgba(53,224,201,0.5)); }
+  100% { transform: none; filter: none; }
+}
+@keyframes splash-glow {
+  from { filter: drop-shadow(0 0 6px rgba(53,224,201,0.15)); }
+  to   { filter: drop-shadow(0 0 26px rgba(53,224,201,0.6)); }
+}
+/* expanding rings behind the logos */
+.splash-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30vmin;
+  height: 30vmin;
+  border: 1px solid rgba(53, 224, 201, 0.55);
+  border-radius: 9999px;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.4);
+  animation: splash-ring 2.2s cubic-bezier(0.2, 0.6, 0.3, 1) 0.2s infinite;
+}
+.splash-ring-2 { animation-delay: 0.9s; border-color: rgba(242, 166, 60, 0.45); }
+.splash-ring-3 { animation-delay: 1.6s; }
+@keyframes splash-ring {
+  0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(0.4); }
+  100% { opacity: 0;   transform: translate(-50%, -50%) scale(3.2); }
+}
+/* one bright scan line sweeping top -> bottom */
+.splash-scan {
+  position: absolute;
+  left: 0;
+  top: -4px;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, rgba(53, 224, 201, 0.95), transparent);
+  box-shadow: 0 0 24px 6px rgba(53, 224, 201, 0.45);
+  animation: splash-scan 1.5s cubic-bezier(0.5, 0, 0.3, 1) 0.15s both;
+}
+@keyframes splash-scan {
+  from { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(100vh); opacity: 0.2; }
+}
+/* HUD corner brackets */
+.splash-corner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-color: rgba(53, 224, 201, 0.75);
+  opacity: 0;
+  animation: splash-corner 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+@keyframes splash-corner {
+  from { opacity: 0; transform: scale(1.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes splash-logo-in {
+  from { opacity: 0; filter: blur(6px); transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
+}
+@keyframes splash-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes splash-rule-draw {
+  from { transform: scaleX(0); opacity: 1; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-uni,
+  .splash-rule,
+  .splash-rule > span,
+  .splash-xavi,
+  .splash-caption,
+  .splash-boot,
+  .splash-ring,
+  .splash-scan,
+  .splash-corner {
+    animation: none;
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-scan,
+  .splash-ring {
+    display: none;
+  }
+  .splash-boot,
+  .splash-corner {
+    opacity: 1;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Energy pass: ticker, button pulse, hover lift, scroll reveal        */
+/* ------------------------------------------------------------------ */
+.ticker-track {
+  animation: ticker-scroll 38s linear infinite;
+}
+.ticker:hover .ticker-track {
+  animation-play-state: paused;
+}
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-25%); } /* 4 identical rows -> seamless loop */
+}
+
+.btn-pulse {
+  position: relative;
+  /* shine must be clipped to the button itself, never the surrounding bar */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  isolation: isolate;
+  transform: translateZ(0);
+  box-shadow: 0 0 18px rgba(242, 166, 60, 0.35);
+}
+.btn-pulse::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.55) 50%, transparent 100%);
+  transform: translateX(-130%) skewX(-18deg);
+  animation: btn-shine 3.2s ease-in-out 1s infinite;
+}
+@keyframes btn-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(242, 166, 60, 0.0), 0 0 12px rgba(242, 166, 60, 0.25); }
+  50%      { box-shadow: 0 0 0 6px rgba(242, 166, 60, 0.12), 0 0 26px rgba(242, 166, 60, 0.55); }
+}
+@keyframes btn-shine {
+  0%, 55% { transform: translateX(-130%) skewX(-18deg); }
+  100%    { transform: translateX(330%) skewX(-18deg); }
+}
+
+.eyebrow-dash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #35e0c9, transparent);
+  transform: translateX(80%);
+}
+@keyframes dash-run {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(260%); }
+}
+
+.person-card {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (hover: hover) {
+  .person-card:hover {
+    transform: translateY(-6px);
+  }
+}
+
+/* Scroll-driven fade-up. Browsers without animation-timeline just show the content normally. */
+@supports (animation-timeline: view()) {
+  .reveal-up {
+    animation: reveal-up linear backwards;
+    animation-timeline: view();
+    animation-range: entry 0% entry 55%;
+  }
+  @keyframes reveal-up {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track, .btn-pulse::after { animation: none; }
+  .reveal-up { animation: none; opacity: 1; transform: none; }
+}
+
+/* committee page: skip rendering off-screen track blocks until they scroll near */
+.track-block {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 900px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Footer map: a warm golden light that circles the tile's edge        */
+/* ------------------------------------------------------------------ */
+.map-glow {
+  position: relative;
+  padding: 3px;                 /* thickness of the running light */
+  border-radius: 14px;
+  overflow: hidden;
+  isolation: isolate;
+  background: rgba(242, 166, 60, 0.28); /* faint always-on gold edge */
+  box-shadow: 0 0 26px rgba(242, 166, 60, 0.18);
+}
+/* the light itself: a conic sweep, rotated; only the 2px frame shows through */
+.map-glow::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 220%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  z-index: -1;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 150deg,
+    rgba(242, 166, 60, 0.25) 200deg,
+    rgba(255, 180, 70, 0.95) 290deg,
+    #ffe9a8 340deg,
+    #fffbe6 356deg,
+    transparent 360deg
+  );
+  animation: map-orbit 4.5s linear infinite;
+  will-change: transform;
+}
+.map-glow-inner {
+  border-radius: 11px;
+  background-clip: padding-box;
+}
+@keyframes map-orbit {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-glow::before { animation: none; }
+}
+
 /* ========================================================
    XAVITECH ADMIN PANEL — LIGHT THEME SPECIFICATION
    ======================================================== */

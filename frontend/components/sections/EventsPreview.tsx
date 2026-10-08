@@ -6,35 +6,88 @@ import { getFanTransform } from "@/lib/fan";
 import { EventsBackdrop } from "./Backdrops";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { firePulse } from "@/lib/pulse";
-import { EVENTS } from "@/lib/eventsData";
 
-const trackLabels: Record<string, string> = {
-  "track-a": "HACKATHON", "track-b": "CODING & DEVELOPMENT", "track-c": "GAMING & ADVENTURE",
-  "track-d": "STAGE & CENTRAL EVENTS", "track-e": "WORKSHOPS & KNOWLEDGE",
-};
-const events = EVENTS.map((event) => ({
-  id: event.id,
-  name: event.name,
-  track: trackLabels[event.trackId],
-  status: event.registrationConfig ? "Requirements available" : "Details TBA",
-  format: event.team,
-}));
+import { EVENTS, TRACKS, trackById, type FestEvent, type TrackId } from "@/lib/fest";
+import { TRACK_EVENT } from "@/lib/trackBus";
 
-// filter chips: the same five tracks the Tracks section introduces
-const FILTERS = [
-  { label: "All", track: null },
-  { label: "Hackathon", track: "HACKATHON" },
-  { label: "Coding", track: "CODING & DEVELOPMENT" },
-  { label: "Gaming", track: "GAMING & ADVENTURE" },
-  { label: "Stage & Central", track: "STAGE & CENTRAL EVENTS" },
-  { label: "Workshops", track: "WORKSHOPS & KNOWLEDGE" },
-] as const;
+type Filter = "all" | TrackId;
+const FILTERS: { label: string; id: Filter }[] = [
+  { label: "All", id: "all" },
+  ...TRACKS.map((t) => ({ label: t.short, id: t.id as Filter })),
+];
+
+/** Card artwork: the event's poster, dimmed under a scrim — or a generated blueprint pattern when there's no poster. */
+function CardArt({ event, active }: { event: FestEvent; active: boolean }) {
+  return (
+    <>
+      {event.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={event.image}
+          alt=""
+          width={640}
+          height={480}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-all duration-500 ${
+            active ? "scale-110 opacity-80" : "scale-100 opacity-50"
+          }`}
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 80% 15%, rgba(242,166,60,0.38), transparent 55%), radial-gradient(circle at 15% 90%, rgba(53,224,201,0.32), transparent 55%), linear-gradient(rgba(53,224,201,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(53,224,201,0.18) 1px, transparent 1px)",
+            backgroundSize: "auto, auto, 24px 24px, 24px 24px",
+          }}
+        />
+      )}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07080B] via-[#07080B]/55 to-[#07080B]/20"
+      />
+    </>
+  );
+}
+
+function CardText({ event, number, active, large = false }: { event: FestEvent; number: number; active: boolean; large?: boolean }) {
+  const track = trackById(event.track);
+  return (
+    <>
+      <div className="relative z-10">
+        <div className="flex items-center justify-between gap-2">
+          <p className="truncate text-[10px] font-medium tracking-[0.12em] text-ink/70">{track.tag}</p>
+          <span className="font-mono text-[10px] text-ink/50">{String(number).padStart(2, "0")}</span>
+        </div>
+        <h3
+          className={`mt-3 font-display font-semibold uppercase tracking-wide text-ink [text-shadow:0_2px_14px_rgba(0,0,0,0.8)] transition-all duration-300 ${
+            large ? "text-3xl sm:text-4xl" : active ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"
+          }`}
+        >
+          {event.name}
+        </h3>
+        {/* what the event really is */}
+        <p className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-circuit/50 bg-bg/70 px-2.5 py-1 font-mono text-[10px] uppercase leading-none tracking-[0.12em] text-circuit backdrop-blur-sm">
+          <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-circuit" />
+          <span className="truncate">{event.realName}</span>
+        </p>
+      </div>
+      <div className="relative z-10 flex items-center justify-between text-xs">
+        <span className="text-ink/75">{event.format}</span>
+        <span className={event.status === "Registration open" ? "text-circuit" : "text-ink/60"}>{event.status}</span>
+      </div>
+    </>
+  );
+}
 
 export default function EventsPreview() {
   const [paused, setPaused] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [filter, setFilter] = useState(0);
+  const [filter, setFilter] = useState<Filter>("all");
   // Touch devices (and anyone who asked for reduced motion) get a plain
   // swipeable row instead of the auto-scrolling marquee: a moving target is
   // hard to tap, and a marquee has no hover to pause it on a phone.
@@ -52,25 +105,33 @@ export default function EventsPreview() {
     };
   }, []);
 
-  const filtered = FILTERS[filter].track
-    ? events.filter((e) => e.track === FILTERS[filter].track)
-    : events;
-  // a short filter (e.g. one event) still needs enough cards to fill a marquee
-  const base = Array.from({ length: Math.ceil(8 / filtered.length) }).flatMap(() => filtered);
-  const carouselEvents = [...base, ...base];
-
-  const pickFilter = (i: number) => {
-    setFilter(i);
+  const pickFilter = (id: Filter) => {
+    setFilter(id);
     setHoveredIndex(null);
     setSelectedIndex(null);
     setPaused(false);
-    firePulse(i);
   };
+
+  // A tap on a track card (Tracks section) filters this carousel to that track.
+  useEffect(() => {
+    const onTrack = (e: Event) => {
+      const id = (e as CustomEvent<{ track: TrackId }>).detail?.track;
+      if (id) pickFilter(id);
+    };
+    window.addEventListener(TRACK_EVENT, onTrack);
+    return () => window.removeEventListener(TRACK_EVENT, onTrack);
+  }, []);
+
+  const filtered = filter === "all" ? EVENTS : EVENTS.filter((e) => e.track === filter);
+    // a short filter still needs enough cards to fill a marquee
+  const base = Array.from({ length: Math.ceil(8 / filtered.length) }).flatMap(() => filtered);
+  const carouselEvents = [...base, ...base];
+
   const activeIndex = hoveredIndex ?? selectedIndex;
   const hasActive = activeIndex !== null;
 
   return (
-    <section id="events" className="relative isolate overflow-hidden">
+    <section id="events" className="relative isolate scroll-mt-14 overflow-hidden">
       <EventsBackdrop />
 
       {/* inner box keeps the marquee clipped to the content width */}
@@ -83,7 +144,7 @@ export default function EventsPreview() {
               A handful of what&rsquo;s running.{" "}
               <span className="[@media(hover:none)]:hidden">Hover</span>
               <span className="hidden [@media(hover:none)]:inline">Tap</span> one
-              to bring it forward — the full list is one tap further.
+              to bring it forward — or pick a track below.
             </p>
           </div>
         </div>
@@ -94,14 +155,17 @@ export default function EventsPreview() {
           aria-label="Filter events by track"
           className="mt-7 flex flex-wrap gap-2 sm:mt-9"
         >
-          {FILTERS.map((f, i) => (
+          {FILTERS.map((f) => (
             <button
-              key={f.label}
+              key={f.id}
               type="button"
-              onClick={() => pickFilter(i)}
-              aria-pressed={filter === i}
+              onClick={() => {
+                pickFilter(f.id);
+                firePulse(Math.max(0, FILTERS.findIndex((x) => x.id === f.id)));
+              }}
+              aria-pressed={filter === f.id}
               className={`min-h-11 rounded-full border px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors duration-200 sm:min-h-9 sm:px-3.5 sm:text-[11px] ${
-                filter === i
+                filter === f.id
                   ? "border-circuit bg-circuit/15 text-circuit shadow-[0_0_16px_rgba(53,224,201,0.25)]"
                   : "border-line/70 text-muted hover:border-circuit/50 hover:text-ink"
               }`}
@@ -111,35 +175,19 @@ export default function EventsPreview() {
           ))}
         </div>
 
-{filtered.length === 1 ? (
+        {filtered.length === 1 ? (
           /* A track with exactly one event doesn't get a carousel to fan
-             through — that's just an awkward sideways shuffle of one card.
-             One centred card, in on a scale + fade + upward move instead. */
+             through — one centred card, in on a scale + fade + upward move. */
           <div className="flex justify-center py-14 sm:py-16">
             <motion.div
               key={filter}
               initial={{ opacity: 0, scale: 0.94, y: 22 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="w-full max-w-sm rounded-2xl border border-circuit/70 bg-surface-raised p-6 text-left shadow-[0_0_40px_rgba(53,224,201,0.18)] sm:max-w-md sm:p-8"
+              className="relative flex h-64 w-full max-w-sm flex-col justify-between overflow-hidden rounded-2xl border border-circuit/70 bg-surface-raised p-6 text-left shadow-[0_0_40px_rgba(53,224,201,0.18)] sm:h-72 sm:max-w-md sm:p-8"
             >
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted">{filtered[0].track}</p>
-                <span className="font-mono text-[10px] text-muted/60">01</span>
-              </div>
-              <h3 className="mt-3 font-display text-2xl font-semibold text-ink sm:text-3xl">
-                {filtered[0].name}
-              </h3>
-              <div className="mt-6 flex items-center justify-between text-xs">
-                <span className="text-muted">{filtered[0].format}</span>
-                <span
-                  className={
-                    filtered[0].status === "Registration open" ? "text-circuit" : "text-muted"
-                  }
-                >
-                  {filtered[0].status}
-                </span>
-              </div>
+              <CardArt event={filtered[0]} active />
+              <CardText event={filtered[0]} number={1} active large />
             </motion.div>
           </div>
         ) : scrollLayout ? (
@@ -158,140 +206,84 @@ export default function EventsPreview() {
                     firePulse(index);
                   }}
                   aria-pressed={on}
-                  className={`relative flex h-52 w-[16.5rem] shrink-0 snap-start flex-col justify-between rounded-2xl border p-5 text-left transition-colors duration-300 sm:h-56 sm:w-[18rem] sm:p-6 ${
+                  className={`relative flex h-56 w-[16.5rem] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left transition-colors duration-300 sm:h-60 sm:w-[18rem] sm:p-6 ${
                     on
                       ? "border-circuit/70 bg-surface-raised shadow-[0_0_40px_rgba(53,224,201,0.18)]"
                       : "border-line/60 bg-surface"
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted">{event.track}</p>
-                      <span className="font-mono text-[10px] text-muted/60">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                    </div>
-                    <h3 className="mt-3 font-display text-2xl font-semibold text-ink">
-                      {event.name}
-                    </h3>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted">{event.format}</span>
-                    <span className={event.status === "Registration open" ? "text-circuit" : "text-muted"}>
-                      {event.status}
-                    </span>
-                  </div>
+                  <CardArt event={event} active={on} />
+                  <CardText event={event} number={index + 1} active={on} />
                 </button>
               );
             })}
           </div>
         ) : (
-        <div
-          className="relative overflow-visible pb-14 pt-24 sm:pt-28"
-
-          style={{
-            maskImage:
-              "linear-gradient(90deg, transparent 0, black 7%, black 93%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(90deg, transparent 0, black 7%, black 93%, transparent 100%)",
-          }}
-          onPointerLeave={(e) => {
-            if (e.pointerType !== "mouse") return;
-            setPaused(false);
-            setHoveredIndex(null);
-          }}
-        >
-
           <div
-            key={filter}
-            className="flex w-max gap-5"
+            className="relative overflow-visible pb-14 pt-24 sm:pt-28"
             style={{
-              animation: `events-scroll ${base.length * 2.7}s linear infinite`,
-              animationPlayState: paused || hasActive ? "paused" : "running",
+              maskImage: "linear-gradient(90deg, transparent 0, black 7%, black 93%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(90deg, transparent 0, black 7%, black 93%, transparent 100%)",
+            }}
+            onPointerLeave={(e) => {
+              if (e.pointerType !== "mouse") return;
+              setPaused(false);
+              setHoveredIndex(null);
             }}
           >
-            {carouselEvents.map((event, index) => {
-              const isActive = activeIndex === index;
-              const isSelected = selectedIndex === index;
-              const fan = getFanTransform(
-                index - (activeIndex ?? index),
-                isActive,
-                hasActive
-              );
+            <div
+              key={filter}
+              className="flex w-max gap-5"
+              style={{
+                animation: `events-scroll ${base.length * 2.7}s linear infinite`,
+                animationPlayState: paused || hasActive ? "paused" : "running",
+              }}
+            >
+              {carouselEvents.map((event, index) => {
+                const isActive = activeIndex === index;
+                const isSelected = selectedIndex === index;
+                const fan = getFanTransform(index - (activeIndex ?? index), isActive, hasActive);
 
-              return (
-                <motion.button
-                  key={`${event.name}-${index}`}
-                  type="button"
-                  onPointerEnter={(e) => {
-                    if (e.pointerType !== "mouse") return;
-                    setPaused(true);
-                    setHoveredIndex(index);
-                  }}
-                  onPointerLeave={(e) => {
-                    if (e.pointerType !== "mouse") return;
-                    setHoveredIndex((h) => (h === index ? null : h));
-                  }}
-                  onClick={() => {
-                    setSelectedIndex((s) => (s === index ? null : index));
-                    firePulse(index);
-                  }}
-                  aria-pressed={isSelected}
-                  className={`group relative flex h-52 w-[16.5rem] shrink-0 flex-col justify-between rounded-2xl border p-5 text-left sm:h-56 sm:w-[18rem] sm:p-6 transition-colors duration-300 ${
-                    isActive
-                      ? "border-circuit/70 bg-surface-raised shadow-[0_0_40px_rgba(53,224,201,0.18)]"
-                      : "border-line/60 bg-surface hover:border-circuit/50"
-                  }`}
-                  style={{ transformOrigin: "bottom center" }}
-                  animate={{
-                    y: fan.y,
-                    rotate: fan.rotate,
-                    scale: fan.scale,
-                    opacity: fan.opacity,
-                    zIndex: fan.zIndex,
-                  }}
-                  transition={{ type: "spring", stiffness: 260, damping: 26 }}
-                >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted">{event.track}</p>
-                      <span className="font-mono text-[10px] text-muted/60">
-                        {String((index % filtered.length) + 1).padStart(2, "0")}
-                      </span>
-                    </div>
-
-                    <h3
-                      className={`mt-3 font-display font-semibold text-ink transition-all duration-300 ${
-                        isActive ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"
-                      }`}
-                    >
-                      {event.name}
-                    </h3>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted">{event.format}</span>
-                    <span
-                      className={
-                        event.status === "Registration open"
-                          ? "text-circuit"
-                          : "text-muted"
-                      }
-                    >
-                      {event.status}
-                    </span>
-                  </div>
-
-                  <div
-                    className={`pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_0%,rgba(227,148,51,0.10),transparent_65%)] transition-opacity duration-500 ${
-                      isActive ? "opacity-100" : "opacity-0"
+                return (
+                  <motion.button
+                    key={`${event.name}-${index}`}
+                    type="button"
+                    onPointerEnter={(e) => {
+                      if (e.pointerType !== "mouse") return;
+                      setPaused(true);
+                      setHoveredIndex(index);
+                    }}
+                    onPointerLeave={(e) => {
+                      if (e.pointerType !== "mouse") return;
+                      setHoveredIndex((h) => (h === index ? null : h));
+                    }}
+                    onClick={() => {
+                      setSelectedIndex((s) => (s === index ? null : index));
+                      firePulse(index);
+                    }}
+                    aria-pressed={isSelected}
+                    className={`group relative flex h-56 w-[16.5rem] shrink-0 flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left sm:h-60 sm:w-[18rem] sm:p-6 transition-colors duration-300 ${
+                      isActive
+                        ? "border-circuit/70 bg-surface-raised shadow-[0_0_40px_rgba(53,224,201,0.18)]"
+                        : "border-line/60 bg-surface hover:border-circuit/50"
                     }`}
-                  />
-                </motion.button>
-              );
-            })}
+                    style={{ transformOrigin: "bottom center" }}
+                    animate={{
+                      y: fan.y,
+                      rotate: fan.rotate,
+                      scale: fan.scale,
+                      opacity: fan.opacity,
+                      zIndex: fan.zIndex,
+                    }}
+                    transition={{ type: "spring", stiffness: 260, damping: 26 }}
+                  >
+                    <CardArt event={event} active={isActive} />
+                    <CardText event={event} number={(index % filtered.length) + 1} active={isActive} />
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
-        </div>
         )}
 
         <style jsx>{`

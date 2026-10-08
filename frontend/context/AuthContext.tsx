@@ -13,7 +13,7 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
 } from "firebase/auth";
-import { auth, googleProvider } from "../lib/firebase/client";
+import { auth, googleProvider, hasFirebaseConfig } from "../lib/firebase/client";
 import {
   api,
   UserProfile,
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Helper to retrieve current ID token
   const getIdToken = useCallback(async (): Promise<string | null> => {
-    if (!auth.currentUser) return null;
+    if (!auth?.currentUser) return null;
     return await auth.currentUser.getIdToken();
   }, []);
 
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Re-fetch profile manually
   const refreshProfile = useCallback(async (): Promise<UserProfile | null> => {
-    if (!auth.currentUser) {
+    if (!auth?.currentUser) {
       setUser(null);
       return null;
     }
@@ -68,6 +68,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Listen to Firebase Auth state changes
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
 
@@ -91,6 +96,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Google Sign-In Flow
   const loginWithGoogle = async (): Promise<UserProfile> => {
+    if (!hasFirebaseConfig || !auth || !googleProvider) {
+      throw new Error(
+        "Google sign-in is not configured. Add the Firebase web app values to frontend/.env.local and restart the dev server."
+      );
+    }
+
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -109,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async (): Promise<void> => {
     setLoading(true);
     try {
-      await firebaseSignOut(auth);
+      if (auth) await firebaseSignOut(auth);
       setFirebaseUser(null);
       setUser(null);
     } finally {

@@ -8,21 +8,24 @@ import LaserBolts from "./LaserBolts";
 import OrbitalRings from "./OrbitalRings";
 import Planet from "./Planet";
 import Debris from "./Debris";
-import { PALETTE, isPhone, type SceneProps } from "./shared";
+import { PALETTE, getQualityTier, type SceneProps } from "./shared";
 
 /**
  * The whole WebGL scene. Loaded lazily (client only) by CosmosBackdrop, so it
  * never blocks first paint and never runs on the server.
  */
 export default function Scene(props: SceneProps) {
-  const phone = isPhone();
+  // Scene only mounts at all on medium/high tier (CosmosBackdrop gates
+  // "low" out entirely), so the only distinction left to make here is
+  // medium vs high.
+  const reduced = getQualityTier() !== "high";
 
   return (
     <Canvas
       camera={{ position: [0, 0, 8], fov: 55, near: 0.1, far: 400 }}
-      dpr={[1, phone ? 1.25 : 1.6]}
+      dpr={[1, reduced ? 1.25 : 1.6]}
       gl={{
-        antialias: !phone,
+        antialias: !reduced,
         alpha: true,
         powerPreference: "high-performance",
       }}

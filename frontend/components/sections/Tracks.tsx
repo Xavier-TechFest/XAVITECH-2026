@@ -1,44 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import CyberDog, { type CursorPoint, type DogMode } from "./CyberDog";
 import { TracksBackdrop } from "./Backdrops";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { firePulse } from "@/lib/pulse";
+import { TRACKS, eventsOf } from "@/lib/fest";
+import { trackPageHref } from "@/lib/trackBus";
 
-const tracks = [
-  {
-    name: "Hackathon",
-    detail: "Models, agents, applied ML",
-    blurb:
-      "Build something that works in a single stretch. Bring a team of four, pick a problem, ship a working prototype by judging.",
-  },
-  {
-    name: "Coding & Development",
-    detail: "CTF, pentesting, defense",
-    blurb:
-      "Web builds, debugging sprints, and security challenges — for people who'd rather solve it in the editor than on a whiteboard.",
-  },
-  {
-    name: "Gaming & Adventure",
-    detail: "Full-stack builds, hackathons",
-    blurb:
-      "Treasure hunts, elimination races, and head-to-head gaming rounds spread across the day. Team up or go solo.",
-  },
-  {
-    name: "Stage & Central Events",
-    detail: "Bots, embedded, IoT",
-    blurb:
-      "The main-stage lineup — quizzes, debates, prompt battles, and the events everyone ends up watching between their own rounds.",
-  },
-  {
-    name: "Workshop & Knowledge",
-    detail: "UI/UX, product thinking",
-    blurb:
-      "Hands-on sessions run by people who do this for a living. Walk in knowing the basics, walk out having built something.",
-  },
-];
+const tracks = TRACKS;
 
 const COLS = 11;
 const ROWS = 7;
@@ -49,6 +21,7 @@ const GRID_BASE_WIDTH = 420;
 const GRID_ASPECT = 1.3;
 
 export default function Tracks() {
+  const router = useRouter();
   // The binary grid is driven from a rAF loop that writes styles straight to
   // the digit spans (no React state per pointer move — 77 cells re-rendering
   // on every move is exactly the kind of cost a phone can't afford).
@@ -351,6 +324,9 @@ export default function Tracks() {
           </div>
         </div>
 
+        {/* rail: holds the phone tab bar OR the tablet/desktop cards, plus the cyber
+            dog stage — which now shows on every screen size, phones included. */}
+        <div ref={railRef} className="relative overflow-visible">
         {/* Mobile only (< sm): a swipeable A–E tab bar, one track open at a
             time, instead of the desktop layout simply stacked into a column. */}
         <div className="mt-10 sm:hidden">
@@ -409,19 +385,16 @@ export default function Tracks() {
               <p className="mt-3 text-[13px] leading-snug text-ink/80">
                 {tracks[mobileTrack].blurb}
               </p>
-              <a
-                href="#events"
-                className="mt-3 inline-flex min-h-10 items-center gap-2 text-[13px] font-medium text-circuit transition-colors hover:text-marigold"
-              >
+              <button type="button" onClick={() => { firePulse(mobileTrack); router.push(trackPageHref(tracks[mobileTrack].id)); }} className="mt-3 inline-flex min-h-10 items-center gap-2 text-[13px] font-medium text-circuit transition-colors hover:text-marigold">
                 View events in this track
                 <span aria-hidden="true">↓</span>
-              </a>
+              </button>
             </motion.div>
           </AnimatePresence>
         </div>
 
         {/* Tablet & up: the five cards, 2 columns on tablets, 5 across from `lg` */}
-        <div ref={railRef} className="relative mt-10 hidden overflow-visible sm:mt-14 sm:block lg:mt-16">
+        <div className="hidden sm:mt-14 sm:block lg:mt-16">
           <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {tracks.map((track, index) => {
               const isActive = activeIndex === index;
@@ -449,9 +422,11 @@ export default function Tracks() {
                   }}
                   onBlur={() => setHoveredIndex((h) => (h === index ? null : h))}
                   onClick={() => {
-                    setSelectedIndex((s) => (s === index ? null : index));
+                    setSelectedIndex(index);
                     // the 3D ring gate behind the page flashes in this track's colour
                     firePulse(index);
+                    // open the track page already filtered to this track
+                    router.push(trackPageHref(track.id));
                   }}
                   aria-pressed={isSelected}
                   className={`group relative w-full min-w-0 overflow-visible rounded-2xl border p-4 text-left transition-colors duration-300 sm:last:col-span-2 lg:p-3 lg:last:col-span-1 xl:p-4 ${
@@ -482,6 +457,9 @@ export default function Tracks() {
                     <p className="mt-1 text-xs leading-relaxed text-muted">
                       {track.detail}
                     </p>
+                    <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-circuit/80">
+                      {eventsOf(track.id).length} {eventsOf(track.id).length === 1 ? "event" : "events"}
+                    </p>
 
                     <AnimatePresence>
                       {isActive && (
@@ -495,14 +473,10 @@ export default function Tracks() {
                           <p className="mt-3 max-w-sm text-[13px] leading-snug text-ink/80">
                             {track.blurb}
                           </p>
-                          <a
-                            href="#events"
-                            onClick={(e) => e.stopPropagation()}
-                            className="mt-3 inline-flex min-h-10 items-center gap-2 text-[13px] font-medium text-circuit transition-colors hover:text-marigold"
-                          >
+                          <span className="mt-3 inline-flex min-h-10 items-center gap-2 text-[13px] font-medium text-circuit transition-colors hover:text-marigold">
                             View events in this track
                             <span aria-hidden="true">↓</span>
-                          </a>
+                          </span>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -511,11 +485,12 @@ export default function Tracks() {
               );
             })}
           </div>
+        </div>
 
-          {/* Cyber dog stage */}
+          {/* Cyber dog stage — visible on phones too */}
           <div
             ref={stageRef}
-            className="relative h-24 lg:h-28 xl:h-32"
+            className="relative mt-4 h-24 sm:mt-0 lg:h-28 xl:h-32"
             aria-hidden="true"
           >
             {/* floor the dog walks on */}

@@ -11,41 +11,45 @@
  *   Any number of images works.
  *
  * HOW TO EDIT
- * - Put your image in /public/assets/event-images/ (WebP/SVG/JPEG, 4:3 like 1200x900).
+ * - Put your image in /public/events/ (JPEG / WebP, 4:3 like 1200x900, ideally under 100 KB). The `file` name must match exactly, including the extension.
  * - Change `file` below (and `title` / `track` if needed). Order here = order shown.
  */
 
 export interface EventSlide {
   title: string;
   track: string;
-  file: string; // file name inside /public/assets/event-images/
+  file: string; // file name inside /public/events/
 }
 
+// Official event names (as announced by the Overall Coordinators).
+// Image numbers follow /public/events/details.txt. Slide 13 (Workshop — Hack the Skill)
+// has no image file yet, so it is left out; add `event-13.jpeg` and the line below
+// to bring it into the rotation.
 export const EVENT_SLIDES: EventSlide[] = [
-  { title: "Hackathon", track: "HACKATHON", file: "event-01.svg" },
-  { title: "Debugging Challenge", track: "CODING & DEVELOPMENT", file: "event-02.svg" },
-  { title: "Web Development", track: "CODING & DEVELOPMENT", file: "event-03.svg" },
-  { title: "Data Analytics Challenge", track: "CODING & DEVELOPMENT", file: "event-04.svg" },
-  { title: "Code Sprint", track: "CODING & DEVELOPMENT", file: "event-05.svg" },
-  { title: "Gaming", track: "GAMING & ADVENTURE", file: "event-06.svg" },
-  { title: "Tech Treasure Hunt", track: "GAMING & ADVENTURE", file: "event-07.svg" },
-  { title: "Death Race", track: "GAMING & ADVENTURE", file: "event-08.svg" },
-  { title: "Tech Quiz", track: "CENTRAL EVENTS", file: "event-09.svg" },
-  { title: "AI Prompt Battle", track: "CENTRAL EVENTS", file: "event-10.svg" },
-  { title: "MUN", track: "CENTRAL EVENTS", file: "event-11.svg" },
-  { title: "Ideathon", track: "CENTRAL EVENTS", file: "event-12.svg" },
-  { title: "Workshop", track: "KNOWLEDGE", file: "event-13.svg" },
-  { title: "Hackathon", track: "HACKATHON", file: "event-14.svg" },
-  { title: "Debugging Challenge", track: "CODING & DEVELOPMENT", file: "event-15.svg" },
-  { title: "Web Development", track: "CODING & DEVELOPMENT", file: "event-16.svg" },
-  { title: "Data Analytics Challenge", track: "CODING & DEVELOPMENT", file: "event-17.svg" },
-  { title: "Code Sprint", track: "CODING & DEVELOPMENT", file: "event-18.svg" },
-  { title: "Gaming", track: "GAMING & ADVENTURE", file: "event-19.svg" },
-  { title: "Tech Treasure Hunt", track: "GAMING & ADVENTURE", file: "event-20.svg" },
-  { title: "Death Race", track: "GAMING & ADVENTURE", file: "event-21.svg" },
-  { title: "Tech Quiz", track: "CENTRAL EVENTS", file: "event-22.svg" },
-  { title: "AI Prompt Battle", track: "CENTRAL EVENTS", file: "event-23.svg" },
-  { title: "MUN", track: "CENTRAL EVENTS", file: "event-24.svg" },
+  { title: "Innocraft", track: "HACKATHON", file: "event-01.jpeg" },
+  { title: "Debug Derby", track: "CODING & DEVELOPMENT", file: "event-02.jpeg" },
+  { title: "WebWeave", track: "CODING & DEVELOPMENT", file: "event-03.jpeg" },
+  { title: "VLookUp", track: "CODING & DEVELOPMENT", file: "event-04.jpeg" },
+  { title: "Runtime Rush", track: "CODING & DEVELOPMENT", file: "event-05.jpeg" },
+  { title: "BattleGround Blitz", track: "GAMING & ADVENTURE", file: "event-06.jpeg" },
+  { title: "Cipher Chase", track: "GAMING & ADVENTURE", file: "event-07.jpeg" },
+  { title: "VelocityX", track: "GAMING & ADVENTURE", file: "event-08.jpeg" },
+  { title: "Circuit of Minds", track: "CENTRAL EVENTS", file: "event-09.jpeg" },
+  { title: "Battle of Bots", track: "CENTRAL EVENTS", file: "event-10.jpeg" },
+  { title: "Unscripted Nations", track: "CENTRAL EVENTS", file: "event-11.jpeg" },
+  { title: "ThoughtLab", track: "CENTRAL EVENTS", file: "event-12.jpeg" },
+  // { title: "Hack the Skill", track: "KNOWLEDGE", file: "event-13.jpeg" }, // image not added yet
+  { title: "Innocraft", track: "HACKATHON", file: "event-14.jpeg" },
+  { title: "Debug Derby", track: "CODING & DEVELOPMENT", file: "event-15.jpeg" },
+  { title: "WebWeave", track: "CODING & DEVELOPMENT", file: "event-16.jpeg" },
+  { title: "VLookUp", track: "CODING & DEVELOPMENT", file: "event-17.jpeg" },
+  { title: "Runtime Rush", track: "CODING & DEVELOPMENT", file: "event-18.jpeg" },
+  { title: "BattleGround Blitz", track: "GAMING & ADVENTURE", file: "event-19.jpeg" },
+  { title: "Cipher Chase", track: "GAMING & ADVENTURE", file: "event-20.jpeg" },
+  { title: "VelocityX", track: "GAMING & ADVENTURE", file: "event-21.jpeg" },
+  { title: "Circuit of Minds", track: "CENTRAL EVENTS", file: "event-22.jpeg" },
+  { title: "Battle of Bots", track: "CENTRAL EVENTS", file: "event-23.jpeg" },
+  { title: "Unscripted Nations", track: "CENTRAL EVENTS", file: "event-24.jpeg" },
 ];
 
 /** The first midnight (IST) of the rotation: image #1 appears at 12:00 AM on this date. */

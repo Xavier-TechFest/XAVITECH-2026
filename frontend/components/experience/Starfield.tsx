@@ -6,7 +6,7 @@ import * as THREE from "three";
 import {
   PALETTE,
   clamp01,
-  isPhone,
+  getQualityTier,
   makeSpriteTexture,
   smoothstep,
   type SceneProps,
@@ -90,11 +90,11 @@ export default function Starfield({ scrollRef }: SceneProps) {
   const nearRef = useRef<THREE.Points>(null!);
   const streakRef = useRef<THREE.LineSegments>(null!);
 
-  const phone = useMemo(() => isPhone(), []);
+  const reduced = useMemo(() => getQualityTier() !== "high", []);
   const sprite = useMemo(() => makeSpriteTexture(), []);
-  const farGeo = useMemo(() => buildStars(phone ? 800 : 1700), [phone]);
-  const nearGeo = useMemo(() => buildStars(phone ? 90 : 220), [phone]);
-  const streaks = useMemo(() => buildStreaks(phone ? 110 : 240), [phone]);
+  const farGeo = useMemo(() => buildStars(reduced ? 800 : 1700), [reduced]);
+  const nearGeo = useMemo(() => buildStars(reduced ? 90 : 220), [reduced]);
+  const streaks = useMemo(() => buildStreaks(reduced ? 110 : 240), [reduced]);
 
   useEffect(
     () => () => {

@@ -10,10 +10,10 @@ export default function Eyebrow({
 }) {
   return (
     <p
-      className={`flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.24em] text-circuit/80 sm:text-xs ${className}`}
+      className={`reveal-up flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.24em] text-circuit/80 sm:text-xs ${className}`}
     >
       <span className="text-marigold">{`// ${n}`}</span>
-      <span aria-hidden="true" className="h-px w-8 shrink-0 bg-circuit/40" />
+      <span aria-hidden="true" className="eyebrow-dash relative h-px w-8 shrink-0 overflow-hidden bg-circuit/40" />
       <span>{children}</span>
     </p>
   );
