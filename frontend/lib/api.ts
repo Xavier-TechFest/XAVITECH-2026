@@ -206,26 +206,68 @@ export interface ParticipantRegistration {
   id: string;
   registrationId?: string;
   registration_id?: string;
+  userId?: string;
+  user_id?: string;
   eventId?: string;
   event_id?: string;
   eventSlug?: string;
   event_slug?: string;
+  teamId?: string | null;
+  team_id?: string | null;
   status?: string;
   registrationType?: string;
   registration_type?: string;
+  payableAmount?: number | null;
   createdAt?: string;
   created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
   event?: {
     id?: string;
     slug?: string;
     name?: string;
     title?: string;
     trackName?: string;
-    track?: string;
+    track?: string | { id?: string; name?: string; slug?: string } | null;
+    category?: string | null;
+    eventType?: string | null;
+    registrationType?: string;
+    fee?: number;
+    currency?: string;
     date?: string;
     venue?: string;
     status?: string;
   };
+  team?: {
+    id?: string;
+    teamName?: string;
+    team_name?: string;
+    status?: string;
+    members?: Array<{ id: string; name: string; memberOrder?: number }>;
+    teamSize?: number;
+  };
+  user?: {
+    id?: string;
+    name?: string | null;
+    email?: string;
+    phone?: string | null;
+    collegeName?: string | null;
+  };
+  participants?: Array<{
+    id?: string;
+    participantOrder?: number;
+    participantRole?: string;
+    fullName?: string;
+    institutionName?: string;
+    mobileNumber?: string;
+    email?: string;
+    city?: string | null;
+    studentId?: string | null;
+    standardClass?: string | null;
+    idCardUrl?: string | null;
+    profilePhotoUrl?: string | null;
+    customFields?: Record<string, any>;
+  }>;
 }
 
 export async function fetchMyRegistrations(token: string): Promise<ParticipantRegistration[]> {

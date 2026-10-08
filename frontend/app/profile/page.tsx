@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "@/components/layout/Navbar";
-import { EVENTS, TRACKS } from "@/lib/eventsData";
+import { EVENTS, TRACKS, EventItem } from "@/lib/eventsData";
 import { api, ParticipantRegistration } from "@/lib/api";
 
 function validatePhoneNumber(value: string): { isValid: boolean; error: string | null } {
@@ -15,6 +15,126 @@ function validatePhoneNumber(value: string): { isValid: boolean; error: string |
     return { isValid: false, error: "Enter a valid 10-digit mobile number." };
   }
   return { isValid: true, error: null };
+}
+
+function normalizeErrorMessage(err: unknown, fallback: string): string {
+  if (!err) return fallback;
+  if (typeof err === "string" && err.trim()) return err.trim();
+  if (err instanceof Error && typeof err.message === "string" && err.message.trim()) {
+    return err.message.trim();
+  }
+  if (typeof err === "object" && err !== null) {
+    const obj = err as Record<string, unknown>;
+    if (typeof obj.message === "string" && obj.message.trim()) return obj.message.trim();
+    if (typeof obj.error === "string" && obj.error.trim()) return obj.error.trim();
+  }
+  return fallback;
+}
+
+function extractTrackName(trackRaw: unknown): string {
+  if (!trackRaw) return "";
+  if (typeof trackRaw === "string") return trackRaw.trim();
+  if (typeof trackRaw === "object" && trackRaw !== null) {
+    const obj = trackRaw as { name?: unknown; title?: unknown; slug?: unknown };
+    if (typeof obj.name === "string" && obj.name.trim()) return obj.name.trim();
+    if (typeof obj.title === "string" && obj.title.trim()) return obj.title.trim();
+    if (typeof obj.slug === "string" && obj.slug.trim()) {
+      return obj.slug
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+    }
+  }
+  return "";
+}
+
+// Canonical database UUID to official event slug mapping for all 13 official festival events
+const UUID_TO_EVENT_SLUG: Record<string, string> = {
+  "213a4266-b523-4317-b80e-c0120965cbe4": "innocraft",
+  "abeecd1f-e07d-43e5-8970-691e6ed010b2": "webweave",
+  "b631bfc9-ac25-4958-9bb0-c908ae8967b8": "runtime-rush",
+  "c83ca21b-9787-4c8d-9bb4-0a1ac7c5b793": "vlookup",
+  "15328fe9-412b-4f0a-93fc-96ff567f6f93": "debug-derby",
+  "770970ed-6e63-4bd7-b9e9-ff4874acd060": "unscripted-nations",
+  "b5c3b61d-2b26-45d2-9ff4-92cce891b727": "circuit-of-minds",
+  "218f1371-b8e6-4d59-8e90-e0a5d0f000f6": "battle-of-bots",
+  "ae0bcfc2-517a-4b86-be13-88abe1ce5ea0": "thoughtlab",
+  "620c5d8b-9e67-4a6c-82e3-0366c071d153": "loot-goblins",
+  "74693e7b-9409-4934-a154-dc351f9ceb73": "cipher-chase",
+  "2dfb0b0d-ffba-4cbc-993f-72aa907da3b7": "velocityx",
+  "f3c690be-8655-4d7f-a7e9-75d3e84a5e54": "hack-the-skill",
+};
+
+function resolveEventFromRegistration(reg: ParticipantRegistration): EventItem | null {
+  const slugCandidate = (
+    (typeof reg.event?.slug === "string" && reg.event.slug) ||
+    (typeof reg.eventSlug === "string" && reg.eventSlug) ||
+    (typeof reg.event_slug === "string" && reg.event_slug) ||
+    ""
+  ).toLowerCase().trim();
+
+  const nameCandidate = (
+    (typeof reg.event?.name === "string" && reg.event.name) ||
+    (typeof reg.event?.title === "string" && reg.event.title) ||
+    ""
+  ).toLowerCase().trim();
+
+  const eventIdCandidate = (
+    (typeof reg.event?.id === "string" && reg.event.id) ||
+    (typeof reg.eventId === "string" && reg.eventId) ||
+    (typeof reg.event_id === "string" && reg.event_id) ||
+    ""
+  ).trim();
+
+  // 1. Direct slug match on EVENTS.id (e.g. "innocraft", "battle-of-bots")
+  if (slugCandidate) {
+    const match = EVENTS.find((e) => e.id.toLowerCase() === slugCandidate);
+    if (match) return match;
+  }
+
+  // 2. Database UUID lookup
+  if (eventIdCandidate && UUID_TO_EVENT_SLUG[eventIdCandidate]) {
+    const mappedSlug = UUID_TO_EVENT_SLUG[eventIdCandidate];
+    const match = EVENTS.find((e) => e.id.toLowerCase() === mappedSlug);
+    if (match) return match;
+  }
+
+  // 3. Normalized name match (handles casing and unicode differences)
+  if (nameCandidate) {
+    const cleanName = nameCandidate.replace(/[^a-z0-9]/g, "");
+    const match = EVENTS.find((e) => {
+      const eName = (e.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const eTitle = (e.fullTitle || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const eId = (e.id || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      return eName === cleanName || eTitle === cleanName || eId === cleanName;
+    });
+    if (match) return match;
+  }
+
+  return null;
+}
+
+interface ParticipantEventViewModel {
+  id: string;
+  registrationId: string | null;
+  name: string;
+  track: string;
+  date: string;
+  venue: string;
+  statusBadge: string;
+  stageDescription: string;
+  badgeStyle: {
+    color: string;
+    borderColor: string;
+    backgroundColor: string;
+  };
+  accent: string;
+  href: string;
+  isTeam: boolean;
+  teamName: string | null;
+  teamSize: number | null;
+  userRole: string | null;
+  payableAmount: number | null;
 }
 
 export default function ProfilePage() {
@@ -47,7 +167,12 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!user) return () => { cancelled = true; };
+    if (!user) {
+      setRegistrationsLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const loadRegistrations = async () => {
       setRegistrationsLoading(true);
@@ -56,11 +181,16 @@ export default function ProfilePage() {
         const token = await getIdToken();
         if (!token) throw new Error("Please sign in again to view your events.");
         const rows = await api.fetchMyRegistrations(token);
-        if (!cancelled) setRegistrations(rows);
-      } catch (error) {
+        if (!cancelled) {
+          const safeRows = Array.isArray(rows) ? rows : [];
+          setRegistrations(safeRows);
+        }
+      } catch (error: unknown) {
         if (!cancelled) {
           setRegistrations([]);
-          setRegistrationsError(error instanceof Error ? error.message : "Could not load your events.");
+          setRegistrationsError(
+            normalizeErrorMessage(error, "Could not load your registered events at this time.")
+          );
         }
       } finally {
         if (!cancelled) setRegistrationsLoading(false);
@@ -68,26 +198,217 @@ export default function ProfilePage() {
     };
 
     loadRegistrations();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user?.firebaseUid, getIdToken]);
 
-  const participantEvents = useMemo(() => registrations.map((registration) => {
-    const key = registration.eventId || registration.event_id || registration.eventSlug || registration.event_slug || registration.event?.slug || registration.event?.id;
-    const event = EVENTS.find((item) => item.id === key || item.name === registration.event?.name || item.fullTitle === registration.event?.title);
-    const track = event ? TRACKS.find((item) => item.id === event.trackId)?.name : registration.event?.trackName || registration.event?.track;
-    const status = registration.status || registration.event?.status || "Registered";
-    return {
-      id: registration.id || `${key || "event"}-${registration.createdAt || registration.created_at || "registration"}`,
-      eventId: event?.id || (typeof key === "string" ? key : ""),
-      name: event?.name || registration.event?.name || registration.event?.title || "Event registration",
-      track: track || "XaviTech 2026",
-      date: event?.date || registration.event?.date || "Date to be announced",
-      venue: event?.venue || registration.event?.venue || "Venue to be announced",
-      status: status.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()),
-      accent: event?.accentColor || "#35e0c9",
-      href: event?.id ? `/events/${event.id}` : key ? `/events/${key}` : "/events",
-    };
-  }), [registrations]);
+  const participantEvents: ParticipantEventViewModel[] = useMemo(() => {
+    if (!Array.isArray(registrations)) return [];
+
+    const list: ParticipantEventViewModel[] = [];
+
+    for (const registration of registrations) {
+      if (!registration || typeof registration !== "object") continue;
+
+      try {
+        const staticEvent = resolveEventFromRegistration(registration);
+
+        // Explicit primitive name
+        let eventName = "Event Registration";
+        if (staticEvent?.name) {
+          eventName = staticEvent.name;
+        } else if (typeof registration.event?.name === "string" && registration.event.name.trim()) {
+          eventName = registration.event.name.trim();
+        } else if (typeof registration.event?.title === "string" && registration.event.title.trim()) {
+          eventName = registration.event.title.trim();
+        }
+
+        // Explicit primitive track
+        let trackName = "XaviTech 2026";
+        if (staticEvent) {
+          const matchedTrack = TRACKS.find((t) => t.id === staticEvent.trackId);
+          trackName = matchedTrack?.name || staticEvent.trackName || "XaviTech 2026";
+        } else {
+          const fromEvent =
+            extractTrackName(registration.event?.track) ||
+            (typeof registration.event?.trackName === "string" ? registration.event.trackName : "") ||
+            (typeof registration.event?.category === "string" ? registration.event.category : "");
+          if (fromEvent) trackName = fromEvent;
+        }
+
+        // Explicit primitive date & venue
+        const date = staticEvent?.date || registration.event?.date || "March 2026";
+        const venue = staticEvent?.venue || registration.event?.venue || "Campus Venue";
+        const accent = staticEvent?.accentColor || "#35e0c9";
+
+        // Verified public route: Always navigates to /events/[id] (where id is the slug) or /events
+        const href = staticEvent ? `/events/${staticEvent.id}` : "/events";
+
+        // Participation type
+        const isTeam =
+          registration.registrationType === "TEAM" ||
+          registration.registration_type === "TEAM" ||
+          Boolean(registration.team) ||
+          staticEvent?.registrationConfig?.eventFormat === "team";
+
+        // Team information
+        let teamName: string | null = null;
+        if (typeof registration.team?.teamName === "string" && registration.team.teamName.trim()) {
+          teamName = registration.team.teamName.trim();
+        } else if (typeof registration.team?.team_name === "string" && registration.team.team_name.trim()) {
+          teamName = registration.team.team_name.trim();
+        }
+
+        let teamSize: number | null = null;
+        if (typeof registration.team?.teamSize === "number") {
+          teamSize = registration.team.teamSize;
+        } else if (Array.isArray(registration.team?.members)) {
+          teamSize = 1 + registration.team.members.length;
+        } else if (Array.isArray(registration.participants) && registration.participants.length > 0) {
+          teamSize = registration.participants.length;
+        }
+
+        let userRole: string | null = null;
+        if (isTeam) {
+          const userEmail = (user?.email || "").toLowerCase().trim();
+          const userName = (user?.name || "").toLowerCase().trim();
+
+          const matchedParticipant = Array.isArray(registration.participants)
+            ? registration.participants.find((p) => {
+                const pEmail = (p.email || "").toLowerCase().trim();
+                const pName = (p.fullName || "").toLowerCase().trim();
+                return (userEmail && pEmail === userEmail) || (userName && pName === userName);
+              })
+            : null;
+
+          if (matchedParticipant) {
+            if (matchedParticipant.participantRole === "LEADER" || matchedParticipant.participantOrder === 1) {
+              userRole = "Team Leader";
+            } else {
+              userRole = "Team Member";
+            }
+          } else {
+            userRole = "Team Leader";
+          }
+        }
+
+        // Registration ID
+        const registrationId =
+          (typeof registration.registrationId === "string" && registration.registrationId) ||
+          (typeof registration.registration_id === "string" && registration.registration_id) ||
+          null;
+
+        // Payable Amount / Fee
+        let payableAmount: number | null = null;
+        if (typeof registration.payableAmount === "number") {
+          payableAmount = registration.payableAmount;
+        } else if (typeof registration.event?.fee === "number") {
+          payableAmount = registration.event.fee;
+        }
+
+        // Stage & Status resolution
+        const rawStatus = (registration.status || registration.event?.status || "").toUpperCase().trim();
+        let statusBadge = "REGISTERED";
+        let stageDescription = "Registration active";
+        let badgeStyle = {
+          color: accent,
+          borderColor: `${accent}55`,
+          backgroundColor: `${accent}0d`,
+        };
+
+        switch (rawStatus) {
+          case "CONFIRMED":
+            statusBadge = "CONFIRMED";
+            stageDescription = "Registration confirmed & verified";
+            badgeStyle = {
+              color: "#34d399",
+              borderColor: "rgba(52, 211, 153, 0.4)",
+              backgroundColor: "rgba(52, 211, 153, 0.1)",
+            };
+            break;
+          case "PAYMENT_SUCCESS":
+            statusBadge = "PAYMENT SUCCESS";
+            stageDescription = "Payment successful · processing confirmation";
+            badgeStyle = {
+              color: "#34d399",
+              borderColor: "rgba(52, 211, 153, 0.4)",
+              backgroundColor: "rgba(52, 211, 153, 0.1)",
+            };
+            break;
+          case "PAYMENT_PENDING":
+            statusBadge = "PAYMENT PENDING";
+            stageDescription = "Registration submitted · fee payment pending";
+            badgeStyle = {
+              color: "#fbbf24",
+              borderColor: "rgba(251, 191, 36, 0.4)",
+              backgroundColor: "rgba(251, 191, 36, 0.1)",
+            };
+            break;
+          case "DRAFT":
+            statusBadge = "DRAFT INITIATED";
+            stageDescription = isTeam ? "Draft initiated · team / details in progress" : "Draft initiated · details in progress";
+            badgeStyle = {
+              color: "#60a5fa",
+              borderColor: "rgba(96, 165, 250, 0.4)",
+              backgroundColor: "rgba(96, 165, 250, 0.1)",
+            };
+            break;
+          case "PAYMENT_FAILED":
+            statusBadge = "PAYMENT FAILED";
+            stageDescription = "Payment failed · retry required";
+            badgeStyle = {
+              color: "#f87171",
+              borderColor: "rgba(248, 113, 113, 0.4)",
+              backgroundColor: "rgba(248, 113, 113, 0.1)",
+            };
+            break;
+          case "CANCELLED":
+            statusBadge = "CANCELLED";
+            stageDescription = "Registration cancelled";
+            badgeStyle = {
+              color: "#9ca3af",
+              borderColor: "rgba(156, 163, 175, 0.4)",
+              backgroundColor: "rgba(156, 163, 175, 0.1)",
+            };
+            break;
+          default:
+            if (rawStatus) {
+              statusBadge = rawStatus.replaceAll("_", " ");
+              stageDescription = `Registration stage: ${statusBadge.toLowerCase()}`;
+            }
+            break;
+        }
+
+        const stableKey =
+          registration.id ||
+          `${registrationId || (staticEvent ? staticEvent.id : "event")}-${registration.createdAt || registration.created_at || list.length}`;
+
+        list.push({
+          id: stableKey,
+          registrationId,
+          name: eventName,
+          track: trackName,
+          date,
+          venue,
+          statusBadge,
+          stageDescription,
+          badgeStyle,
+          accent,
+          href,
+          isTeam,
+          teamName,
+          teamSize,
+          userRole,
+          payableAmount,
+        });
+      } catch (err) {
+        console.error("Failed to map registration for profile:", err, registration);
+      }
+    }
+
+    return list;
+  }, [registrations, user]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -132,8 +453,10 @@ export default function ProfilePage() {
       setPhone(updated.phone || trimmedPhone);
       setSuccessMessage("Your profile has been updated successfully.");
       setTimeout(() => setSuccessMessage(null), 4000);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to update profile. Please try again.");
+    } catch (error: unknown) {
+      setErrorMessage(
+        normalizeErrorMessage(error, "Failed to update profile. Please try again.")
+      );
     } finally {
       setIsSaving(false);
     }
@@ -262,39 +585,117 @@ export default function ProfilePage() {
                 <p className="mb-2 font-oxanium text-[10px] font-bold uppercase tracking-[0.2em] text-circuit">02 / YOUR FESTIVAL</p>
                 <h2 id="events-heading" className="font-sora text-xl font-semibold text-white sm:text-2xl">My Events</h2>
               </div>
-              {!registrationsLoading && participantEvents.length > 0 && <p className="font-space text-xs text-slate-500">{participantEvents.length} {participantEvents.length === 1 ? "event" : "events"} registered</p>}
+              {!registrationsLoading && participantEvents.length > 0 && (
+                <p className="font-space text-xs text-slate-500">
+                  {participantEvents.length} {participantEvents.length === 1 ? "event" : "events"} registered
+                </p>
+              )}
             </div>
 
             {registrationsLoading ? (
               <div className="border-y border-white/10 py-8 font-space text-sm text-slate-400">Loading your events…</div>
             ) : registrationsError ? (
-              <div role="alert" className="border-y border-rose-300/20 py-6 font-space text-sm text-rose-200">{registrationsError}</div>
+              <div role="alert" className="border-y border-rose-300/20 py-6 font-space text-sm text-rose-200">
+                {registrationsError}
+              </div>
             ) : participantEvents.length === 0 ? (
               <div className="relative border-y border-white/10 py-8 pl-5 sm:py-10 sm:pl-7">
                 <span className="absolute left-0 top-0 h-4 w-4 border-l border-t border-marigold/70" aria-hidden="true" />
                 <span className="absolute bottom-0 right-0 h-4 w-4 border-b border-r border-circuit/70" aria-hidden="true" />
                 <p className="font-sora text-lg font-medium text-white">No events registered yet</p>
-                <p className="mt-2 max-w-lg font-space text-sm leading-6 text-slate-400">Explore the festival events and find the ones you want to take part in.</p>
-                <Link href="/events" className="mt-5 inline-flex min-h-10 items-center border border-marigold/50 px-4 font-oxanium text-[10px] font-bold uppercase tracking-[0.14em] text-marigold transition-colors hover:bg-marigold hover:text-[#11100b]">Explore Events <span className="ml-2" aria-hidden="true">→</span></Link>
+                <p className="mt-2 max-w-lg font-space text-sm leading-6 text-slate-400">
+                  Explore the festival events and find the ones you want to take part in.
+                </p>
+                <Link
+                  href="/events"
+                  className="mt-5 inline-flex min-h-10 items-center border border-marigold/50 px-4 font-oxanium text-[10px] font-bold uppercase tracking-[0.14em] text-marigold transition-colors hover:bg-marigold hover:text-[#11100b]"
+                >
+                  Explore Events <span className="ml-2" aria-hidden="true">→</span>
+                </Link>
               </div>
             ) : (
               <div className="divide-y divide-white/10 border-y border-white/10">
                 {participantEvents.map((registration) => (
                   <article key={registration.id} className="group relative py-5 transition-colors hover:bg-white/[0.02] sm:py-6">
-                    <span className="absolute bottom-5 left-0 top-5 w-[2px] opacity-80 sm:bottom-6 sm:top-6" style={{ backgroundColor: registration.accent }} aria-hidden="true" />
+                    <span
+                      className="absolute bottom-5 left-0 top-5 w-[2px] opacity-80 sm:bottom-6 sm:top-6"
+                      style={{ backgroundColor: registration.accent }}
+                      aria-hidden="true"
+                    />
                     <div className="flex min-w-0 flex-col gap-4 pl-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pl-5">
                       <div className="min-w-0 flex-1">
-                        <div className="mb-2 flex flex-wrap items-center gap-2.5">
-                          <h3 className="break-words font-sora text-base font-semibold text-white sm:text-lg">{registration.name}</h3>
-                          <span className="border px-2 py-0.5 font-oxanium text-[9px] font-bold uppercase tracking-wider" style={{ color: registration.accent, borderColor: `${registration.accent}55`, backgroundColor: `${registration.accent}0d` }}>{registration.status}</span>
+                        {/* Title and Badges row */}
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <h3 className="break-words font-sora text-base font-semibold text-white sm:text-lg">
+                            {registration.name}
+                          </h3>
+                          <span
+                            className="border px-2 py-0.5 font-oxanium text-[9px] font-bold uppercase tracking-wider"
+                            style={registration.badgeStyle}
+                          >
+                            {registration.statusBadge}
+                          </span>
+                          {registration.registrationId && (
+                            <span className="border border-white/10 bg-white/[0.03] px-2 py-0.5 font-mono text-[9px] text-slate-400">
+                              {registration.registrationId}
+                            </span>
+                          )}
+                          <span
+                            className={`border px-2 py-0.5 font-oxanium text-[9px] font-bold uppercase tracking-wider ${
+                              registration.isTeam
+                                ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
+                                : "border-blue-500/30 bg-blue-500/10 text-blue-300"
+                            }`}
+                          >
+                            {registration.isTeam ? "Team" : "Individual"}
+                          </span>
+                          {registration.userRole && (
+                            <span className="border border-circuit/30 bg-circuit/10 px-2 py-0.5 font-oxanium text-[9px] font-bold uppercase tracking-wider text-circuit">
+                              {registration.userRole}
+                            </span>
+                          )}
                         </div>
-                        <p className="font-space text-xs text-slate-400">{registration.track}</p>
+
+                        {/* Track and stage explanation */}
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                          <p className="font-space text-xs text-slate-400">{registration.track}</p>
+                          <span className="hidden text-slate-600 sm:inline">·</span>
+                          <p className="font-space text-xs text-slate-500">{registration.stageDescription}</p>
+                        </div>
+
+                        {/* Event Details Grid */}
                         <div className="mt-3 grid gap-x-6 gap-y-1 font-space text-xs text-slate-400 sm:grid-cols-2">
-                          <p><span className="text-slate-600">Date </span>{registration.date}</p>
-                          <p className="min-w-0 break-words"><span className="text-slate-600">Venue </span>{registration.venue}</p>
+                          <p>
+                            <span className="text-slate-600">Date </span>
+                            {registration.date}
+                          </p>
+                          <p className="min-w-0 break-words">
+                            <span className="text-slate-600">Venue </span>
+                            {registration.venue}
+                          </p>
+                          {registration.isTeam && registration.teamName && (
+                            <p className="min-w-0 break-words">
+                              <span className="text-slate-600">Team Name </span>
+                              <span className="text-slate-200">{registration.teamName}</span>
+                              {registration.teamSize ? ` (${registration.teamSize} members)` : ""}
+                            </p>
+                          )}
+                          {typeof registration.payableAmount === "number" && (
+                            <p>
+                              <span className="text-slate-600">Fee </span>
+                              <span className="text-slate-200">
+                                {registration.payableAmount > 0 ? `₹${registration.payableAmount}` : "Free"}
+                              </span>
+                            </p>
+                          )}
                         </div>
                       </div>
-                      <Link href={registration.href} className="inline-flex min-h-10 shrink-0 items-center justify-center self-start border border-white/15 px-4 font-oxanium text-[10px] font-bold uppercase tracking-[0.12em] text-slate-200 transition-colors hover:border-circuit/60 hover:text-circuit sm:self-center">
+
+                      {/* Action Button: View Event */}
+                      <Link
+                        href={registration.href}
+                        className="inline-flex min-h-10 shrink-0 items-center justify-center self-start border border-white/15 px-4 font-oxanium text-[10px] font-bold uppercase tracking-[0.12em] text-slate-200 transition-colors hover:border-circuit/60 hover:text-circuit sm:self-center"
+                      >
                         View Event <span className="ml-2" aria-hidden="true">→</span>
                       </Link>
                     </div>

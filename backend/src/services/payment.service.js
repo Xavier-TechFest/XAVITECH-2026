@@ -186,6 +186,8 @@ export const paymentService = {
       const productInfo = `XAVITECH 2026 - ${event.name}`.slice(0, 100);
       const returnUrl = config.easebuzz.callbackUrl || `${config.serverUrl}/api/payments/callback`;
 
+      logger.info(`Initiating live Easebuzz checkout: txnid=${transactionId}, amount=₹${formattedAmount}, returnUrl=${returnUrl}`);
+
       const hash = generateInitiateHash({
         key: config.easebuzz.key,
         txnid: transactionId,
