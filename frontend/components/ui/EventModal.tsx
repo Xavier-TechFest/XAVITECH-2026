@@ -119,7 +119,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
                 <svg className="h-4 w-4 text-circuit" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Event Information
+                {event.exploreSections?.length ? "About the challenge" : "Event Information"}
               </h3>
               {event.registrationConfig?.details?.committee && <p className="mt-3 rounded-xl border border-line/60 bg-surface-raised p-3 font-space text-xs text-ink"><strong>Committee: </strong>{event.registrationConfig.details.committee}</p>}
               {event.registrationConfig?.details?.agenda && <p className="mt-2 rounded-xl border border-line/60 bg-surface-raised p-3 font-space text-xs text-ink"><strong>Agenda: </strong>{event.registrationConfig.details.agenda}</p>}
@@ -137,8 +137,8 @@ export default function EventModal({ event, onClose }: EventModalProps) {
             </div>
           )}
 
-          {event.eligibility?.length ? <ContentList title="Eligibility" items={event.eligibility} /> : null}
-          {event.registrationInfo?.length ? <ContentList title="Registration" items={event.registrationInfo} /> : null}
+          {!event.exploreSections?.length && event.eligibility?.length ? <ContentList title="Eligibility" items={event.eligibility} /> : null}
+          {!event.exploreSections?.length && event.registrationInfo?.length ? <ContentList title="Registration" items={event.registrationInfo} /> : null}
           {!event.exploreSections?.length && event.requirements?.length ? <ContentList title="Requirements" items={event.requirements} /> : null}
           {event.exploreSections?.length ? <EventExploreSections sections={event.exploreSections} /> : null}
 

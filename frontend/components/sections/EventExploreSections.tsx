@@ -5,8 +5,8 @@ export default function EventExploreSections({ sections }: { sections: EventExpl
 
   return (
     <section className="mt-8" aria-label="Detailed event information">
-      <h2 className="mb-3 font-space text-xl font-bold text-white">Full event guide</h2>
-      <p className="mb-4 text-sm leading-relaxed text-slate-400">Open a section to see the course, robot requirements, rules, schedule, and event setup.</p>
+      <h2 className="mb-3 font-space text-xl font-bold text-white">Participant guide</h2>
+      <p className="mb-4 text-sm leading-relaxed text-slate-400">Select a section for event details, requirements, and rules.</p>
       <div className="space-y-2">
         {sections.map((section, index) => (
           <details key={section.title} open={index === 0} className="group border border-white/10 bg-white/[.03]">

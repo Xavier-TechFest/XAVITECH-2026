@@ -19,7 +19,10 @@ export default function EventDetailView({ event }: { event: EventItem }) {
     { label: "Registration Deadline", value: config?.deadline ?? "TBA" },
   ];
   const downloadBrochure = () => {
-    const text = [`XAVITECH 2026 — ${event.name}`, `Category: ${track?.name ?? event.trackName}`, ...facts.map((fact) => `${fact.label}: ${fact.value}`), "", event.fullDesc, ...[...(event.eligibility ?? []), ...(event.highlights ?? []), ...(event.registrationInfo ?? []), ...(event.requirements ?? []), ...(event.rules ?? []), ...(event.exploreSections ?? []).flatMap((section) => [`${section.title}:`, ...section.items])].map((item) => `• ${item}`)].join("\n");
+    const guideContent = event.exploreSections?.length
+      ? event.exploreSections.flatMap((section) => [section.title, ...section.items.map((item) => `• ${item}`)])
+      : [...(event.eligibility ?? []), ...(event.highlights ?? []), ...(event.registrationInfo ?? []), ...(event.requirements ?? []), ...(event.rules ?? [])].map((item) => `• ${item}`);
+    const text = [`XAVITECH 2026 — ${event.name}`, `Category: ${track?.name ?? event.trackName}`, ...facts.map((fact) => `${fact.label}: ${fact.value}`), "", event.fullDesc, ...guideContent].join("\n");
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
     const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${event.id}-xavitech-2026.txt`; anchor.click(); URL.revokeObjectURL(url);
   };
@@ -32,7 +35,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-300">{event.fullDesc}</p>
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">{facts.map((fact) => <Fact key={fact.label} label={fact.label} value={fact.value} />)}</div>
         {(config?.details || event.highlights.length > 0) && <section className="mt-10 space-y-4">
-          <h2 className="font-space text-xl font-bold text-white">Event Information</h2>
+          <h2 className="font-space text-xl font-bold text-white">{event.exploreSections?.length ? "About the challenge" : "Event Information"}</h2>
           {config?.details?.committee && <InfoBlock title="Committee" value={config.details.committee} />}
           {config?.details?.agenda && <InfoBlock title="Agenda" value={config.details.agenda} />}
           {config?.details?.duration && <InfoBlock title="Expected duration" value={config.details.duration} />}
@@ -40,8 +43,8 @@ export default function EventDetailView({ event }: { event: EventItem }) {
           {config?.details?.maps && <InfoBlock title="Maps" value={config.details.maps.join(", ")} />}
           {event.highlights.map((item) => <p key={item} className="border-l border-cyan-400/60 pl-4 text-sm leading-relaxed text-slate-300">{item}</p>)}
         </section>}
-        <InfoList title="Eligibility" items={event.eligibility ?? []} />
-        <InfoList title="Registration" items={event.registrationInfo ?? []} />
+        {!event.exploreSections?.length && <InfoList title="Eligibility" items={event.eligibility ?? []} />}
+        {!event.exploreSections?.length && <InfoList title="Registration" items={event.registrationInfo ?? []} />}
         {!event.exploreSections?.length && <InfoList title="Requirements" items={event.requirements ?? []} />}
         {!event.exploreSections?.length && <InfoList title="Rules" items={event.rules} />}
         {event.exploreSections?.length ? <EventExploreSections sections={event.exploreSections} /> : null}
