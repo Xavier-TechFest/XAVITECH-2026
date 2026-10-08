@@ -47,12 +47,30 @@ const formatPrivateKey = (key) => {
   return formatted.trim();
 };
 
+const isProduction = process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER);
+
+const resolveServerUrl = () => {
+  const configured = normalizeOrigin(
+    process.env.SERVER_URL || process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL
+  );
+  if (configured) {
+    if (isProduction && (configured.includes('localhost') || configured.includes('127.0.0.1'))) {
+      return 'https://xavitech-2026.onrender.com';
+    }
+    return configured;
+  }
+  if (isProduction) {
+    return 'https://xavitech-2026.onrender.com';
+  }
+  return `http://localhost:${parseInt(process.env.PORT, 10) || 5000}`;
+};
+
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT, 10) || 5000,
   clientUrl: normalizeOrigin(process.env.CLIENT_URL || process.env.FRONTEND_URL) || 'https://xavitech.in',
   frontendUrl: normalizeOrigin(process.env.FRONTEND_URL || process.env.CLIENT_URL) || 'https://xavitech.in',
-  serverUrl: normalizeOrigin(process.env.SERVER_URL || process.env.BACKEND_URL) || `http://localhost:${parseInt(process.env.PORT, 10) || 5000}`,
+  serverUrl: resolveServerUrl(),
   corsOrigins: parseCorsOrigins(
     process.env.CLIENT_URL,
     process.env.FRONTEND_URL,
@@ -94,7 +112,7 @@ export const config = {
     liveTestEventSlug: (process.env.EASEBUZZ_LIVE_TEST_EVENT_SLUG || '').trim().toLowerCase(),
     testFeeOverrideEnabled: process.env.EASEBUZZ_TEST_FEE_OVERRIDE_ENABLED === 'true',
     testFeeAmount: parseFloat(process.env.EASEBUZZ_TEST_FEE_AMOUNT) || 1.00,
-    callbackUrl: process.env.EASEBUZZ_CALLBACK_URL || '',
+    callbackUrl: normalizeOrigin(process.env.EASEBUZZ_CALLBACK_URL || process.env.PAYMENT_CALLBACK_URL) || '',
     subMerchantId: process.env.EASEBUZZ_SUB_MERCHANT_ID || '',
     get baseUrl() {
       return this.env === 'prod' || this.env === 'production'

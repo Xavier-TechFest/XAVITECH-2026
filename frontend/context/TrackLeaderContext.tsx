@@ -15,6 +15,7 @@ import {
   TrackLeaderAssignedTrack,
   TrackLeaderEvent,
   AdminRegistrationListItem,
+  AdminDashboardStats,
   ApiError,
 } from "@/lib/api";
 
@@ -22,6 +23,9 @@ interface TrackLeaderContextType {
   trackLeader: TrackLeaderProfile | null;
   assignedTrack: TrackLeaderAssignedTrack | null;
   events: TrackLeaderEvent[];
+  dashboardStats: AdminDashboardStats | null;
+  isStatsLoading: boolean;
+  refreshDashboardStats: () => Promise<AdminDashboardStats | null>;
   loading: boolean;
   isEventsLoading: boolean;
   error: string | null;
@@ -58,11 +62,29 @@ export function TrackLeaderProvider({
   const [trackLeader, setTrackLeader] = useState<TrackLeaderProfile | null>(null);
   const [assignedTrack, setAssignedTrack] = useState<TrackLeaderAssignedTrack | null>(null);
   const [events, setEvents] = useState<TrackLeaderEvent[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<AdminDashboardStats | null>(null);
+  const [isStatsLoading, setIsStatsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [theme, setThemeState] = useState<"dark" | "light">("dark");
+
+  const refreshDashboardStats = useCallback(async (): Promise<AdminDashboardStats | null> => {
+    setIsStatsLoading(true);
+    try {
+      const stats = await api.trackLeaderGetDashboardStats();
+      setDashboardStats(stats);
+      return stats;
+    } catch (err: any) {
+      if (err.data?.code !== "PASSWORD_CHANGE_REQUIRED") {
+        console.error("Failed to fetch track leader stats:", err);
+      }
+      return null;
+    } finally {
+      setIsStatsLoading(false);
+    }
+  }, []);
 
   // Cached Registrations dataset scoped strictly to assigned track
   const [registrations, setRegistrations] = useState<AdminRegistrationListItem[]>([]);
@@ -196,7 +218,10 @@ export function TrackLeaderProvider({
           setAssignedTrack(profile.assignedTrack);
         }
         if (!profile.must_change_password) {
-          await refreshTrackAndEvents();
+          await Promise.all([
+            refreshTrackAndEvents(),
+            refreshDashboardStats(),
+          ]);
           refreshRegistrations(false).catch(() => {});
         }
         return profile;
@@ -205,6 +230,7 @@ export function TrackLeaderProvider({
         setTrackLeader(null);
         setAssignedTrack(null);
         setEvents([]);
+        setDashboardStats(null);
         setRegistrations([]);
         registrationsLoadedRef.current = false;
         setRegistrationsLoaded(false);
@@ -215,12 +241,13 @@ export function TrackLeaderProvider({
       setTrackLeader(null);
       setAssignedTrack(null);
       setEvents([]);
+      setDashboardStats(null);
       setRegistrations([]);
       registrationsLoadedRef.current = false;
       setRegistrationsLoaded(false);
       return null;
     }
-  }, [refreshTrackAndEvents, refreshRegistrations]);
+  }, [refreshTrackAndEvents, refreshDashboardStats, refreshRegistrations]);
 
   useEffect(() => {
     let mounted = true;
@@ -332,6 +359,9 @@ export function TrackLeaderProvider({
         trackLeader,
         assignedTrack,
         events,
+        dashboardStats,
+        isStatsLoading,
+        refreshDashboardStats,
         loading,
         isEventsLoading,
         error,

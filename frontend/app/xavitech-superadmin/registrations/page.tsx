@@ -27,6 +27,7 @@ export default function AdminRegistrationsPage() {
   const [selectedEventId, setSelectedEventId] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("");
   const [page, setPage] = useState(1);
   const limit = 15;
 
@@ -95,6 +96,7 @@ export default function AdminRegistrationsPage() {
         eventId: selectedEventId,
         registrationType: selectedType,
         status: selectedStatus,
+        paymentStatus: selectedPaymentStatus,
       });
       setRegistrations(data.registrations);
       setPagination(data.pagination);
@@ -104,7 +106,7 @@ export default function AdminRegistrationsPage() {
     } finally {
       setIsLoadingData(false);
     }
-  }, [page, limit, appliedSearch, selectedTrackId, selectedEventId, selectedType, selectedStatus, getRegistrations]);
+  }, [page, limit, appliedSearch, selectedTrackId, selectedEventId, selectedType, selectedStatus, selectedPaymentStatus, getRegistrations]);
 
   useEffect(() => {
     fetchRegistrations();
@@ -134,6 +136,7 @@ export default function AdminRegistrationsPage() {
     setSelectedEventId("");
     setSelectedType("");
     setSelectedStatus("");
+    setSelectedPaymentStatus("");
     setPage(1);
   };
 
@@ -192,7 +195,7 @@ export default function AdminRegistrationsPage() {
               >
                 Search
               </button>
-              {(appliedSearch || selectedTrackId || selectedEventId || selectedType || selectedStatus) && (
+              {(appliedSearch || selectedTrackId || selectedEventId || selectedType || selectedStatus || selectedPaymentStatus) && (
                 <button
                   type="button"
                   onClick={handleClearFilters}
@@ -205,7 +208,7 @@ export default function AdminRegistrationsPage() {
           </div>
 
           {/* Filters Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-neutral-800/80">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-neutral-800/80">
             {/* Filter by Track */}
             <div>
               <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1.5">
@@ -282,6 +285,29 @@ export default function AdminRegistrationsPage() {
                 <option value="CONFIRMED">CONFIRMED</option>
                 <option value="PAYMENT_SUCCESS">PAYMENT_SUCCESS</option>
                 <option value="CANCELLED">CANCELLED</option>
+              </select>
+            </div>
+
+            {/* Payment Status Filter */}
+            <div>
+              <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1.5">
+                Payment Status
+              </label>
+              <select
+                value={selectedPaymentStatus}
+                onChange={(e) => {
+                  setSelectedPaymentStatus(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full px-3 py-2 bg-[#131929] border border-neutral-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-[#35e0c9]"
+              >
+                <option value="">All Payments</option>
+                <option value="SUCCESS">SUCCESS</option>
+                <option value="PENDING">PENDING</option>
+                <option value="INITIATED">INITIATED</option>
+                <option value="FAILED">FAILED</option>
+                <option value="CANCELLED">CANCELLED</option>
+                <option value="NOT_APPLICABLE">NOT_APPLICABLE (Free)</option>
               </select>
             </div>
           </div>
@@ -378,17 +404,32 @@ export default function AdminRegistrationsPage() {
                       )}
                     </td>
                     <td className="py-4 px-4">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
-                          reg.status === "CONFIRMED" || reg.status === "PAYMENT_SUCCESS"
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                            : reg.status === "CANCELLED" || reg.status === "PAYMENT_FAILED"
-                            ? "bg-red-500/10 text-red-400 border-red-500/30"
-                            : "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                        }`}
-                      >
-                        {reg.status}
-                      </span>
+                      <div className="flex flex-col gap-1 items-start">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
+                            reg.status === "CONFIRMED" || reg.status === "PAYMENT_SUCCESS"
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                              : reg.status === "CANCELLED" || reg.status === "PAYMENT_FAILED"
+                              ? "bg-red-500/10 text-red-400 border-red-500/30"
+                              : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                          }`}
+                        >
+                          {reg.status}
+                        </span>
+                        {reg.paymentStatus && (
+                          <span
+                            className={`inline-block px-1.5 py-0.5 text-[9px] font-mono rounded border uppercase ${
+                              reg.paymentStatus === "SUCCESS"
+                                ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
+                                : reg.paymentStatus === "FAILED" || reg.paymentStatus === "CANCELLED"
+                                ? "bg-rose-500/10 text-rose-300 border-rose-500/20"
+                                : "bg-neutral-800 text-neutral-400 border-neutral-700"
+                            }`}
+                          >
+                            Pay: {reg.paymentStatus}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-4 text-[11px] text-neutral-400 font-mono whitespace-nowrap">
                       {reg.createdAt ? new Date(reg.createdAt).toLocaleDateString() : "—"}
@@ -445,6 +486,7 @@ export default function AdminRegistrationsPage() {
           eventId: selectedEventId,
           registrationType: selectedType,
           status: selectedStatus,
+          paymentStatus: selectedPaymentStatus,
         }}
         tracks={tracks}
         events={events}

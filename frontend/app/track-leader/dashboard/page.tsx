@@ -9,9 +9,12 @@ export default function TrackLeaderDashboardPage() {
     trackLeader,
     assignedTrack,
     events,
+    dashboardStats,
+    isStatsLoading,
     loading,
     isEventsLoading,
     refreshTrackAndEvents,
+    refreshDashboardStats,
     refreshRegistrations,
     registrationsRefreshing,
     theme,
@@ -30,24 +33,39 @@ export default function TrackLeaderDashboardPage() {
   const leaderName = trackLeader?.name || "Track Leader";
   const leaderEmail = trackLeader?.email || "";
 
+  // Build event count map from live backend aggregation
+  const eventCountsMap = new Map<string, number>();
+  if (dashboardStats?.eventCounts) {
+    for (const ec of dashboardStats.eventCounts) {
+      if (ec.eventId) eventCountsMap.set(ec.eventId, ec.count);
+      if (ec.slug) eventCountsMap.set(ec.slug, ec.count);
+    }
+  }
+
   return (
     <div className="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-8">
       {/* 1. Header & Welcome Banner */}
-      <div className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b ${
-        isLight ? "border-slate-200" : "border-neutral-800/80"
-      }`}>
+      <div
+        className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b ${
+          isLight ? "border-slate-200" : "border-neutral-800/80"
+        }`}
+      >
         <div>
-          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono uppercase tracking-widest mb-3 ${
-            isLight
-              ? "bg-teal-50 border-teal-200 text-teal-800"
-              : "border-[#35e0c9]/30 bg-[#35e0c9]/10 text-[#35e0c9]"
-          }`}>
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono uppercase tracking-widest mb-3 ${
+              isLight
+                ? "bg-teal-50 border-teal-200 text-teal-800"
+                : "border-[#35e0c9]/30 bg-[#35e0c9]/10 text-[#35e0c9]"
+            }`}
+          >
             <span className={`w-1.5 h-1.5 rounded-full ${isLight ? "bg-teal-600" : "bg-[#35e0c9]"}`} />
             TRACK OPERATIONS CONSOLE
           </div>
-          <h1 className={`text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight ${
-            isLight ? "text-slate-900" : "text-white"
-          }`}>
+          <h1
+            className={`text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight ${
+              isLight ? "text-slate-900" : "text-white"
+            }`}
+          >
             Welcome, {leaderName}
           </h1>
           <p className={`text-xs sm:text-sm mt-1 ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
@@ -88,10 +106,11 @@ export default function TrackLeaderDashboardPage() {
             onClick={async () => {
               await Promise.all([
                 refreshTrackAndEvents(),
+                refreshDashboardStats(),
                 refreshRegistrations(true),
               ]);
             }}
-            disabled={isEventsLoading || registrationsRefreshing}
+            disabled={isEventsLoading || isStatsLoading || registrationsRefreshing}
             className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 ${
               isLight
                 ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
@@ -100,7 +119,7 @@ export default function TrackLeaderDashboardPage() {
           >
             <svg
               className={`w-3.5 h-3.5 ${isLight ? "text-teal-600" : "text-[#35e0c9]"} ${
-                isEventsLoading || registrationsRefreshing ? "animate-spin" : ""
+                isEventsLoading || isStatsLoading || registrationsRefreshing ? "animate-spin" : ""
               }`}
               fill="none"
               stroke="currentColor"
@@ -113,12 +132,119 @@ export default function TrackLeaderDashboardPage() {
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            <span>{isEventsLoading || registrationsRefreshing ? "Syncing..." : "Sync Live Data"}</span>
+            <span>
+              {isEventsLoading || isStatsLoading || registrationsRefreshing ? "Syncing..." : "Sync Live Data"}
+            </span>
           </button>
         </div>
       </div>
 
-      {/* 2. Track Assignment Status Card */}
+      {/* 2. Track Telemetry Metrics (Real Live Data from PostgreSQL) */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className={`w-1.5 h-1.5 rounded-full ${isLight ? "bg-teal-600" : "bg-[#35e0c9]"}`} />
+          <h2 className={`text-xs uppercase font-mono tracking-wider font-semibold ${
+            isLight ? "text-slate-600" : "text-neutral-400"
+          }`}>
+            Track Live Telemetry
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {/* Total Registrations */}
+          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl ${
+            isLight ? "bg-white border-slate-200 shadow-slate-200/50" : "bg-[#0e131f]/90 border-neutral-800/80"
+          }`}>
+            <span className={`text-[11px] font-mono uppercase tracking-wider block mb-2 ${
+              isLight ? "text-slate-500" : "text-neutral-400"
+            }`}>
+              Total Registrations
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className={`text-3xl sm:text-4xl font-extrabold font-mono ${
+                isLight ? "text-slate-900" : "text-white"
+              }`}>
+                {dashboardStats ? dashboardStats.totalRegistrations : 0}
+              </span>
+              <span className="text-xs text-neutral-500 font-mono">records</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-dashed border-neutral-800/40 text-[11px] font-mono flex items-center justify-between text-neutral-400">
+              <span className="text-emerald-400 font-bold">
+                {dashboardStats?.confirmedRegistrations ?? 0} Confirmed
+              </span>
+              <span className="text-amber-400 font-bold">
+                {dashboardStats?.paymentPendingRegistrations ?? 0} Pending
+              </span>
+            </div>
+          </div>
+
+          {/* Total Participants */}
+          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl ${
+            isLight ? "bg-white border-slate-200 shadow-slate-200/50" : "bg-[#0e131f]/90 border-neutral-800/80"
+          }`}>
+            <span className={`text-[11px] font-mono uppercase tracking-wider block mb-2 ${
+              isLight ? "text-slate-500" : "text-neutral-400"
+            }`}>
+              Total Participants
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className={`text-3xl sm:text-4xl font-extrabold font-mono ${
+                isLight ? "text-slate-900" : "text-white"
+              }`}>
+                {dashboardStats ? dashboardStats.totalParticipants : 0}
+              </span>
+              <span className="text-xs text-neutral-500 font-mono">individuals</span>
+            </div>
+            <p className="mt-3 text-[11px] text-neutral-500 font-mono">
+              Individual delegates + team members
+            </p>
+          </div>
+
+          {/* Total Teams */}
+          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl ${
+            isLight ? "bg-white border-slate-200 shadow-slate-200/50" : "bg-[#0e131f]/90 border-neutral-800/80"
+          }`}>
+            <span className={`text-[11px] font-mono uppercase tracking-wider block mb-2 ${
+              isLight ? "text-slate-500" : "text-neutral-400"
+            }`}>
+              Track Squads / Teams
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className={`text-3xl sm:text-4xl font-extrabold font-mono ${
+                isLight ? "text-teal-700" : "text-[#35e0c9]"
+              }`}>
+                {dashboardStats ? dashboardStats.totalTeams : 0}
+              </span>
+              <span className="text-xs text-neutral-500 font-mono">teams</span>
+            </div>
+            <p className="mt-3 text-[11px] text-neutral-500 font-mono">
+              Created squads under this track
+            </p>
+          </div>
+
+          {/* Active Events */}
+          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl ${
+            isLight ? "bg-white border-slate-200 shadow-slate-200/50" : "bg-[#0e131f]/90 border-neutral-800/80"
+          }`}>
+            <span className={`text-[11px] font-mono uppercase tracking-wider block mb-2 ${
+              isLight ? "text-slate-500" : "text-neutral-400"
+            }`}>
+              Track Events
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-400">
+                {events.length}
+              </span>
+              <span className="text-xs text-neutral-500 font-mono">events</span>
+            </div>
+            <p className="mt-3 text-[11px] text-neutral-500 font-mono">
+              Events in {assignedTrack?.name || "assigned track"}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Track Assignment Status Card */}
       <section id="track" className="space-y-3">
         <div className="flex items-center gap-2">
           <span className={`w-1.5 h-1.5 rounded-full ${isLight ? "bg-teal-600" : "bg-[#35e0c9]"}`} />
@@ -130,44 +256,57 @@ export default function TrackLeaderDashboardPage() {
         </div>
 
         {assignedTrack ? (
-          <div className={`border rounded-2xl p-6 sm:p-7 backdrop-blur-xl relative overflow-hidden shadow-xl ${
-            isLight
-              ? "bg-white border-slate-200 shadow-slate-200/50"
-              : "bg-[#0e131f]/90 border-neutral-800/80 shadow-black/20"
-          }`}>
+          <div
+            className={`border rounded-2xl p-6 sm:p-7 backdrop-blur-xl relative overflow-hidden shadow-xl ${
+              isLight
+                ? "bg-white border-slate-200 shadow-slate-200/50"
+                : "bg-[#0e131f]/90 border-neutral-800/80 shadow-black/20"
+            }`}
+          >
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 relative z-10">
               {/* Left Column: Track Info */}
               <div className="space-y-3 flex-1 min-w-0">
-                <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs font-mono uppercase tracking-wider font-bold ${
-                  isLight
-                    ? "bg-teal-50 border-teal-200 text-teal-800"
-                    : "bg-[#35e0c9]/10 border-[#35e0c9]/30 text-[#35e0c9]"
-                }`}>
+                <div
+                  className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs font-mono uppercase tracking-wider font-bold ${
+                    isLight
+                      ? "bg-teal-50 border-teal-200 text-teal-800"
+                      : "bg-[#35e0c9]/10 border-[#35e0c9]/30 text-[#35e0c9]"
+                  }`}
+                >
                   <span className={`w-1.5 h-1.5 rounded-full ${isLight ? "bg-teal-600" : "bg-[#35e0c9]"}`} />
                   OFFICIAL XAVITECH TRACK
                 </div>
 
-                <h3 className={`text-xl sm:text-2xl font-bold font-mono tracking-tight break-words ${
-                  isLight ? "text-slate-900" : "text-white"
-                }`}>
+                <h3
+                  className={`text-xl sm:text-2xl font-bold font-mono tracking-tight break-words ${
+                    isLight ? "text-slate-900" : "text-white"
+                  }`}
+                >
                   {assignedTrack.name}
                 </h3>
 
                 {assignedTrack.description && (
-                  <p className={`text-xs sm:text-sm max-w-2xl leading-relaxed ${
-                    isLight ? "text-slate-600" : "text-neutral-300"
-                  }`}>
+                  <p
+                    className={`text-xs sm:text-sm max-w-2xl leading-relaxed ${
+                      isLight ? "text-slate-600" : "text-neutral-300"
+                    }`}
+                  >
                     {assignedTrack.description}
                   </p>
                 )}
 
                 <div className="pt-2 flex flex-wrap items-center gap-2.5 text-xs font-mono">
-                  <span className={`px-3 py-1 rounded-lg border ${
-                    isLight
-                      ? "bg-slate-50 border-slate-200 text-slate-600"
-                      : "bg-neutral-900/90 border-neutral-800 text-neutral-400"
-                  }`}>
-                    slug: <span className={isLight ? "text-slate-900 font-semibold" : "text-neutral-200"}>{assignedTrack.slug}</span>
+                  <span
+                    className={`px-3 py-1 rounded-lg border ${
+                      isLight
+                        ? "bg-slate-50 border-slate-200 text-slate-600"
+                        : "bg-neutral-900/90 border-neutral-800 text-neutral-400"
+                    }`}
+                  >
+                    slug:{" "}
+                    <span className={isLight ? "text-slate-900 font-semibold" : "text-neutral-200"}>
+                      {assignedTrack.slug}
+                    </span>
                   </span>
                   <span
                     className={`px-3 py-1 rounded-lg border font-semibold ${
@@ -186,31 +325,41 @@ export default function TrackLeaderDashboardPage() {
               </div>
 
               {/* Right Column: Event count stat box */}
-              <div className={`w-full sm:w-44 sm:self-stretch flex flex-col justify-center items-center py-6 px-6 rounded-2xl border shrink-0 text-center ${
-                isLight
-                  ? "bg-slate-50 border-slate-200"
-                  : "bg-neutral-900/90 border-neutral-800/90"
-              }`}>
-                <span className={`text-4xl sm:text-4xl font-black font-mono block ${
-                  isLight ? "text-teal-700" : "text-[#35e0c9]"
-                }`}>
+              <div
+                className={`w-full sm:w-44 sm:self-stretch flex flex-col justify-center items-center py-6 px-6 rounded-2xl border shrink-0 text-center ${
+                  isLight
+                    ? "bg-slate-50 border-slate-200"
+                    : "bg-neutral-900/90 border-neutral-800/90"
+                }`}
+              >
+                <span
+                  className={`text-4xl sm:text-4xl font-black font-mono block ${
+                    isLight ? "text-teal-700" : "text-[#35e0c9]"
+                  }`}
+                >
                   {events.length}
                 </span>
-                <span className={`text-xs sm:text-[11px] font-mono uppercase tracking-wider mt-1.5 block font-bold ${
-                  isLight ? "text-slate-600" : "text-neutral-400"
-                }`}>
+                <span
+                  className={`text-xs sm:text-[11px] font-mono uppercase tracking-wider mt-1.5 block font-bold ${
+                    isLight ? "text-slate-600" : "text-neutral-400"
+                  }`}
+                >
                   TRACK EVENTS
                 </span>
               </div>
             </div>
           </div>
         ) : (
-          <div className={`border rounded-2xl p-6 sm:p-7 text-center space-y-3 ${
-            isLight ? "bg-amber-50/50 border-amber-200" : "bg-[#0e131f]/90 border-amber-900/40"
-          }`}>
-            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center mx-auto ${
-              isLight ? "bg-amber-100 border-amber-300 text-amber-700" : "bg-amber-950/50 border-amber-800/50 text-amber-400"
-            }`}>
+          <div
+            className={`border rounded-2xl p-6 sm:p-7 text-center space-y-3 ${
+              isLight ? "bg-amber-50/50 border-amber-200" : "bg-[#0e131f]/90 border-amber-900/40"
+            }`}
+          >
+            <div
+              className={`w-12 h-12 rounded-xl border flex items-center justify-center mx-auto ${
+                isLight ? "bg-amber-100 border-amber-300 text-amber-700" : "bg-amber-950/50 border-amber-800/50 text-amber-400"
+              }`}
+            >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -230,21 +379,25 @@ export default function TrackLeaderDashboardPage() {
         )}
       </section>
 
-      {/* 3. Assigned Events List Section */}
+      {/* 4. Assigned Events List Section */}
       <section id="events" className="space-y-4 pt-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <h2 className={`text-lg sm:text-xl font-black font-mono uppercase tracking-tight ${
-                isLight ? "text-slate-900" : "text-white"
-              }`}>
+              <h2
+                className={`text-lg sm:text-xl font-black font-mono uppercase tracking-tight ${
+                  isLight ? "text-slate-900" : "text-white"
+                }`}
+              >
                 Assigned Track Events
               </h2>
-              <span className={`inline-flex items-center justify-center min-w-[28px] px-2.5 py-0.5 rounded-lg border text-xs sm:text-sm font-mono font-bold shrink-0 ${
-                isLight
-                  ? "bg-teal-50 border-teal-200 text-teal-800"
-                  : "bg-[#35e0c9]/15 border-[#35e0c9]/40 text-[#35e0c9] shadow-sm shadow-[#35e0c9]/10"
-              }`}>
+              <span
+                className={`inline-flex items-center justify-center min-w-[28px] px-2.5 py-0.5 rounded-lg border text-xs sm:text-sm font-mono font-bold shrink-0 ${
+                  isLight
+                    ? "bg-teal-50 border-teal-200 text-teal-800"
+                    : "bg-[#35e0c9]/15 border-[#35e0c9]/40 text-[#35e0c9] shadow-sm shadow-[#35e0c9]/10"
+                }`}
+              >
                 {events.length}
               </span>
             </div>
@@ -258,6 +411,8 @@ export default function TrackLeaderDashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {events.map((event) => {
               const feeVal = event.fee ?? event.entry_fee ?? 0;
+              const eventRegCount = eventCountsMap.get(event.id) ?? eventCountsMap.get(event.slug) ?? 0;
+
               return (
                 <div
                   key={event.id}
@@ -269,11 +424,13 @@ export default function TrackLeaderDashboardPage() {
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`text-[11px] uppercase tracking-wider font-mono font-bold px-2.5 py-1 rounded-md border ${
-                        isLight
-                          ? "bg-teal-50 text-teal-800 border-teal-200"
-                          : "bg-[#35e0c9]/10 text-[#35e0c9] border-[#35e0c9]/30"
-                      }`}>
+                      <span
+                        className={`text-[11px] uppercase tracking-wider font-mono font-bold px-2.5 py-1 rounded-md border ${
+                          isLight
+                            ? "bg-teal-50 text-teal-800 border-teal-200"
+                            : "bg-[#35e0c9]/10 text-[#35e0c9] border-[#35e0c9]/30"
+                        }`}
+                      >
                         {event.registration_type}
                       </span>
                       <span
@@ -291,37 +448,64 @@ export default function TrackLeaderDashboardPage() {
                       </span>
                     </div>
 
-                    <h4 className={`text-base sm:text-lg font-bold font-mono tracking-tight ${
-                      isLight ? "text-slate-900" : "text-white"
-                    }`}>
+                    <h4
+                      className={`text-base sm:text-lg font-bold font-mono tracking-tight ${
+                        isLight ? "text-slate-900" : "text-white"
+                      }`}
+                    >
                       {event.title || event.name}
                     </h4>
 
                     {event.tagline && (
-                      <p className={`text-xs line-clamp-2 leading-relaxed ${
-                        isLight ? "text-slate-600" : "text-neutral-400"
-                      }`}>
+                      <p
+                        className={`text-xs line-clamp-2 leading-relaxed ${
+                          isLight ? "text-slate-600" : "text-neutral-400"
+                        }`}
+                      >
                         {event.tagline}
                       </p>
                     )}
                   </div>
 
-                  <div className={`pt-3 border-t flex items-center justify-between text-xs font-mono ${
-                    isLight ? "border-slate-200 text-slate-600" : "border-neutral-800/80 text-neutral-400"
-                  }`}>
-                    <div>
-                      Team:{" "}
-                      <span className={isLight ? "text-slate-900 font-semibold" : "text-neutral-200"}>
-                        {event.min_team_size === event.max_team_size
-                          ? event.min_team_size
-                          : `${event.min_team_size}-${event.max_team_size}`}{" "}
-                        {event.max_team_size === 1 ? "solo" : "members"}
-                      </span>
+                  <div className="space-y-2 pt-3 border-t border-dashed border-neutral-800/60">
+                    <div
+                      className={`flex items-center justify-between text-xs font-mono ${
+                        isLight ? "text-slate-600" : "text-neutral-400"
+                      }`}
+                    >
+                      <div>
+                        Team:{" "}
+                        <span className={isLight ? "text-slate-900 font-semibold" : "text-neutral-200"}>
+                          {event.min_team_size === event.max_team_size
+                            ? event.min_team_size
+                            : `${event.min_team_size}-${event.max_team_size}`}{" "}
+                          {event.max_team_size === 1 ? "solo" : "members"}
+                        </span>
+                      </div>
+                      <div>
+                        Fee:{" "}
+                        <span className={`font-bold ${isLight ? "text-teal-700" : "text-[#35e0c9]"}`}>
+                          {feeVal === 0 ? "Free" : `₹${feeVal}`}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      Fee:{" "}
-                      <span className={`font-bold ${isLight ? "text-teal-700" : "text-[#35e0c9]"}`}>
-                        {feeVal === 0 ? "Free" : `₹${feeVal}`}
+
+                    <div className="flex items-center justify-between text-xs font-mono pt-1">
+                      <span className="text-[11px] text-neutral-500 uppercase tracking-wider">
+                        Live Registrations
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded font-bold text-[11px] border ${
+                          eventRegCount > 0
+                            ? isLight
+                              ? "bg-teal-50 border-teal-200 text-teal-800"
+                              : "bg-[#35e0c9]/15 border-[#35e0c9]/30 text-[#35e0c9]"
+                            : isLight
+                            ? "bg-slate-100 border-slate-200 text-slate-500"
+                            : "bg-neutral-900 border-neutral-800 text-neutral-500"
+                        }`}
+                      >
+                        {eventRegCount} registered
                       </span>
                     </div>
                   </div>
@@ -330,9 +514,11 @@ export default function TrackLeaderDashboardPage() {
             })}
           </div>
         ) : (
-          <div className={`p-8 rounded-2xl border text-center ${
-            isLight ? "bg-white border-slate-200" : "bg-[#0e131f]/90 border-neutral-800"
-          }`}>
+          <div
+            className={`p-8 rounded-2xl border text-center ${
+              isLight ? "bg-white border-slate-200" : "bg-[#0e131f]/90 border-neutral-800"
+            }`}
+          >
             <p className={`text-xs font-mono ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
               No events found for this track.
             </p>
