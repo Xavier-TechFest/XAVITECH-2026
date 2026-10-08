@@ -108,6 +108,8 @@ interface AdminContextType {
       search?: string;
       eventId?: string;
       status?: string;
+      teamStatus?: string;
+      registrationStatus?: string;
     },
     forceRefresh?: boolean
   ) => Promise<TeamsQueryResponse>;
@@ -412,6 +414,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         search?: string;
         eventId?: string;
         status?: string;
+        teamStatus?: string;
+        registrationStatus?: string;
       },
       forceRefresh = false
     ): Promise<TeamsQueryResponse> => {
@@ -421,6 +425,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         search: (params?.search || "").trim(),
         eventId: params?.eventId || "",
         status: params?.status || "",
+        teamStatus: params?.teamStatus || "",
+        registrationStatus: params?.registrationStatus || "",
       });
 
       if (!forceRefresh && teamsCache.current[cacheKey]) {

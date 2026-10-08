@@ -971,6 +971,9 @@ export interface AdminTeamListItem {
   id: string;
   teamName: string;
   status: string;
+  teamStatus?: string;
+  registrationStatus?: string | null;
+  paymentStatus?: string | null;
   createdAt: string;
   updatedAt: string;
   memberCount: number;
@@ -982,6 +985,12 @@ export interface AdminTeamListItem {
     fee: number;
     minTeamSize: number | null;
     maxTeamSize: number | null;
+    trackId?: string | null;
+    track?: {
+      id: string;
+      name: string;
+      slug: string;
+    } | null;
   } | null;
   leader: {
     id: string;
@@ -994,6 +1003,8 @@ export interface AdminTeamListItem {
     id: string;
     registrationId: string;
     status: string;
+    paymentStatus?: string | null;
+    createdAt?: string;
   } | null;
 }
 
@@ -1001,6 +1012,9 @@ export interface AdminTeamDetail {
   id: string;
   teamName: string;
   status: string;
+  teamStatus?: string;
+  registrationStatus?: string | null;
+  paymentStatus?: string | null;
   createdAt: string;
   updatedAt: string;
   totalTeamSize: number;
@@ -1017,6 +1031,12 @@ export interface AdminTeamDetail {
     fee: number;
     isActive: boolean;
     registrationOpen: boolean;
+    trackId?: string | null;
+    track?: {
+      id: string;
+      name: string;
+      slug: string;
+    } | null;
   } | null;
   leader: {
     id: string;
@@ -1040,8 +1060,22 @@ export interface AdminTeamDetail {
     registrationId: string;
     status: string;
     registrationType: string;
+    paymentStatus?: string | null;
     createdAt: string;
   } | null;
+  participants?: Array<{
+    id: string;
+    participantOrder: number;
+    participantRole: string;
+    fullName: string;
+    email: string;
+    mobileNumber?: string;
+    institutionName?: string;
+    city?: string;
+    studentId?: string;
+    standardClass?: string;
+    customFields?: Record<string, any>;
+  }>;
 }
 
 /**
@@ -1125,6 +1159,8 @@ export async function adminGetTeams(params?: {
   search?: string;
   eventId?: string;
   status?: string;
+  teamStatus?: string;
+  registrationStatus?: string;
 }): Promise<{ teams: AdminTeamListItem[]; pagination: PaginationMeta }> {
   const url = new URL(`${API_BASE_URL}/admin/teams`);
   if (params?.page) url.searchParams.set("page", String(params.page));
@@ -1132,6 +1168,8 @@ export async function adminGetTeams(params?: {
   if (params?.search) url.searchParams.set("search", params.search);
   if (params?.eventId) url.searchParams.set("eventId", params.eventId);
   if (params?.status) url.searchParams.set("status", params.status);
+  if (params?.teamStatus) url.searchParams.set("teamStatus", params.teamStatus);
+  if (params?.registrationStatus) url.searchParams.set("registrationStatus", params.registrationStatus);
 
   const response = await fetch(url.toString(), {
     method: "GET",
