@@ -1600,21 +1600,22 @@ export const EVENTS: EventItem[] = [
     badgeLevel: "Intermediate",
     trackId: "track-c",
     trackName: "TRACK C — GAMING & ADVENTURE",
-    shortDesc: "A four-member campus treasure hunt.",
-    fullDesc: "Cipher Chase is a campus treasure hunt for teams of exactly four students. Clues may use QR codes, Morse code, binary code, and other puzzle formats. Teams must stay within their assigned area and follow the event rules.",
+    shortDesc: "A team-based campus treasure hunt with clue rounds and eliminations.",
+    fullDesc: "Cipher Chase is a team-based campus treasure hunt built around clues, search challenges, and an elimination format. Teams follow club-specific clue sets, compete through multiple activities, and advance toward a final treasure challenge.",
     date: "TBA",
     time: "TBA",
     prize: "To Be Announced",
     price: "₹400 per team",
     team: "Exactly 4 members",
-    venue: "Campus",
+    venue: "De Nobili Hall or an assigned campus venue (To Be Announced)",
     accentColor: "#60a5fa",
     glowColor: "rgba(96,165,250,.2)",
     borderColor: "rgba(96,165,250,.4)",
     image: "/images/events/event-07.jpeg",
     highlights: [
-      "Clues may use QR codes, Morse code, binary code, and similar formats.",
-      "Four members per team.",
+      "Teams of 4 · ₹400 per team.",
+      "Club groupings organize elimination rounds; teams in a club do not play as one combined team.",
+      "Clues may use QR codes, Morse code, binary code, and other puzzle formats.",
     ],
     rules: [
       "Do not damage college property. Damage may result in a penalty or fine.",
@@ -1628,14 +1629,85 @@ export const EVENTS: EventItem[] = [
       "All courses and departments are eligible. External participants are allowed. No age restriction is specified.",
     ],
     registrationInfo: [
-      "A team must have exactly 4 members. Team name is not required; a team leader is required.",
-      "The team leader submits one registration for all four members. Separate registrations and joining multiple teams are not allowed.",
+      "Register exactly 4 members. A team name is not required; choose one team leader to submit the team's registration.",
+      "The team leader registers all four members together. Separate member registrations and joining multiple teams are not allowed.",
       "Use an email address and mobile number that are not already registered to another team.",
-      "The registration fee is ₹400 per team. The deadline is before 30 October 2026.",
+      "The fee is ₹400 per team. Register before 30 October 2026.",
     ],
     requirements: [
       "Every member must provide full name, institution, student ID/roll number, city, and a valid college ID card. Department/course is optional.",
       "Only the team leader must provide a mobile number, email address, and optional profile photo. Year/semester and section are not collected.",
+    ],
+    exploreSections: [
+      {
+        title: "Eligibility",
+        items: [
+          "Open to students in Classes 9–12 and undergraduate or postgraduate students. All courses and departments are eligible; external participants are welcome. No age restriction is specified.",
+          "Each registered team has exactly 4 members. The registration fee is ₹400 per team.",
+        ],
+      },
+      {
+        title: "How does the club system work?",
+        items: [
+          "Clubs are groups used to organize the elimination rounds. Teams assigned to the same club remain separate teams; they do not play as one combined team.",
+          "Club counts are based on the number of registered teams. Examples: 30 teams → 6 clubs of 5; 25 teams → 5 clubs; 20 teams → 4 clubs. The final number and size of clubs are To Be Announced.",
+          "Round labels include 6, 5, 4, 3, and 2 teams at different stages. A separate 30-team setup uses 6 clubs of 5; the final round-by-round counts are To Be Announced.",
+        ],
+      },
+      {
+        title: "What happens in Fast & Furious?",
+        items: [
+          "When a club has five teams, each team receives a clue from that club's set. For example, Club A receives Set A, with five clues for five teams.",
+          "Teams follow their clue to an assigned location and search for a Green Card. Teams in a club may have different locations, or some teams may share a location; assignments are made club by club.",
+          "For a five-team club, four Green Cards are available. The first four teams to secure a card qualify for the next round; the remaining team is eliminated. Each Green Card says “GO TO START.”",
+          "Four Green Cards are listed at each assigned location. How the location assignments and club-level card count fit together is To Be Announced.",
+        ],
+      },
+      {
+        title: "How do teams advance?",
+        items: [
+          "In the 30-team example, 6 clubs of 5 teams begin. One team from each club is eliminated after each game: 30 → 24 → 18 → 12 → 6 teams.",
+          "After four elimination games, the club structure ends and the six remaining teams move to the final stage.",
+          "Later-round activities are Search the Smiley, Hunt 1, Hunt 2, and Hunt 3. The outline also shows “Direct” links between some Hunt rounds; their exact role, order, instructions, and elimination rules are To Be Announced.",
+        ],
+      },
+      {
+        title: "What happens in the final?",
+        items: [
+          "The six remaining teams enter the final stage. An early final round may eliminate 2 or 3 teams, leaving 4 or 3 teams to continue.",
+          "The remaining teams continue through final challenges until one team wins.",
+          "The final-round outline lists Run to Treasure (2 teams), Brain Games (3 teams), and Final Challenge (6 teams). The final activity order, team counts, and detailed rules are To Be Announced.",
+        ],
+      },
+      {
+        title: "How do I register my team?",
+        items: [
+          "Register exactly 4 team members. One team leader submits all four members in a single registration; a team name is not required.",
+          "The fee is ₹400 per team. Register before 30 October 2026. Fees are non-refundable after cancellation.",
+          "Each member provides their full name, institution, student ID/roll number, city, and a valid college ID. Department/course is optional.",
+          "The team leader provides a mobile number and email address that are not used by another team. A profile photo is optional; year/semester and section are not collected.",
+          "Separate member registrations and participation on multiple teams are not allowed.",
+        ],
+      },
+      {
+        title: "When and where is it happening?",
+        items: [
+          "Venue: De Nobili Hall or another assigned campus venue. Final venue and event time: To Be Announced.",
+          "The event takes place on campus. Follow your club's clue set and proceed only to the locations assigned to your team.",
+        ],
+      },
+      {
+        title: "Full rules and participant guide",
+        items: [
+          "Stay within your team's assigned area. Leaving it eliminates the entire team.",
+          "Do not damage college property. Damage may result in a penalty or fine.",
+          "Cheating, disrupting equipment, or using a proxy disqualifies the entire team.",
+          "Teams may visit campus before their assigned time to become familiar with it, but must not search for clues. Anyone caught searching for clues early is immediately eliminated.",
+          "Follow the clue set assigned to your club. The club label determines the clue set (for example, Club A receives Set A).",
+          "A club is an elimination grouping only; teams within it compete individually as teams, not together as one large squad.",
+          "The game format is still being finalized. Round timing, team allocations, card placement, and later-round rules will be announced before the event.",
+        ],
+      },
     ],
     coordinatorRequirements: [
       "Provide coordinators with team-wise participant lists, contact details, uploaded ID cards, registration/payment/check-in status, and records for cancelled teams.",
