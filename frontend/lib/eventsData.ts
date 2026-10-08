@@ -1441,7 +1441,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Battlefield Blitz is XAVITECH 2026's squad-based Battlegrounds Mobile India tournament. Up to 25 squads play one Best-of-3 series across Erangel, Miramar, and Rondo. The winner is decided by cumulative placement and kill points, with live coverage for spectators at De Nobili Hall.",
     date: "31 October 2026",
     time: "8:00 AM–1:00 PM",
-    prize: "₹12,000 prize pool",
+    prize: "₹12,000",
     price: "₹200 per player",
     team: "4–5 members",
     venue: "De Nobili Hall (Track C)",
