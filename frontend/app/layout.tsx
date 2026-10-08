@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Rajdhani, Space_Grotesk, Orbitron } from "next/font/google";
-import { AuthProvider } from "@/context/AuthContext";
 import LoadingScreen from "@/components/effects/LoadingScreen";
 import SoundToggle from "@/components/effects/SoundToggle";
+import ScrollProgress from "@/components/effects/ScrollProgress";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 // Headings — angular, technical, still fully readable at any size.
@@ -31,7 +32,7 @@ const orbitron = Orbitron({
   display: "swap",
 });
 
-const SITE_URL = "https://xavitech.in";
+const SITE_URL = "https://xavitech.xup.ac.in";
 const TITLE = "XAVITECH 2026 — Xavier Tech Fest";
 const DESCRIPTION =
   "XAVITECH 2026 — a one-day technology festival at Xavier University, Patna, on 31 October 2026. Five tracks, a full events lineup, live schedule and results.";
@@ -80,6 +81,7 @@ export default function RootLayout({
       <body className="font-body antialiased bg-bg text-ink">
         <AuthProvider>
           <LoadingScreen />
+          <ScrollProgress />
           {children}
           <SoundToggle />
         </AuthProvider>

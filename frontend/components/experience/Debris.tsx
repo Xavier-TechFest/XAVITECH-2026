@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { PALETTE, isPhone, smoothstep, type SceneProps } from "./shared";
+import { PALETTE, getQualityTier, smoothstep, type SceneProps } from "./shared";
 
 /**
  * A drifting wreckage field the camera dollies straight through while the
@@ -13,8 +13,8 @@ import { PALETTE, isPhone, smoothstep, type SceneProps } from "./shared";
 export default function Debris({ scrollRef }: SceneProps) {
   const hullRef = useRef<THREE.InstancedMesh>(null!);
   const wireRef = useRef<THREE.InstancedMesh>(null!);
-  const phone = useMemo(() => isPhone(), []);
-  const count = phone ? 34 : 72;
+  const reduced = useMemo(() => getQualityTier() !== "high", []);
+  const count = reduced ? 34 : 72;
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
   const seeds = useMemo(

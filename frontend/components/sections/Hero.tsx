@@ -476,7 +476,7 @@ export default function Hero() {
         }}
       />
 
-      <div ref={contentRef} className="relative z-10 mx-auto w-full max-w-6xl px-6 will-change-[transform,opacity]">
+      <div ref={contentRef} className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center px-6 text-center will-change-[transform,opacity]">
         <div className="relative inline-flex items-center">
           {/* Soft futuristic glow strip behind the tagline */}
           <div
@@ -520,7 +520,7 @@ export default function Hero() {
         </p>
         </div>
         
-        <div className="mt-8 flex flex-wrap items-center gap-x-10 gap-y-7 sm:mt-10 sm:gap-y-8">
+        <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-x-10 gap-y-7 sm:mt-10 sm:gap-y-8">
           <a
             href="#events"
             className="group relative w-full overflow-hidden rounded-full bg-marigold px-7 py-3.5 text-center text-sm font-semibold text-bg transition-transform duration-300 hover:-translate-y-0.5 sm:w-auto sm:py-3"

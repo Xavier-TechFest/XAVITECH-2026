@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { Component, useEffect, useState, type ReactNode } from "react";
 import { useMouse } from "@/hooks/useMouse";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
+import { getQualityTier } from "./shared";
 
 // three.js is only fetched on the client, after first paint
 const Scene = dynamic(() => import("./Scene"), { ssr: false });
@@ -84,8 +85,14 @@ export default function CosmosBackdrop() {
     const saveData = (
       navigator as Navigator & { connection?: { saveData?: boolean } }
     ).connection?.saveData;
+    // Low tier (weak/mobile devices): skip WebGL entirely rather than run a
+    // trimmed-down version of it — this is the biggest single performance
+    // win available, since it means no Three.js download, no WebGL context,
+    // no per-frame render loop on the devices least able to afford one.
+    const tier = getQualityTier();
 
-    const update = () => setLive(!reduce.matches && !saveData && webglAvailable());
+    const update = () =>
+      setLive(!reduce.matches && !saveData && tier !== "low" && webglAvailable());
     update();
     reduce.addEventListener("change", update);
     return () => reduce.removeEventListener("change", update);

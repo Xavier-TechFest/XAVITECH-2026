@@ -10,16 +10,28 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase client app (singleton pattern)
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+// The site can render without Firebase credentials (for example, on a fresh
+// checkout). Auth-dependent actions report a setup error instead of crashing
+// the entire application during module initialization.
+const hasFirebaseConfig = Object.values(firebaseConfig).every(
+  (value) => typeof value === "string" && value.length > 0 && !value.startsWith("your_")
+);
+
+const app = hasFirebaseConfig
+  ? getApps().length > 0
+    ? getApp()
+    : initializeApp(firebaseConfig)
+  : null;
+const auth = app ? getAuth(app) : null;
+const googleProvider = auth ? new GoogleAuthProvider() : null;
 
 // Request email and profile scopes
-googleProvider.addScope("email");
-googleProvider.addScope("profile");
-googleProvider.setCustomParameters({
-  prompt: "select_account",
-});
+if (googleProvider) {
+  googleProvider.addScope("email");
+  googleProvider.addScope("profile");
+  googleProvider.setCustomParameters({
+    prompt: "select_account",
+  });
+}
 
-export { app, auth, googleProvider };
+export { app, auth, googleProvider, hasFirebaseConfig };

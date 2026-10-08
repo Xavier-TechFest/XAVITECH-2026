@@ -87,13 +87,6 @@ export default function Schedule() {
         </div>
 
         <ol ref={listRef} className="relative mt-10 max-w-xl sm:mt-14">
-          <div aria-hidden="true" className="absolute bottom-2 left-[3.3rem] top-2 w-px bg-line">
-            <div
-              ref={fillRef}
-              className="h-full origin-top bg-gradient-to-b from-circuit to-marigold shadow-[0_0_8px_rgba(53,224,201,0.6)]"
-              style={{ transform: "scaleY(0)" }}
-            />
-          </div>
           {schedule.map((item, i) => {
             const open = selected === i;
             return (

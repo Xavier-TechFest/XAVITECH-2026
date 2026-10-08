@@ -3,9 +3,10 @@ import Footer from "@/components/layout/Footer";
 import EventsDirectory from "@/components/sections/EventsDirectory";
 import CosmosBackdrop from "@/components/experience/CosmosBackdrop";
 import DataStreams from "@/components/effects/DataStreams";
+import { Suspense } from "react";
 
 export const metadata = {
-  title: "Track Directory — XAVITECH '26 | Xavier University Patna",
+  title: "Tracks & Events — XAVITECH '26 | Xavier University Patna",
   description:
     "Explore 15 futuristic technology arenas, hackathons, coding duels, esports, and MUNs at XAVITECH 2026.",
 };
@@ -19,7 +20,9 @@ export default function TracksPage() {
 
       <div className="relative z-10">
         <main>
-          <EventsDirectory />
+          <Suspense fallback={<div className="min-h-[60vh]" />}>
+            <EventsDirectory />
+          </Suspense>
         </main>
         <Footer />
       </div>

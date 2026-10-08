@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 
 const links = [
-  { label: "Tracks", href: "/tracks" },
-  { label: "Events", href: "/events" },
-  { label: "Schedule", href: "/#schedule" },
-  { label: "Results", href: "/results" },
-  { label: "About", href: "/#about" },
-  { label: "Committee", href: "/contact" },
+  { label: "HOME", href: "/" },
+  { label: "TRACKS & EVENTS", href: "/tracks" },
+  { label: "SCHEDULE", href: "/#schedule" },
+  { label: "RESULTS", href: "/results" },
+  { label: "ABOUT", href: "/#about" },
+  { label: "COMMITTEE", href: "/contact" },
 ];
 
 export default function Navbar() {
@@ -51,25 +51,14 @@ export default function Navbar() {
   return (
     <header className="fixed top-0 z-50 w-full border-b border-line/60 bg-bg/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
       <nav className="mx-auto flex max-w-6xl items-center justify-between pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] py-2 sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] md:py-4">
-        <Link
-          href="/"
-          onClick={goHome}
-          aria-label="XAVITECH — Xavier University, Patna — home"
-          className="flex items-center gap-2.5"
-        >
-          <img
-            src="/xavitech-logo-nav.webp"
-            alt="XAVITECH"
-            width={520}
-            height={178}
-            className="h-7 w-auto sm:h-8"
-          />
-
-          <span className="font-mono text-[9px] font-bold uppercase leading-tight tracking-[0.14em] text-white sm:text-[10px]">
-            <span className="block">Xavier University</span>
-            <span className="block text-center">|Patna|</span>
-          </span>
-        </Link>
+        <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
+          <a href="https://xup.ac.in/" target="_blank" rel="noopener noreferrer" aria-label="Xavier University, Patna — visit website" title="Xavier University, Patna" className="flex h-8 w-8 shrink-0 items-center justify-center sm:h-10 sm:w-10">
+            <img src="/university-logo.webp" alt="Xavier University crest" width={836} height={900} className="h-full w-full object-contain" />
+          </a>
+          <Link href="/" onClick={goHome} aria-label="XAVITECH — home" className="flex items-center">
+            <img src="/xavitech-logo-nav.webp" alt="XAVITECH" width={520} height={178} className="h-7 w-auto sm:h-8" />
+          </Link>
+        </div>
 
         <ul className="hidden items-center gap-8 md:flex">
           {links.map((link) => (
@@ -85,8 +74,7 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* Action buttons (Registration + Auth) */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden items-center gap-3 md:flex">
           <Link
             href="/registration"
             className="rounded-full bg-marigold px-5 py-2 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
@@ -165,7 +153,7 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
-            <li className="pt-3 flex flex-col gap-2.5">
+            <li className="flex flex-col gap-2.5 pt-3">
               <Link
                 href="/registration"
                 onClick={() => setOpen(false)}
@@ -174,7 +162,7 @@ export default function Navbar() {
                 Registration
               </Link>
               {loading ? (
-                <div className="h-12 w-full rounded-full bg-surface border border-line/50 animate-pulse" />
+                <div className="h-12 w-full animate-pulse rounded-full border border-line/50 bg-surface" />
               ) : isAuthenticated && user ? (
                 <Link
                   href="/profile"

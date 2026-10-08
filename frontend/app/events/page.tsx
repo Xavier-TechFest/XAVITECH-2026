@@ -1,28 +1,6 @@
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import EventsShowcase from "@/components/sections/EventsShowcase";
-import CosmosBackdrop from "@/components/experience/CosmosBackdrop";
-import DataStreams from "@/components/effects/DataStreams";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "Events Directory — XAVITECH '26 | Xavier University Patna",
-  description:
-    "Explore 15 futuristic technology arenas, hackathons, coding duels, esports, and MUNs at XAVITECH 2026.",
-};
-
+/** The event directory now lives under Tracks & Events. */
 export default function EventsPage() {
-  return (
-    <>
-      <CosmosBackdrop />
-      <DataStreams variant="edge" count={10} />
-      <Navbar />
-
-      <div className="relative z-10">
-        <main>
-          <EventsShowcase />
-        </main>
-        <Footer />
-      </div>
-    </>
-  );
+  redirect("/tracks");
 }
