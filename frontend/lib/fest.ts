@@ -82,19 +82,19 @@ export interface FestEvent {
 const card = (slug: string) => `/events/cards/${slug}.webp`;
 
 export const EVENTS: FestEvent[] = [
-  { name: "Innocraft", realName: "Hackathon", track: "hackathon", status: "Registration open", format: "Team of 4", image: card("innocraft") },
-  { name: "Debug Derby", realName: "Debugging Challenge", track: "coding", status: "Registration open", format: "Team of 2", image: card("debug-derby") },
-  { name: "WebWeave", realName: "Web Development Challenge", track: "coding", status: "Registration open", format: "Team of 3", image: card("webweave") },
-  { name: "VLookUp", realName: "Data Analytics", track: "coding", status: "Registration open", format: "Team of 2", image: card("vlookup") },
-  { name: "Runtime Rush", realName: "Code Sprint", track: "coding", status: "Registration open", format: "Team of 2", image: card("runtime-rush") },
-  { name: "BattleGround Blitz", realName: "BGMI Tournament", track: "gaming", status: "Registration open", format: "Team of 5", image: card("battleground-blitz") },
-  { name: "Cipher Chase", realName: "Tech Treasure Hunt", track: "gaming", status: "Registration open", format: "Team of 2", image: card("cipher-chase") },
-  { name: "VelocityX", realName: "Death Race", track: "gaming", status: "Opens soon", format: "Team of 2", image: card("velocityx") },
-  { name: "Circuit of Minds", realName: "Tech Quiz", track: "stage", status: "Registration open", format: "Team of 2", image: card("circuit-of-minds") },
-  { name: "Battle of Bots", realName: "AI Prompt Battle", track: "stage", status: "Registration open", format: "Team of 2", image: card("battle-of-bots") },
-  { name: "Unscripted Nations", realName: "Model United Nations (MUN)", track: "stage", status: "Registration open", format: "Team of 2", image: card("unscripted-nations") },
-  { name: "ThoughtLab", realName: "Ideathon", track: "stage", status: "Registration open", format: "Team of 2", image: card("thoughtlab") },
-  { name: "Hack the Skill", realName: "Skill Workshop", track: "workshops", status: "Registration open", format: "Individual" },
+  { name: "INNOCRAFT", realName: "Hackathon", track: "hackathon", status: "Registration open", format: "Team of 4", image: card("innocraft") },
+  { name: "DEBUG DERBY", realName: "Debugging Challenge", track: "coding", status: "Registration open", format: "Individual", image: card("debug-derby") },
+  { name: "WEBWEAVE", realName: "Web Development Challenge", track: "coding", status: "Registration open", format: "Team of 2", image: card("webweave") },
+  { name: "DATA ANALYTICS", realName: "Data Analytics Challenge", track: "coding", status: "Registration open", format: "Team of 2", image: card("vlookup") },
+  { name: "RUNTIME RUSH", realName: "Code Sprint", track: "coding", status: "Registration open", format: "Team of 1-2", image: card("runtime-rush") },
+  { name: "BATTLEFIELD BLITZ", realName: "BGMI Tournament", track: "gaming", status: "Registration open", format: "Team of 4-5", image: card("battleground-blitz") },
+  { name: "CIPHER CHASE", realName: "Tech Treasure Hunt", track: "gaming", status: "Registration open", format: "Team of 20-30", image: card("cipher-chase") },
+  { name: "DEATH RACE", realName: "Elimination Race", track: "gaming", status: "Registration open", format: "Team of 2-3", image: card("velocityx") },
+  { name: "TECH QUIZ", realName: "Tech Quiz", track: "stage", status: "Registration open", format: "Team of 2", image: card("circuit-of-minds") },
+  { name: "BATTLE OF BOTS", realName: "AI Prompt Battle", track: "stage", status: "Registration open", format: "Team of 1-3", image: card("battle-of-bots") },
+  { name: "MODEL UNITED NATIONS", realName: "Model United Nations (MUN)", track: "stage", status: "Registration open", format: "Individual", image: card("unscripted-nations") },
+  { name: "IDEATHON", realName: "Ideathon", track: "stage", status: "Registration open", format: "Team of 2-4", image: card("thoughtlab") },
+  { name: "HACK THE SKILLS", realName: "Skill Workshop", track: "workshops", status: "Registration open", format: "Team of 1-4" },
 ];
 
 export const trackById = (id: TrackId) => TRACKS.find((t) => t.id === id)!;

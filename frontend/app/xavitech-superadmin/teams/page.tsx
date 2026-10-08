@@ -13,6 +13,7 @@ export default function AdminTeamsPage() {
   const [appliedSearch, setAppliedSearch] = useState("");
   const [selectedEventId, setSelectedEventId] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedRegStatus, setSelectedRegStatus] = useState("");
   const [page, setPage] = useState(1);
   const limit = 15;
 
@@ -49,7 +50,8 @@ export default function AdminTeamsPage() {
         limit,
         search: appliedSearch,
         eventId: selectedEventId,
-        status: selectedStatus,
+        teamStatus: selectedStatus,
+        registrationStatus: selectedRegStatus,
       });
       setTeams(data.teams);
       setPagination(data.pagination);
@@ -59,7 +61,7 @@ export default function AdminTeamsPage() {
     } finally {
       setIsLoadingData(false);
     }
-  }, [getTeams, page, limit, appliedSearch, selectedEventId, selectedStatus]);
+  }, [getTeams, page, limit, appliedSearch, selectedEventId, selectedStatus, selectedRegStatus]);
 
   useEffect(() => {
     fetchTeams();
@@ -76,6 +78,7 @@ export default function AdminTeamsPage() {
     setAppliedSearch("");
     setSelectedEventId("");
     setSelectedStatus("");
+    setSelectedRegStatus("");
     setPage(1);
   };
 
@@ -120,7 +123,7 @@ export default function AdminTeamsPage() {
                 >
                   Search
                 </button>
-                {(appliedSearch || selectedEventId || selectedStatus) && (
+                {(appliedSearch || selectedEventId || selectedStatus || selectedRegStatus) && (
                   <button
                     type="button"
                     onClick={handleClearFilters}
@@ -133,7 +136,7 @@ export default function AdminTeamsPage() {
             </div>
 
             {/* Filters Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-neutral-800/80">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-neutral-800/80">
               {/* Event Filter */}
               <div>
                 <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1.5">
@@ -156,7 +159,7 @@ export default function AdminTeamsPage() {
                 </select>
               </div>
 
-              {/* Status Filter */}
+              {/* Team Status Filter */}
               <div>
                 <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1.5">
                   Team Status
@@ -169,9 +172,31 @@ export default function AdminTeamsPage() {
                   }}
                   className="w-full px-3 py-2 bg-[#131929] border border-neutral-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-[#35e0c9]"
                 >
-                  <option value="">All Statuses</option>
+                  <option value="">All Team Statuses</option>
                   <option value="DRAFT">DRAFT</option>
                   <option value="SUBMITTED">SUBMITTED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+              </div>
+
+              {/* Registration Status Filter */}
+              <div>
+                <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1.5">
+                  Registration Status
+                </label>
+                <select
+                  value={selectedRegStatus}
+                  onChange={(e) => {
+                    setSelectedRegStatus(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full px-3 py-2 bg-[#131929] border border-neutral-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-[#35e0c9]"
+                >
+                  <option value="">All Registration Statuses</option>
+                  <option value="CONFIRMED">CONFIRMED</option>
+                  <option value="PAYMENT_PENDING">PAYMENT_PENDING</option>
+                  <option value="PAYMENT_SUCCESS">PAYMENT_SUCCESS</option>
+                  <option value="DRAFT">DRAFT</option>
                   <option value="CANCELLED">CANCELLED</option>
                 </select>
               </div>
@@ -254,15 +279,30 @@ export default function AdminTeamsPage() {
                         </span>
                       </td>
                       <td className="py-4 px-4">
-                        {team.registration ? (
-                          <Link
-                            href={`/xavitech-superadmin/registrations/view?registrationId=${team.registration.registrationId}`}
-                            className="font-mono text-xs text-[#35e0c9] hover:underline font-semibold"
-                          >
-                            {team.registration.registrationId}
-                          </Link>
+                        {team.registration?.registrationId ? (
+                          <div className="flex flex-col gap-1 items-start">
+                            <Link
+                              href={`/xavitech-superadmin/registrations/view?registrationId=${team.registration.registrationId}`}
+                              className="font-mono text-xs text-[#35e0c9] hover:underline font-semibold"
+                            >
+                              {team.registration.registrationId}
+                            </Link>
+                            {team.registration.status && (
+                              <span
+                                className={`inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold rounded border uppercase ${
+                                  team.registration.status === "CONFIRMED" || team.registration.status === "PAYMENT_SUCCESS"
+                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                                    : team.registration.status === "CANCELLED" || team.registration.status === "PAYMENT_FAILED"
+                                    ? "bg-red-500/10 text-red-400 border-red-500/30"
+                                    : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                                }`}
+                              >
+                                {team.registration.status}
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <span className="text-neutral-500 font-mono text-[11px]">Unregistered draft</span>
+                          <span className="text-neutral-500 font-mono text-xs">—</span>
                         )}
                       </td>
                       <td className="py-4 px-4">
@@ -275,7 +315,7 @@ export default function AdminTeamsPage() {
                               : "bg-blue-500/10 text-blue-400 border-blue-500/30"
                           }`}
                         >
-                          {team.status}
+                          {team.status || "DRAFT"}
                         </span>
                       </td>
                       <td className="py-4 px-4 text-[11px] text-neutral-400 font-mono whitespace-nowrap">

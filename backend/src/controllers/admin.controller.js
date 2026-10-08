@@ -79,7 +79,7 @@ export const getRegistrationDetails = async (req, res, next) => {
  */
 export const listTeams = async (req, res, next) => {
   try {
-    const { page, limit, search, eventId, status } = req.query;
+    const { page, limit, search, eventId, status, teamStatus, registrationStatus } = req.query;
 
     const result = await adminRegistrationService.listTeams({
       page,
@@ -87,6 +87,8 @@ export const listTeams = async (req, res, next) => {
       search,
       eventId,
       status,
+      teamStatus,
+      registrationStatus,
     });
 
     return sendSuccess(res, 'Teams retrieved successfully', result, 200);

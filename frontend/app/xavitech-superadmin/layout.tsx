@@ -6,15 +6,35 @@ import { AdminProvider, useAdmin } from "@/context/AdminContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 
+function AdminAuthLoading() {
+  return (
+    <div className="min-h-screen bg-[#080b11] flex flex-col items-center justify-center p-4 selection:bg-[#35e0c9]/30">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-neutral-800 border-t-[#35e0c9] animate-spin" />
+        <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-neutral-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#35e0c9] animate-pulse" />
+          <span>Verifying Admin Authorization...</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLoginPage = pathname === "/xavitech-superadmin";
+  const normalizedPath = pathname?.replace(/\/$/, "") || "";
+  const isLoginPage = normalizedPath === "/xavitech-superadmin";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isSidebarCollapsed, theme } = useAdmin();
+  const { admin, isLoadingAdmin, isSidebarCollapsed, theme } = useAdmin();
 
   // If on login page, render children directly without admin layout chrome
   if (isLoginPage) {
     return <>{children}</>;
+  }
+
+  // Guard protected routes: prevent unauthenticated flash of Sidebar, Header, or page content
+  if (isLoadingAdmin || !admin) {
+    return <AdminAuthLoading />;
   }
 
   return (
