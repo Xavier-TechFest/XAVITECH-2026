@@ -1,6 +1,21 @@
 import { getSupabaseClient } from '../config/database.js';
 
 /**
+ * Canonical alias map for alternative/display slugs to primary database slugs.
+ */
+export const EVENT_SLUG_ALIASES = {
+  'tech-quiz': 'circuit-of-minds',
+  'data-analytics': 'vlookup',
+  'model-united-nations': 'unscripted-nations',
+  'mun': 'unscripted-nations',
+  'ideathon': 'thoughtlab',
+  'battlefield-blitz': 'loot-goblins',
+  'bgmi': 'loot-goblins',
+  'death-race': 'velocityx',
+  'hack-the-skills': 'hack-the-skill',
+};
+
+/**
  * Event Model / Data Access Layer
  * Encapsulates all PostgreSQL / Supabase queries for the `events` table.
  */
@@ -178,8 +193,9 @@ export const EventModel = {
 
   /**
    * Find an event by its unique URL slug.
+   * Supports canonical database slugs as well as common display aliases.
    *
-   * @param {string} slug - Event unique slug
+   * @param {string} slug - Event unique slug or alias
    * @returns {Promise<Object|null>}
    */
   getEventBySlug: async (slug) => {
@@ -188,10 +204,13 @@ export const EventModel = {
       throw new Error('Database client is not available');
     }
 
+    const normalizedSlug = (slug || '').trim().toLowerCase().replace(/\u0430/g, 'a');
+    const targetSlug = EVENT_SLUG_ALIASES[normalizedSlug] || normalizedSlug;
+
     const { data, error } = await client
       .from('events')
       .select('*, tracks(id, name, slug)')
-      .eq('slug', slug)
+      .eq('slug', targetSlug)
       .maybeSingle();
 
     if (error) {
