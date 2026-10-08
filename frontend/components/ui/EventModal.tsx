@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EventItem } from "@/lib/eventsData";
 import Link from "next/link";
+import EventExploreSections from "@/components/sections/EventExploreSections";
 
 interface EventModalProps {
   event: EventItem | null;
@@ -138,12 +139,13 @@ export default function EventModal({ event, onClose }: EventModalProps) {
 
           {event.eligibility?.length ? <ContentList title="Eligibility" items={event.eligibility} /> : null}
           {event.registrationInfo?.length ? <ContentList title="Registration" items={event.registrationInfo} /> : null}
-          {event.requirements?.length ? <ContentList title="Requirements" items={event.requirements} /> : null}
+          {!event.exploreSections?.length && event.requirements?.length ? <ContentList title="Requirements" items={event.requirements} /> : null}
+          {event.exploreSections?.length ? <EventExploreSections sections={event.exploreSections} /> : null}
 
           {event.registrationConfig?.coordinator && <div className="mt-6 border-t border-line pt-5"><h3 className="font-oxanium text-xs font-bold uppercase tracking-wider text-circuit">Event Contact</h3><Contact name={event.registrationConfig.coordinator.name} role="Event Coordinator" email={event.registrationConfig.coordinator.email} phone={event.registrationConfig.coordinator.phone}/>{event.registrationConfig.coordinator.coCoordinator && <Contact name={event.registrationConfig.coordinator.coCoordinator} role="Co-Coordinator"/>}</div>}
 
           {/* Protocol & Rules */}
-          {event.rules && event.rules.length > 0 && (
+          {!event.exploreSections?.length && event.rules && event.rules.length > 0 && (
             <div className="mt-6">
               <h3 className="font-oxanium text-xs font-bold uppercase tracking-wider text-marigold flex items-center gap-2">
                 <svg className="h-4 w-4 text-marigold" fill="none" viewBox="0 0 24 24" stroke="currentColor">

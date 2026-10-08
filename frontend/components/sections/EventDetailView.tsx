@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar, Clock, Download, MapPin, Users, ChevronLeft } from "lucide-react";
 import { EventItem, TRACKS } from "@/lib/eventsData";
 import { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
+import EventExploreSections from "@/components/sections/EventExploreSections";
 
 export default function EventDetailView({ event }: { event: EventItem }) {
   const track = TRACKS.find((item) => item.id === event.trackId);
@@ -18,7 +19,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
     { label: "Registration Deadline", value: config?.deadline ?? "TBA" },
   ];
   const downloadBrochure = () => {
-    const text = [`XAVITECH 2026 — ${event.name}`, `Category: ${track?.name ?? event.trackName}`, ...facts.map((fact) => `${fact.label}: ${fact.value}`), "", event.fullDesc, ...[...(event.eligibility ?? []), ...(event.highlights ?? []), ...(event.registrationInfo ?? []), ...(event.requirements ?? []), ...(event.rules ?? [])].map((item) => `• ${item}`)].join("\n");
+    const text = [`XAVITECH 2026 — ${event.name}`, `Category: ${track?.name ?? event.trackName}`, ...facts.map((fact) => `${fact.label}: ${fact.value}`), "", event.fullDesc, ...[...(event.eligibility ?? []), ...(event.highlights ?? []), ...(event.registrationInfo ?? []), ...(event.requirements ?? []), ...(event.rules ?? []), ...(event.exploreSections ?? []).flatMap((section) => [`${section.title}:`, ...section.items])].map((item) => `• ${item}`)].join("\n");
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
     const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${event.id}-xavitech-2026.txt`; anchor.click(); URL.revokeObjectURL(url);
   };
@@ -41,8 +42,9 @@ export default function EventDetailView({ event }: { event: EventItem }) {
         </section>}
         <InfoList title="Eligibility" items={event.eligibility ?? []} />
         <InfoList title="Registration" items={event.registrationInfo ?? []} />
-        <InfoList title="Requirements" items={event.requirements ?? []} />
-        <InfoList title="Rules" items={event.rules} />
+        {!event.exploreSections?.length && <InfoList title="Requirements" items={event.requirements ?? []} />}
+        {!event.exploreSections?.length && <InfoList title="Rules" items={event.rules} />}
+        {event.exploreSections?.length ? <EventExploreSections sections={event.exploreSections} /> : null}
         {config?.coordinator && <section className="mt-10 rounded border border-white/10 bg-white/[.03] p-5">
           <h2 className="font-space font-bold text-white">Event Contact</h2>
           <Contact name={config.coordinator.name} role="Event Coordinator" email={config.coordinator.email} phone={config.coordinator.phone} />

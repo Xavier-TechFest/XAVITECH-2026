@@ -43,6 +43,12 @@ export interface PrizeBreakdown {
   note?: string;
 }
 
+/** Reader-friendly sections for long event briefs shown in Explore. */
+export interface EventExploreSection {
+  title: string;
+  items: string[];
+}
+
 /**
  * Event-specific registration policy and workflow rules.
  */
@@ -168,6 +174,7 @@ export interface EventItem {
   requirements?: string[];
   prizeBreakdown?: PrizeBreakdown;
   documents?: DocumentRequirement[];
+  exploreSections?: EventExploreSection[];
 }
 
 /**
@@ -1620,29 +1627,45 @@ export const EVENTS: EventItem[] = [
     badgeLevel: "Advanced",
     trackId: "track-c",
     trackName: "TRACK C — GAMING & ADVENTURE",
-    shortDesc: "A team-based Death Race competition.",
-    fullDesc: "Death Race is a team-based competition for teams of 2–3 members, with a registration fee of ₹700 per team.",
-    date: "TBA",
-    time: "TBA",
+    shortDesc: "Build and pilot a robot through a timed obstacle course.",
+    fullDesc: "Build. Pilot. Survive the Track. Death Race is a robotic obstacle racing challenge where teams guide their custom-built robots through a single modular course featuring rough terrain, a shallow water pit, a steep ramp, and more.",
+    date: "31 October 2026",
+    time: "9:00 AM–12:00 PM (proposed schedule)",
     prize: "To Be Announced",
     price: "₹700 per team",
-    team: "2–3 members",
-    venue: "TBA",
+    team: "2–4 members",
+    venue: "Track C Area (courtyard / De Nobili Hall; final venue TBA)",
     accentColor: "#60a5fa",
     glowColor: "rgba(96,165,250,.2)",
     borderColor: "rgba(96,165,250,.4)",
     image: "/images/events/event-08.jpeg",
-    highlights: [],
-    rules: [],
+    highlights: [
+      "One 20–30 m modular course with five obstacle zones.",
+      "₹700 per team · 2–4 members · beginner to intermediate.",
+      "Time-trial qualifiers lead into knockout heats and a championship final.",
+    ],
+    rules: [
+      "Pilots must stand behind the marked control barrier and operate by remote control or approved onboard automation.",
+      "Do not touch the robot after a run begins. A pilot may request one manual reset if the robot is trapped; a 15-second penalty applies.",
+      "Runs have a five-minute time limit. An unfinished run is recorded as incomplete.",
+      "Interfering with marshals, timing equipment, or another lane results in disqualification.",
+      "Robots must not use weapons, sharp exposed edges, liquid sprays, combustion engines, flames, or untethered projectiles.",
+      "Robots must have a clearly marked master power cutoff and a securely fastened battery enclosure. Unsafe operation or fire risk results in disqualification.",
+    ],
     registrationInfo: [
       "Team name and team leader are required.",
-      "The team leader submits one registration for the team and enters the other members during registration. Separate member registrations are not allowed.",
-      "Teams must have 2–3 participants.",
+      "One team member registers the whole team. Enter all 2–4 team members during registration; duplicate registrations are not allowed.",
+      "Registration costs ₹700 per team.",
     ],
     requirements: [
-      "Each member must provide full name, college/university, mobile number, and student ID/roll number.",
-      "Each member must upload a valid college ID card and verify email/mobile.",
-      "Department/course is not required; year/semester, email, profile photo, and city are optional.",
+      "Bring a custom-built, terrestrial robot no larger than 30 cm long × 30 cm wide × 30 cm high. Target weight is 4–5 kg maximum.",
+      "Robots must use onboard rechargeable batteries only (LiPo, NiMH, or sealed lead-acid), at no more than 24 V.",
+      "Manual wired, manual wireless (RF, Bluetooth, Wi-Fi), or fully autonomous control is allowed.",
+      "Each member provides their name, institution, mobile number, and student ID/roll number; each uploads a valid college ID and verifies email/mobile.",
+    ],
+    eligibility: [
+      "Designed for engineering students, robotics enthusiasts, and student clubs. Spectators are welcome to watch from the designated area.",
+      "Each competing team must register 2–4 members and bring a robot that passes the safety and technical inspection.",
     ],
     prizeBreakdown: {
       total: "To Be Announced",
@@ -1663,10 +1686,83 @@ export const EVENTS: EventItem[] = [
         accept: "image/*",
       },
     ],
+    exploreSections: [
+      {
+        title: "Challenge and goals",
+        items: [
+          "A practical engineering challenge focused on obstacle navigation, durability, and precise piloting—not destructive robot combat.",
+          "Teams apply mechanical design, motor control, power distribution, rapid troubleshooting, and resource-conscious building under race conditions.",
+          "The course is designed to create an exciting spectator event while keeping safety requirements and setup costs manageable.",
+        ],
+      },
+      {
+        title: "How the race works",
+        items: [
+          "The event uses one continuous 20–30 m modular track, arranged in a line or U shape.",
+          "Qualifiers: each team makes a solo timed run. The clock starts at the green light; penalties are added to the run time.",
+          "Knockouts: qualifying teams advance to elimination heats. Two robots may race in parallel if the track is wide enough; otherwise teams take back-to-back runs under the same conditions.",
+          "Final: the top teams compete for final placement. The proposal describes a two-lap endurance run and lists both top-eight/top-sixteen qualifiers and smaller top-four/top-two finals; the final bracket will be confirmed by organisers.",
+          "Ranking considers course completion, total time, and penalties. The proposal estimates 10–25 teams; its sections give different estimates, so the final capacity is to be confirmed.",
+        ],
+      },
+      {
+        title: "The five course zones",
+        items: [
+          "1 · Start signal: wait for the green light. A false start adds 5 seconds.",
+          "2 · Zig-zag terrain: steer through bends, cleats, sand, gravel, and small tyres without leaving the track.",
+          "3 · Water pit: cross a lined tray with water no deeper than 3 cm. Protect electronics and maintain traction.",
+          "4 · Incline: climb and descend a 30° ramp with a high-grip surface without slipping, rolling back, or tipping.",
+          "5 · Endurance finish: cross staggered blocks and a low rope set 1–2 cm above the ground, then reach the timing checkpoint.",
+        ],
+      },
+      {
+        title: "Robot specifications and safety",
+        items: [
+          "Maximum footprint: 30 cm × 30 cm; maximum height: 30 cm. The proposal gives a target maximum weight range of 4–5 kg; organisers should confirm the final limit at inspection.",
+          "Onboard rechargeable battery only (LiPo, NiMH, or sealed lead-acid); maximum voltage 24 V. Wired, wireless, or autonomous control is allowed.",
+          "No combat or destructive mechanisms, including wedges, spinners, or saws. No exposed sharp edges, untaped glass or hard acrylic corners, sprays, flames, combustion engines, or untethered projectiles.",
+          "A marked master cutoff switch and securely strapped battery enclosure are mandatory. Electrical isolation and waterproofing are important for the water zone.",
+          "Operators remain behind control barriers. No touching the robot after the start except a requested manual reset (15-second penalty). Each run is limited to five minutes.",
+        ],
+      },
+      {
+        title: "Penalties and scoring",
+        items: [
+          "Finish the full course to qualify for the top rankings; fastest raw time is the baseline.",
+          "False start: +5 seconds. Track boundary violation: +5 seconds.",
+          "Stalling: +5 seconds for each five-second interval. Skipping an obstacle: +20 seconds.",
+          "Manual reset: +15 seconds. Unsafe operation or fire risk: immediate disqualification.",
+          "Intentional interference with marshals, sensors, or opposing lanes: disqualification.",
+        ],
+      },
+      {
+        title: "Proposed schedule and venue",
+        items: [
+          "9:00 AM · Registration and robot technical inspection (scrutineering).",
+          "9:30 AM · Track orientation and pilot rules briefing.",
+          "9:45 AM · Solo qualifying time trials.",
+          "11:00 AM · Leaderboard announcement and pit break.",
+          "11:15 AM · Knockout heats; 11:45 AM · Grand final; 12:00 PM · Results and winner announcement.",
+          "Planned for 2–3 hours on 31 October 2026. Proposed location: an outdoor covered courtyard or De Nobili Hall floor in the Track C area; final venue confirmation is pending.",
+        ],
+      },
+      {
+        title: "Event setup and operations",
+        items: [
+          "The reusable course may use plywood, timber, PVC pipes, rubber sheets, tarpaulin, used tyres, sand, and wooden frames. The proposal estimates three hours to assemble and under 1.5 hours to dismantle.",
+          "Timing and control equipment: red/green light controller, stopwatch or infrared timing gate, and public-address speaker. Pit area: workbenches, extension boards, and a battery-charging mat.",
+          "Seven volunteers are proposed: two track marshals, one light/timing controller, one safety controller, two registration/pit managers, and one crowd manager.",
+          "Estimated setup budget: track framework ₹3,000–₹4,000; ramp ₹500–₹1,200; water tray ₹200–₹400; terrain items ₹300–₹400; contingency and supplies ₹1,000–₹1,500. Total estimate: ₹5,000–₹7,500.",
+          "Sponsor opportunities include branding on track barriers, naming an obstacle, logo placement on certificates and banners, and sponsoring winner prizes.",
+          "The organisers aim to create a lively Track C event and reuse the modular track components at future university festivals.",
+          "Coordinators named in the proposal: Jai Vardhan and Ayush Kumar; Track C leader: Bittu Raj.",
+        ],
+      },
+    ],
     registrationConfig: {
       eventFormat: "team",
       minTeamSize: 2,
-      maxTeamSize: 3,
+      maxTeamSize: 4,
       feeAmount: 700,
       feeBasis: "per_team",
       feeDisplay: "₹700 per team",
@@ -1680,7 +1776,7 @@ export const EVENTS: EventItem[] = [
         name: "Jai Vardhan",
         phone: "7856802097",
         email: "jaivardhan27062007@gmail.com",
-        coCoordinator: "Kaushik",
+        coCoordinator: "Ayush Kumar",
       },
       declarations: deathRaceDeclarations,
       documents: [

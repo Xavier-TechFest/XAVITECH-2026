@@ -89,7 +89,7 @@ export const EVENTS: FestEvent[] = [
   { name: "Runtime Rush", realName: "Code Sprint", track: "coding", status: "Registration open", format: "Team of 2", image: card("runtime-rush") },
   { name: "BattleGround Blitz", realName: "BGMI Tournament", track: "gaming", status: "Registration open", format: "4–5 members · ₹200 each", image: card("battleground-blitz") },
   { name: "Cipher Chase", realName: "Tech Treasure Hunt", track: "gaming", status: "Registration open", format: "4 members · ₹400 per team", image: card("cipher-chase") },
-  { name: "VelocityX", realName: "Death Race", track: "gaming", status: "Opens soon", format: "2–3 members · ₹700 per team", image: card("velocityx") },
+  { name: "VelocityX", realName: "Death Race", track: "gaming", status: "Opens soon", format: "2–4 members · ₹700 per team", image: card("velocityx") },
   { name: "Circuit of Minds", realName: "Tech Quiz", track: "stage", status: "Registration open", format: "2 members · ₹300 per team", image: card("circuit-of-minds") },
   { name: "Battle of Bots", realName: "AI Prompt Battle", track: "stage", status: "Registration open", format: "Team of 2", image: card("battle-of-bots") },
   { name: "Unscripted Nations", realName: "Model United Nations (MUN)", track: "stage", status: "Registration open", format: "Individual · ₹500 per delegate", image: card("unscripted-nations") },

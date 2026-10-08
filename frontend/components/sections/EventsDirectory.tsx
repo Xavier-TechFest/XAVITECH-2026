@@ -36,7 +36,10 @@ export default function EventsDirectory() {
           e.shortDesc.toLowerCase().includes(q) ||
           e.trackName.toLowerCase().includes(q) ||
           e.venue.toLowerCase().includes(q) ||
-          e.badge.toLowerCase().includes(q);
+          e.badge.toLowerCase().includes(q) ||
+          (e.exploreSections ?? []).some((section) =>
+            `${section.title} ${section.items.join(" ")}`.toLowerCase().includes(q)
+          );
 
         return matchesTrack && matchesSearch;
       });
