@@ -9,6 +9,8 @@ import {
   adminUpdateEventRegistrationSettings,
   EventRegistrationStatus,
 } from "@/lib/api";
+import ModalPortal from "@/components/ui/ModalPortal";
+import { useAdmin } from "@/context/AdminContext";
 
 function formatIST(dateStr: string | null | undefined): string {
   if (!dateStr) return "Not configured";
@@ -77,6 +79,9 @@ function computeDerivedPreview(params: {
 let eventsCache: AdminEventItem[] | null = null;
 
 export default function AdminEventsManagementPage() {
+  const { theme = "dark" } = useAdmin();
+  const isLight = theme === "light";
+
   const [events, setEvents] = useState<AdminEventItem[]>(eventsCache || []);
   const [isLoading, setIsLoading] = useState(!eventsCache);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -360,36 +365,86 @@ export default function AdminEventsManagementPage() {
     switch (status) {
       case "OPEN":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider border ${
+              isLight
+                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isLight ? "bg-emerald-600" : "bg-emerald-400"
+              } animate-pulse`}
+            />
             OPEN
           </span>
         );
       case "COMING_SOON":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider border ${
+              isLight
+                ? "bg-teal-50 text-teal-800 border-teal-200"
+                : "bg-cyan-500/15 text-cyan-400 border-cyan-500/30"
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isLight ? "bg-teal-600" : "bg-cyan-400"
+              }`}
+            />
             COMING SOON
           </span>
         );
       case "FULL":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider border ${
+              isLight
+                ? "bg-amber-50 text-amber-800 border-amber-200"
+                : "bg-amber-500/15 text-amber-400 border-amber-500/30"
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isLight ? "bg-amber-600" : "bg-amber-400"
+              }`}
+            />
             FULL
           </span>
         );
       case "CLOSED":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider bg-rose-500/15 text-rose-400 border border-rose-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider border ${
+              isLight
+                ? "bg-rose-50 text-rose-800 border-rose-200"
+                : "bg-rose-500/15 text-rose-400 border-rose-500/30"
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isLight ? "bg-rose-600" : "bg-rose-400"
+              }`}
+            />
             CLOSED
           </span>
         );
       case "DISABLED":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider bg-neutral-800 text-neutral-400 border border-neutral-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-neutral-500" />
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider border ${
+              isLight
+                ? "bg-slate-100 text-slate-700 border-slate-300"
+                : "bg-neutral-800 text-neutral-400 border-neutral-700"
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isLight ? "bg-slate-500" : "bg-neutral-500"
+              }`}
+            />
             DISABLED
           </span>
         );
@@ -749,239 +804,379 @@ export default function AdminEventsManagementPage() {
 
       {/* 5. Manage Registration Modal */}
       {isModalOpen && selectedEvent && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto"
-          onClick={handleCloseModal}
-        >
+        <ModalPortal onClose={handleCloseModal}>
           <div
-            className="w-full max-w-xl rounded-2xl bg-[#0e131f] border border-neutral-800 p-6 shadow-2xl space-y-5 my-8"
+            className={`fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-3 sm:p-4 overflow-y-auto ${
+              isLight ? "admin-theme-light" : "admin-theme-dark"
+            }`}
+            data-admin-theme={theme}
             role="dialog"
             aria-modal="true"
-            onClick={(e) => e.stopPropagation()}
+            aria-labelledby="manage-modal-title"
           >
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
-              <div>
-                <div className="text-[10px] font-mono text-[#35e0c9] uppercase tracking-wider">
-                  Registration Settings
-                </div>
-                <h2 className="text-lg font-bold font-space text-white uppercase mt-0.5">
-                  {selectedEvent.name}
-                </h2>
-                <div className="text-xs font-mono text-neutral-400 mt-0.5">
-                  Track: {selectedEvent.track?.name || "General"} · Current registrations:{" "}
-                  <strong className="text-white">{selectedEvent.registeredCount}</strong>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleCloseModal}
-                disabled={isSubmitting}
-                className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition cursor-pointer"
+            {/* Full-Screen Backdrop Overlay covering entire viewport */}
+            <div
+              className="fixed inset-0 w-screen h-screen bg-black/80 backdrop-blur-md transition-opacity"
+              aria-hidden="true"
+              onClick={handleCloseModal}
+            />
+
+            {/* Modal Dialog Card */}
+            <div
+              className={`relative z-10 w-full max-w-xl max-h-[92vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden my-auto transition-all ${
+                isLight
+                  ? "bg-white border-slate-200 text-slate-900 shadow-slate-900/20"
+                  : "bg-[#0e131f] border-neutral-800 text-white shadow-black/80"
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div
+                className={`p-5 sm:p-6 border-b shrink-0 flex items-start justify-between gap-4 ${
+                  isLight ? "border-slate-200 bg-slate-50/80" : "border-neutral-800 bg-[#0e1422]/90"
+                }`}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Status Live Preview Box */}
-            <div className="p-3 rounded-xl bg-neutral-900/80 border border-neutral-800 flex items-center justify-between">
-              <span className="text-xs font-mono text-neutral-400">
-                Effective Derived Registration Status:
-              </span>
-              <div>{renderStatusBadge(liveModalPreviewStatus)}</div>
-            </div>
-
-            {/* Error & Success Banners */}
-            {modalError && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-xs">
-                {modalError}
-              </div>
-            )}
-            {modalSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs">
-                {modalSuccess}
-              </div>
-            )}
-
-            {/* Modal Form */}
-            <form onSubmit={handleSaveSettings} className="space-y-4">
-              {/* Master Registration Switch */}
-              <div className="p-3.5 rounded-xl bg-neutral-900/50 border border-neutral-800 flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-mono font-bold text-white block">
-                    Registration Master Switch
-                  </label>
-                  <span className="text-[11px] font-mono text-neutral-400 block mt-0.5">
-                    {formRegistrationOpen
-                      ? "Registrations are allowed according to window & capacity schedule."
-                      : "Registrations are immediately CLOSED (overrides date window)."}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFormRegistrationOpen(!formRegistrationOpen)}
-                  className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer ${
-                    formRegistrationOpen ? "bg-[#35e0c9] justify-end" : "bg-neutral-700 justify-start"
-                  }`}
-                >
-                  <div className="bg-black w-4 h-4 rounded-full shadow-md" />
-                </button>
-              </div>
-
-              {/* Event Active Switch */}
-              <div className="p-3.5 rounded-xl bg-neutral-900/50 border border-neutral-800 flex items-center justify-between">
-                <div>
-                  <label className="text-xs font-mono font-bold text-white block">
-                    Event Active Status
-                  </label>
-                  <span className="text-[11px] font-mono text-neutral-400 block mt-0.5">
-                    {formIsActive
-                      ? "Event is visible and active on the festival platform."
-                      : "Event is DISABLED administratively."}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFormIsActive(!formIsActive)}
-                  className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer ${
-                    formIsActive ? "bg-emerald-500 justify-end" : "bg-neutral-700 justify-start"
-                  }`}
-                >
-                  <div className="bg-black w-4 h-4 rounded-full shadow-md" />
-                </button>
-              </div>
-
-              {/* Capacity Controls */}
-              <div className="p-3.5 rounded-xl bg-neutral-900/50 border border-neutral-800 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-mono font-bold text-white">
-                    Maximum Capacity
-                  </label>
-                  <label className="flex items-center gap-2 text-xs font-mono text-neutral-400 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formCapacityUnlimited}
-                      onChange={(e) => {
-                        setFormCapacityUnlimited(e.target.checked);
-                        if (e.target.checked) setFormCapacityValue("");
-                        else setFormCapacityValue(String(Math.max(selectedEvent.registeredCount, 50)));
-                      }}
-                      className="rounded border-neutral-700 text-[#35e0c9] focus:ring-0"
-                    />
-                    <span>Unlimited Capacity</span>
-                  </label>
-                </div>
-
-                {!formCapacityUnlimited && (
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min={selectedEvent.registeredCount}
-                        value={formCapacityValue}
-                        onChange={(e) => setFormCapacityValue(e.target.value)}
-                        placeholder="e.g. 50"
-                        className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-[#35e0c9]"
-                      />
-                      <span className="text-xs font-mono text-neutral-400 shrink-0">slots</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-neutral-500 block">
-                      Must be at least {selectedEvent.registeredCount} (current active registrations).
-                    </span>
+                  <div
+                    className={`text-[10px] font-mono uppercase tracking-wider font-bold ${
+                      isLight ? "text-teal-700" : "text-[#35e0c9]"
+                    }`}
+                  >
+                    Registration Settings
                   </div>
-                )}
-              </div>
-
-              {/* Window Controls: Start & End */}
-              <div className="p-3.5 rounded-xl bg-neutral-900/50 border border-neutral-800 space-y-3">
-                <div className="text-xs font-mono font-bold text-white">
-                  Registration Window Schedule (IST)
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Start Date */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-mono text-neutral-400 uppercase">
-                        Opening Date & Time
-                      </label>
-                      {formStartAtLocal && (
-                        <button
-                          type="button"
-                          onClick={() => setFormStartAtLocal("")}
-                          className="text-[10px] font-mono text-cyan-400 hover:underline"
-                        >
-                          Clear (Immediate)
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      type="datetime-local"
-                      value={formStartAtLocal}
-                      onChange={(e) => setFormStartAtLocal(e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-[#35e0c9]"
-                    />
-                  </div>
-
-                  {/* End Date */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-mono text-neutral-400 uppercase">
-                        Closing Date & Time
-                      </label>
-                      {formEndAtLocal && (
-                        <button
-                          type="button"
-                          onClick={() => setFormEndAtLocal("")}
-                          className="text-[10px] font-mono text-cyan-400 hover:underline"
-                        >
-                          Clear (Indefinite)
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      type="datetime-local"
-                      value={formEndAtLocal}
-                      onChange={(e) => setFormEndAtLocal(e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-[#35e0c9]"
-                    />
+                  <h2
+                    id="manage-modal-title"
+                    className={`text-lg sm:text-xl font-bold font-space uppercase mt-0.5 tracking-tight ${
+                      isLight ? "text-slate-900" : "text-white"
+                    }`}
+                  >
+                    {selectedEvent.name}
+                  </h2>
+                  <div
+                    className={`text-xs font-mono mt-0.5 ${
+                      isLight ? "text-slate-600" : "text-neutral-400"
+                    }`}
+                  >
+                    Track: <span className={isLight ? "text-slate-800 font-semibold" : "text-neutral-200"}>{selectedEvent.track?.name || "General"}</span> · Current registrations:{" "}
+                    <strong className={isLight ? "text-slate-900 font-bold" : "text-white"}>
+                      {selectedEvent.registeredCount}
+                    </strong>
                   </div>
                 </div>
-              </div>
-
-              {/* Modal Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-800">
                 <button
                   type="button"
                   onClick={handleCloseModal}
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-mono uppercase tracking-wider transition cursor-pointer disabled:opacity-50"
+                  aria-label="Close modal"
+                  className={`p-1.5 rounded-xl border transition cursor-pointer disabled:opacity-50 ${
+                    isLight
+                      ? "bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-600 hover:text-slate-900"
+                      : "bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-neutral-400 hover:text-white"
+                  }`}
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-[#35e0c9] hover:bg-[#35e0c9]/90 text-black text-xs font-mono font-bold uppercase tracking-wider transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                      </svg>
-                      <span>SAVING...</span>
-                    </>
-                  ) : (
-                    <span>SAVE SETTINGS</span>
-                  )}
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
-            </form>
+
+              {/* Modal Form */}
+              <form onSubmit={handleSaveSettings} className="flex-1 flex flex-col min-h-0">
+                {/* Scrollable Form Body */}
+                <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+                  {/* Status Live Preview Box */}
+                  <div
+                    className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
+                      isLight
+                        ? "bg-slate-50 border-slate-200 text-slate-700"
+                        : "bg-neutral-900/80 border-neutral-800 text-neutral-300"
+                    }`}
+                  >
+                    <span className={`text-xs font-mono font-medium ${isLight ? "text-slate-700" : "text-neutral-300"}`}>
+                      Effective Derived Registration Status:
+                    </span>
+                    <div>{renderStatusBadge(liveModalPreviewStatus)}</div>
+                  </div>
+
+                  {/* Error & Success Banners */}
+                  {modalError && (
+                    <div
+                      className={`p-3.5 rounded-xl border font-mono text-xs ${
+                        isLight
+                          ? "bg-rose-50 border-rose-200 text-rose-800"
+                          : "bg-red-500/10 border-red-500/30 text-red-400"
+                      }`}
+                    >
+                      {modalError}
+                    </div>
+                  )}
+                  {modalSuccess && (
+                    <div
+                      className={`p-3.5 rounded-xl border font-mono text-xs ${
+                        isLight
+                          ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                          : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                      }`}
+                    >
+                      {modalSuccess}
+                    </div>
+                  )}
+
+                  {/* Master Registration Switch */}
+                  <div
+                    className={`p-3.5 sm:p-4 rounded-xl border flex items-center justify-between gap-4 ${
+                      isLight ? "bg-slate-50 border-slate-200" : "bg-neutral-900/50 border-neutral-800"
+                    }`}
+                  >
+                    <div>
+                      <label className={`text-xs font-mono font-bold block ${isLight ? "text-slate-900" : "text-white"}`}>
+                        Registration Master Switch
+                      </label>
+                      <span className={`text-[11px] font-mono block mt-0.5 ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
+                        {formRegistrationOpen
+                          ? "Registrations are allowed according to window & capacity schedule."
+                          : "Registrations are immediately CLOSED (overrides date window)."}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormRegistrationOpen(!formRegistrationOpen)}
+                      aria-label="Toggle Registration Master Switch"
+                      className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                        formRegistrationOpen
+                          ? isLight
+                            ? "bg-teal-600 justify-end"
+                            : "bg-[#35e0c9] justify-end"
+                          : isLight
+                          ? "bg-slate-300 justify-start"
+                          : "bg-neutral-700 justify-start"
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-full shadow-md ${isLight ? "bg-white" : "bg-black"}`} />
+                    </button>
+                  </div>
+
+                  {/* Event Active Switch */}
+                  <div
+                    className={`p-3.5 sm:p-4 rounded-xl border flex items-center justify-between gap-4 ${
+                      isLight ? "bg-slate-50 border-slate-200" : "bg-neutral-900/50 border-neutral-800"
+                    }`}
+                  >
+                    <div>
+                      <label className={`text-xs font-mono font-bold block ${isLight ? "text-slate-900" : "text-white"}`}>
+                        Event Active Status
+                      </label>
+                      <span className={`text-[11px] font-mono block mt-0.5 ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
+                        {formIsActive
+                          ? "Event is visible and active on the festival platform."
+                          : "Event is DISABLED administratively."}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormIsActive(!formIsActive)}
+                      aria-label="Toggle Event Active Status"
+                      className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                        formIsActive
+                          ? isLight
+                            ? "bg-emerald-600 justify-end"
+                            : "bg-emerald-500 justify-end"
+                          : isLight
+                          ? "bg-slate-300 justify-start"
+                          : "bg-neutral-700 justify-start"
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-full shadow-md ${isLight ? "bg-white" : "bg-black"}`} />
+                    </button>
+                  </div>
+
+                  {/* Capacity Controls */}
+                  <div
+                    className={`p-3.5 sm:p-4 rounded-xl border space-y-2.5 ${
+                      isLight ? "bg-slate-50 border-slate-200" : "bg-neutral-900/50 border-neutral-800"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <label className={`text-xs font-mono font-bold ${isLight ? "text-slate-900" : "text-white"}`}>
+                        Maximum Capacity
+                      </label>
+                      <label
+                        className={`flex items-center gap-2 text-xs font-mono cursor-pointer ${
+                          isLight ? "text-slate-700" : "text-neutral-300"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formCapacityUnlimited}
+                          onChange={(e) => {
+                            setFormCapacityUnlimited(e.target.checked);
+                            if (e.target.checked) setFormCapacityValue("");
+                            else setFormCapacityValue(String(Math.max(selectedEvent.registeredCount, 50)));
+                          }}
+                          className={`w-4 h-4 rounded cursor-pointer ${
+                            isLight
+                              ? "border-slate-300 text-teal-600 focus:ring-teal-500"
+                              : "border-neutral-700 text-[#35e0c9] focus:ring-0 bg-neutral-900"
+                          }`}
+                        />
+                        <span>Unlimited Capacity</span>
+                      </label>
+                    </div>
+
+                    {!formCapacityUnlimited && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min={selectedEvent.registeredCount}
+                            value={formCapacityValue}
+                            onChange={(e) => setFormCapacityValue(e.target.value)}
+                            placeholder="e.g. 50"
+                            className={`w-full px-3 py-2 rounded-xl text-xs font-mono border transition ${
+                              isLight
+                                ? "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                                : "bg-neutral-900 border-neutral-800 text-white placeholder:text-neutral-500 focus:outline-none focus:border-[#35e0c9]"
+                            }`}
+                          />
+                          <span className={`text-xs font-mono shrink-0 font-medium ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
+                            slots
+                          </span>
+                        </div>
+                        <span className={`text-[10px] font-mono block ${isLight ? "text-slate-500" : "text-neutral-500"}`}>
+                          Must be at least {selectedEvent.registeredCount} (current active registrations).
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Window Controls: Start & End */}
+                  <div
+                    className={`p-3.5 sm:p-4 rounded-xl border space-y-3 ${
+                      isLight ? "bg-slate-50 border-slate-200" : "bg-neutral-900/50 border-neutral-800"
+                    }`}
+                  >
+                    <div className={`text-xs font-mono font-bold ${isLight ? "text-slate-900" : "text-white"}`}>
+                      Registration Window Schedule (IST)
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Start Date */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label
+                            className={`text-[10px] font-mono uppercase font-bold tracking-wider ${
+                              isLight ? "text-slate-600" : "text-neutral-400"
+                            }`}
+                          >
+                            Opening Date & Time
+                          </label>
+                          {formStartAtLocal && (
+                            <button
+                              type="button"
+                              onClick={() => setFormStartAtLocal("")}
+                              className={`text-[10px] font-mono hover:underline font-semibold cursor-pointer ${
+                                isLight ? "text-teal-700 hover:text-teal-900" : "text-cyan-400 hover:text-cyan-300"
+                              }`}
+                            >
+                              Clear (Immediate)
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="datetime-local"
+                          value={formStartAtLocal}
+                          onChange={(e) => setFormStartAtLocal(e.target.value)}
+                          style={{ colorScheme: isLight ? "light" : "dark" }}
+                          className={`w-full px-3 py-2 rounded-xl text-xs font-mono border transition ${
+                            isLight
+                              ? "bg-white border-slate-300 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                              : "bg-neutral-900 border-neutral-800 text-white focus:outline-none focus:border-[#35e0c9]"
+                          }`}
+                        />
+                      </div>
+
+                      {/* End Date */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label
+                            className={`text-[10px] font-mono uppercase font-bold tracking-wider ${
+                              isLight ? "text-slate-600" : "text-neutral-400"
+                            }`}
+                          >
+                            Closing Date & Time
+                          </label>
+                          {formEndAtLocal && (
+                            <button
+                              type="button"
+                              onClick={() => setFormEndAtLocal("")}
+                              className={`text-[10px] font-mono hover:underline font-semibold cursor-pointer ${
+                                isLight ? "text-teal-700 hover:text-teal-900" : "text-cyan-400 hover:text-cyan-300"
+                              }`}
+                            >
+                              Clear (Indefinite)
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="datetime-local"
+                          value={formEndAtLocal}
+                          onChange={(e) => setFormEndAtLocal(e.target.value)}
+                          style={{ colorScheme: isLight ? "light" : "dark" }}
+                          className={`w-full px-3 py-2 rounded-xl text-xs font-mono border transition ${
+                            isLight
+                              ? "bg-white border-slate-300 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                              : "bg-neutral-900 border-neutral-800 text-white focus:outline-none focus:border-[#35e0c9]"
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Buttons (Pinned at Bottom) */}
+                <div
+                  className={`p-4 sm:p-5 border-t shrink-0 flex items-center justify-end gap-3 ${
+                    isLight ? "border-slate-200 bg-slate-50/80" : "border-neutral-800 bg-[#0e1422]/90"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    disabled={isSubmitting}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-mono uppercase tracking-wider transition cursor-pointer disabled:opacity-50 border font-semibold ${
+                      isLight
+                        ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-900"
+                        : "bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-neutral-300 hover:text-white"
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-sm ${
+                      isLight
+                        ? "bg-teal-600 hover:bg-teal-700 text-white shadow-teal-700/20"
+                        : "bg-[#35e0c9] hover:bg-[#35e0c9]/90 text-black shadow-[#35e0c9]/20"
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                        <span>SAVING...</span>
+                      </>
+                    ) : (
+                      <span>SAVE SETTINGS</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

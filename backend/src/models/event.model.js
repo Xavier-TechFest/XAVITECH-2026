@@ -80,7 +80,12 @@ export const EventModel = {
   },
 
   /**
-   * Count active (non-cancelled) registrations for a single event.
+   * Count registrations with verified successful payment for a single event.
+   *
+   * Only registrations in CONFIRMED or PAYMENT_SUCCESS status,
+   * or having at least one SUCCESS payment transaction (and not CANCELLED),
+   * are counted. Excludes PAYMENT_PENDING, PAYMENT_FAILED, CANCELLED, and DRAFT.
+   * Duplicate transactions never cause a registration to be counted more than once.
    *
    * @param {string} eventId - Event UUID
    * @returns {Promise<number>}
@@ -91,21 +96,37 @@ export const EventModel = {
       throw new Error('Database client is not available');
     }
 
-    const { count, error } = await client
+    const { data, error } = await client
       .from('registrations')
-      .select('*', { count: 'exact', head: true })
+      .select('id, status, payment_transactions(status)')
       .eq('event_id', eventId)
-      .neq('status', 'CANCELLED');
+      .neq('status', 'CANCELLED')
+      .limit(10000);
 
     if (error) {
       throw error;
     }
 
-    return count || 0;
+    let count = 0;
+    for (const reg of data || []) {
+      const isConfirmed = reg.status === 'CONFIRMED' || reg.status === 'PAYMENT_SUCCESS';
+      const hasSuccessTxn =
+        Array.isArray(reg.payment_transactions) &&
+        reg.payment_transactions.some((tx) => tx?.status === 'SUCCESS');
+
+      if (isConfirmed || hasSuccessTxn) {
+        count++;
+      }
+    }
+
+    return count;
   },
 
   /**
-   * Count active (non-cancelled) registrations grouped by event_id for all events.
+   * Count registrations with verified successful payment grouped by event_id for all events.
+   *
+   * Excludes PAYMENT_PENDING, PAYMENT_FAILED, CANCELLED, and DRAFT unless verified paid.
+   * Deduplicates multiple transactions per registration so each eligible registration counts once.
    *
    * @returns {Promise<Record<string, number>>}
    */
@@ -117,8 +138,9 @@ export const EventModel = {
 
     const { data, error } = await client
       .from('registrations')
-      .select('event_id')
-      .neq('status', 'CANCELLED');
+      .select('id, event_id, status, payment_transactions(status)')
+      .neq('status', 'CANCELLED')
+      .limit(10000);
 
     if (error) {
       throw error;
@@ -126,7 +148,12 @@ export const EventModel = {
 
     const counts = {};
     for (const reg of data || []) {
-      if (reg.event_id) {
+      const isConfirmed = reg.status === 'CONFIRMED' || reg.status === 'PAYMENT_SUCCESS';
+      const hasSuccessTxn =
+        Array.isArray(reg.payment_transactions) &&
+        reg.payment_transactions.some((tx) => tx?.status === 'SUCCESS');
+
+      if ((isConfirmed || hasSuccessTxn) && reg.event_id) {
         counts[reg.event_id] = (counts[reg.event_id] || 0) + 1;
       }
     }
@@ -134,7 +161,7 @@ export const EventModel = {
   },
 
   /**
-   * Check if a registration belongs to an event and is non-cancelled.
+   * Check if a registration belongs to an event and has verified successful payment.
    *
    * @param {string} registrationId - UUID or registration_id code
    * @param {string} eventId - Event UUID
@@ -148,7 +175,7 @@ export const EventModel = {
 
     let query = client
       .from('registrations')
-      .select('id', { count: 'exact', head: true })
+      .select('id, status, payment_transactions(status)')
       .eq('event_id', eventId)
       .neq('status', 'CANCELLED');
 
@@ -158,12 +185,24 @@ export const EventModel = {
       query = query.eq('registration_id', registrationId);
     }
 
-    const { count, error } = await query;
+    const { data, error } = await query;
     if (error) {
       throw error;
     }
 
-    return { count: count || 0 };
+    let count = 0;
+    for (const reg of data || []) {
+      const isConfirmed = reg.status === 'CONFIRMED' || reg.status === 'PAYMENT_SUCCESS';
+      const hasSuccessTxn =
+        Array.isArray(reg.payment_transactions) &&
+        reg.payment_transactions.some((tx) => tx?.status === 'SUCCESS');
+
+      if (isConfirmed || hasSuccessTxn) {
+        count++;
+      }
+    }
+
+    return { count };
   },
 
   /**
