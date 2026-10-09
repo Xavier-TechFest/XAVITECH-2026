@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAdmin } from "@/context/AdminContext";
 import { AdminRegistrationListItem, PaginationMeta } from "@/lib/api";
 import ExportModal from "@/components/export/ExportModal";
@@ -14,18 +15,29 @@ const OFFICIAL_TRACK_ORDER = [
   "creative-learning",
 ];
 
-export default function AdminRegistrationsPage() {
+function RegistrationsListContent() {
   const { getRegistrations, getEvents, getTracks } = useAdmin();
+  const searchParams = useSearchParams();
 
   // Export Modal state
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
+  // Initialize filters from query params if available
+  const queryType = (
+    searchParams.get("participationType") ||
+    searchParams.get("registrationType") ||
+    ""
+  ).toUpperCase();
+  const validInitialType = ["INDIVIDUAL", "TEAM"].includes(queryType) ? queryType : "";
+  const queryTrack = searchParams.get("trackId") || "";
+  const queryEvent = searchParams.get("eventId") || "";
+
   // Filter & Search states
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
-  const [selectedTrackId, setSelectedTrackId] = useState("");
-  const [selectedEventId, setSelectedEventId] = useState("");
-  const [selectedType, setSelectedType] = useState("");
+  const [selectedTrackId, setSelectedTrackId] = useState(queryTrack);
+  const [selectedEventId, setSelectedEventId] = useState(queryEvent);
+  const [selectedType, setSelectedType] = useState(validInitialType);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -108,6 +120,19 @@ export default function AdminRegistrationsPage() {
     }
   }, [page, limit, appliedSearch, selectedTrackId, selectedEventId, selectedType, selectedStatus, selectedPaymentStatus, getRegistrations]);
 
+  // Synchronize filter state if query params change externally
+  useEffect(() => {
+    const rawType = (
+      searchParams.get("participationType") ||
+      searchParams.get("registrationType") ||
+      ""
+    ).toUpperCase();
+    if (["INDIVIDUAL", "TEAM"].includes(rawType)) {
+      setSelectedType(rawType);
+      setPage(1);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     fetchRegistrations();
   }, [fetchRegistrations]);
@@ -129,6 +154,21 @@ export default function AdminRegistrationsPage() {
     setPage(1); // Reset pagination to page 1
   };
 
+  const handleTypeChange = (newType: string) => {
+    setSelectedType(newType);
+    setPage(1);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (newType) {
+        url.searchParams.set("participationType", newType);
+      } else {
+        url.searchParams.delete("participationType");
+        url.searchParams.delete("registrationType");
+      }
+      window.history.replaceState(null, "", url.pathname + (url.search ? url.search : ""));
+    }
+  };
+
   const handleClearFilters = () => {
     setSearch("");
     setAppliedSearch("");
@@ -138,6 +178,9 @@ export default function AdminRegistrationsPage() {
     setSelectedStatus("");
     setSelectedPaymentStatus("");
     setPage(1);
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
   };
 
   return (
@@ -254,10 +297,7 @@ export default function AdminRegistrationsPage() {
               </label>
               <select
                 value={selectedType}
-                onChange={(e) => {
-                  setSelectedType(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => handleTypeChange(e.target.value)}
                 className="w-full px-3 py-2 bg-[#131929] border border-neutral-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-[#35e0c9]"
               >
                 <option value="">All Types</option>
@@ -492,5 +532,25 @@ export default function AdminRegistrationsPage() {
         events={events}
       />
     </div>
+  );
+}
+
+export default function AdminRegistrationsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-4 sm:p-8 max-w-7xl w-full mx-auto py-24 flex items-center justify-center text-sm text-neutral-400 font-mono">
+          <div className="flex items-center gap-3">
+            <svg className="animate-spin h-5 w-5 text-[#35e0c9]" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            <span>Loading registrations...</span>
+          </div>
+        </div>
+      }
+    >
+      <RegistrationsListContent />
+    </Suspense>
   );
 }

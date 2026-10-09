@@ -39,29 +39,49 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return Number(config.easebuzz.testFeeAmount.toFixed(2));
   }
 
+  // Resolve participant count across all calling signatures
+  let resolvedCount = Array.isArray(participants) ? participants.length : 0;
+  if (resolvedCount === 0 && registration) {
+    if (Array.isArray(registration.participants) && registration.participants.length > 0) {
+      resolvedCount = registration.participants.length;
+    } else if (registration.team) {
+      const memberCount = Array.isArray(registration.team.members) ? registration.team.members.length : 0;
+      resolvedCount = 1 + memberCount;
+    } else if (typeof registration.totalTeamSize === 'number' && registration.totalTeamSize > 0) {
+      resolvedCount = registration.totalTeamSize;
+    } else if (typeof registration.participantCount === 'number' && registration.participantCount > 0) {
+      resolvedCount = registration.participantCount;
+    } else if (typeof registration.participant_count === 'number' && registration.participant_count > 0) {
+      resolvedCount = registration.participant_count;
+    }
+  }
+
   // 2. InnoCraft (Hackathon): Pool-based fee (School: 800, College: 1000)
   if (event.slug === 'innocraft') {
-    const leader = participants.find((p) => p.participant_order === 1) || participants[0];
-    const pool = leader?.custom_fields?.pool || (leader?.custom_fields && leader.custom_fields['Participant pool']);
+    const participantList = Array.isArray(participants) && participants.length > 0
+      ? participants
+      : (Array.isArray(registration?.participants) ? registration.participants : []);
+    const leader = participantList.find((p) => p.participant_order === 1 || p.participantOrder === 1) || participantList[0];
+    const pool = leader?.custom_fields?.pool || (leader?.custom_fields && leader.custom_fields['Participant pool']) || leader?.pool;
     if (pool && String(pool).toLowerCase().includes('college')) {
       return 1000.0;
     }
     return 800.0;
   }
 
-  // 2. Loot Goblins (BGMI Esports): ₹200 per player (4 core + optional substitute)
-  if (event.slug === 'loot-goblins') {
-    const count = participants.length > 0 ? participants.length : (event.min_team_size || 4);
-    return Number((baseFee * count).toFixed(2));
+  // 3. Loot Goblins (BGMI Esports / Battlefield Blitz): ₹200 per player (4 core + optional substitute)
+  if (event.slug === 'loot-goblins' || event.slug === 'battlefield-blitz') {
+    const count = resolvedCount > 0 ? resolvedCount : (event.min_team_size || 4);
+    return Number((200.0 * count).toFixed(2));
   }
 
-  // 3. Runtime Rush charges ₹150 for each registered participant.
+  // 4. Runtime Rush charges ₹150 for each registered participant (1 participant = ₹150, 2 participants = ₹300).
   if (event.slug === 'runtime-rush') {
-    const count = participants.length > 0 ? participants.length : 1;
-    return Number((baseFee * count).toFixed(2));
+    const count = resolvedCount > 0 ? resolvedCount : 1;
+    return Number((150.0 * count).toFixed(2));
   }
 
-  // 4. All other events have standard flat team or individual fee configured in DB
+  // 5. All other events have standard flat team or individual fee configured in DB
   return Number(baseFee.toFixed(2));
 };
 

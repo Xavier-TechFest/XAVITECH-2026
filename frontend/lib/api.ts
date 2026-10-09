@@ -400,6 +400,7 @@ export interface CreateRegistrationPayload {
   eventId: string;
   registrationType?: "INDIVIDUAL" | "TEAM";
   teamId?: string;
+  teamName?: string;
   participants?: RegistrationParticipantInput[];
 }
 
@@ -433,6 +434,7 @@ export async function createRegistration(
       event_id: payload.eventId,
       registration_type: payload.registrationType || "INDIVIDUAL",
       team_id: payload.teamId,
+      team_name: payload.teamName,
       participants: payload.participants,
     }),
   });
@@ -602,10 +604,10 @@ export async function createTeam(
     throw new ApiError(
       json.message || "Failed to create team",
       response.status,
-      json
+      json.error || json.data || json
     );
   }
-  return json.data;
+  return json.data?.team ? json.data : (json.data || json.message);
 }
 
 export async function addTeamMember(
@@ -629,10 +631,10 @@ export async function addTeamMember(
     throw new ApiError(
       json.message || "Failed to add team member",
       response.status,
-      json
+      json.error || json.data || json
     );
   }
-  return json.data;
+  return json.data?.member ? json.data : (json.data || json.message);
 }
 
 export async function fetchMyTeams(token: string): Promise<any[]> {

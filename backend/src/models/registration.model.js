@@ -252,6 +252,34 @@ export const RegistrationModel = {
 
     return data;
   },
+
+  /**
+   * Delete a registration by ID (for atomic transaction rollbacks).
+   *
+   * @param {string} id - Registration primary key (UUID)
+   * @returns {Promise<boolean>}
+   */
+  deleteRegistration: async (id) => {
+    const client = getSupabaseClient();
+    if (!client) {
+      throw new Error('Database client is not available');
+    }
+
+    // Delete participants first to ensure clean removal
+    await client.from('registration_participants').delete().eq('registration_id', id);
+
+    const { error } = await client
+      .from('registrations')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  },
 };
 
 export default RegistrationModel;
+

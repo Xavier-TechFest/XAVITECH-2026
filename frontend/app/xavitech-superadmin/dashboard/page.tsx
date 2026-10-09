@@ -109,7 +109,7 @@ export default function AdminDashboardPage() {
             <span className="text-xs text-neutral-500 font-mono">squads</span>
           </div>
           <Link
-            href="/xavitech-superadmin/teams"
+            href="/xavitech-superadmin/registrations?participationType=TEAM"
             className="mt-4 inline-flex items-center gap-1 text-xs text-[#35e0c9] hover:underline font-mono"
           >
             <span>View all teams</span>
