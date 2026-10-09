@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import ModalPortal from "@/components/ui/ModalPortal";
 import {
   api,
@@ -47,6 +47,10 @@ export default function ExportModal({
   const isTrackLeader = role === "track-leader";
 
   // Scope selection
+  // Track Leader Registration Status filter (defaults to CONFIRMED)
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("CONFIRMED");
+
+  // Scope selection
   const [scope, setScope] = useState<ExportScope>(
     isTrackLeader ? "my_track" : "all"
   );
@@ -56,10 +60,14 @@ export default function ExportModal({
   // Format selection
   const [format, setFormat] = useState<ExportFormat>("xlsx");
 
-  // Field selection
-  const [selectedFieldKeys, setSelectedFieldKeys] = useState<string[]>(() =>
-    EXPORT_FIELD_OPTIONS.filter((f) => f.default).map((f) => f.key)
-  );
+  // Field selection (exclude paymentStatus for Track Leader)
+  const [selectedFieldKeys, setSelectedFieldKeys] = useState<string[]>(() => {
+    let opts = EXPORT_FIELD_OPTIONS.filter((f) => f.default);
+    if (isTrackLeader) {
+      opts = opts.filter((f) => f.key !== "paymentStatus");
+    }
+    return opts.map((f) => f.key);
+  });
   const [fieldSearch, setFieldSearch] = useState("");
 
   // Preview & Exporting states
@@ -71,10 +79,14 @@ export default function ExportModal({
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportSuccessMsg, setExportSuccessMsg] = useState<string | null>(null);
 
-  // Group options by category
+  // Group options by category (omit paymentStatus for Track Leader)
   const categories = useMemo(() => {
+    const availableOptions = isTrackLeader
+      ? EXPORT_FIELD_OPTIONS.filter((f) => f.key !== "paymentStatus")
+      : EXPORT_FIELD_OPTIONS;
+
     const map = new Map<string, ExportFieldOption[]>();
-    for (const opt of EXPORT_FIELD_OPTIONS) {
+    for (const opt of availableOptions) {
       if (!map.has(opt.category)) {
         map.set(opt.category, []);
       }
@@ -84,7 +96,7 @@ export default function ExportModal({
       category,
       items,
     }));
-  }, []);
+  }, [isTrackLeader]);
 
   // Filtered field options based on search input
   const filteredCategories = useMemo(() => {
@@ -125,87 +137,232 @@ export default function ExportModal({
     );
   }, [events, customTrackId, isTrackLeader, assignedTrack]);
 
-  // Construct current effective payload
+  // Extract primitive filter values to stabilize useMemo dependencies
+  const activeSearch = activeFilters.search || "";
+  const activeTrackId = activeFilters.trackId || "";
+  const activeEventId = activeFilters.eventId || "";
+  const activeRegType = activeFilters.registrationType || "";
+  const activePaymentStatus = activeFilters.paymentStatus || "";
+  const assignedTrackId = assignedTrack?.id || "";
+
+  // Stable signature of selectedFieldKeys
+  const selectedFieldsSignature = useMemo(
+    () => selectedFieldKeys.slice().sort().join(","),
+    [selectedFieldKeys]
+  );
+
+  // Construct current effective payload with stable primitive dependencies
   const currentPayload = useMemo((): ExportRequestPayload => {
-    let effectiveFilters = { ...activeFilters };
+    let effectiveFilters: Record<string, string> = {};
 
     if (scope === "all") {
       effectiveFilters = {};
-    } else if (scope === "my_track" && assignedTrack) {
-      effectiveFilters = { trackId: assignedTrack.id };
+    } else if (scope === "my_track" && assignedTrackId) {
+      effectiveFilters = { trackId: assignedTrackId };
     } else if (scope === "track") {
       effectiveFilters = { trackId: customTrackId };
     } else if (scope === "event") {
       effectiveFilters = {
-        ...(isTrackLeader && assignedTrack ? { trackId: assignedTrack.id } : {}),
+        ...(isTrackLeader && assignedTrackId ? { trackId: assignedTrackId } : {}),
         eventId: customEventId,
       };
+    } else if (scope === "filtered") {
+      if (activeSearch) effectiveFilters.search = activeSearch;
+      if (activeTrackId) effectiveFilters.trackId = activeTrackId;
+      if (activeEventId) effectiveFilters.eventId = activeEventId;
+      if (activeRegType) effectiveFilters.registrationType = activeRegType;
+      if (activePaymentStatus) effectiveFilters.paymentStatus = activePaymentStatus;
+      if (isTrackLeader && assignedTrackId) {
+        effectiveFilters.trackId = assignedTrackId;
+      }
     }
+
+    // Apply Registration Status filter (defaults to CONFIRMED for both Superadmin & Track Leader)
+    if (selectedStatusFilter && selectedStatusFilter !== "ALL") {
+      effectiveFilters.status = selectedStatusFilter;
+    } else {
+      delete effectiveFilters.status;
+    }
+
+    if (isTrackLeader && assignedTrackId) {
+      effectiveFilters.trackId = assignedTrackId;
+    }
+
+    const effectiveFields = isTrackLeader
+      ? selectedFieldKeys.filter((k) => k !== "paymentStatus")
+      : selectedFieldKeys;
 
     return {
       format,
       scope,
       filters: effectiveFilters,
-      fields: selectedFieldKeys,
-      trackId: isTrackLeader ? assignedTrack?.id : customTrackId || undefined,
+      fields: effectiveFields,
+      trackId: isTrackLeader ? assignedTrackId || undefined : customTrackId || undefined,
       eventId: scope === "event" ? customEventId : undefined,
     };
   }, [
     scope,
     format,
+    selectedFieldsSignature,
     selectedFieldKeys,
-    activeFilters,
+    activeSearch,
+    activeTrackId,
+    activeEventId,
+    activeRegType,
+    activePaymentStatus,
     customTrackId,
     customEventId,
     isTrackLeader,
-    assignedTrack,
+    assignedTrackId,
+    selectedStatusFilter,
   ]);
 
-  // Fetch export preview summary from backend
-  const fetchPreview = useCallback(async () => {
-    if (selectedFieldKeys.length === 0) {
-      setPreviewData(null);
-      setPreviewError("At least one field must be selected for export.");
-      return;
-    }
+  // Request deduplication, abort controllers and sequence tracking refs
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const currentRequestIdRef = useRef<number>(0);
+  const lastFetchedPayloadRef = useRef<string>("");
+  const prevIsOpenRef = useRef<boolean>(false);
 
-    setIsLoadingPreview(true);
-    setPreviewError(null);
-    try {
-      let data: ExportPreviewResponse;
-      if (isTrackLeader) {
-        data = await api.trackLeaderExportRegistrationsPreview(currentPayload);
-      } else {
-        data = await api.adminExportRegistrationsPreview(currentPayload);
+  // Execute export preview summary with cancellation, in-flight guard and deduplication
+  const executeFetchPreview = useCallback(
+    async (payloadToFetch: ExportRequestPayload, isRetry = false) => {
+      if (!isOpen) return;
+
+      if (selectedFieldKeys.length === 0) {
+        setPreviewData(null);
+        setPreviewError("At least one field must be selected for export.");
+        setIsLoadingPreview(false);
+        return;
       }
-      setPreviewData(data);
-    } catch (err: any) {
-      console.error("Error generating export preview:", err);
-      setPreviewError(err.message || "Failed to calculate preview metadata.");
-    } finally {
-      setIsLoadingPreview(false);
-    }
-  }, [currentPayload, isTrackLeader, selectedFieldKeys]);
 
-  // Refresh preview on configuration change
+      const serialized = JSON.stringify(payloadToFetch);
+      // Skip redundant request if already fetched and we have data (unless user clicked Retry)
+      if (!isRetry && serialized === lastFetchedPayloadRef.current && previewData) {
+        return;
+      }
+
+      // Cancel previous in-flight preview request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      const requestId = ++currentRequestIdRef.current;
+      lastFetchedPayloadRef.current = serialized;
+
+      setIsLoadingPreview(true);
+      setPreviewError(null);
+
+      try {
+        let data: ExportPreviewResponse;
+        if (isTrackLeader) {
+          data = await api.trackLeaderExportRegistrationsPreview(payloadToFetch, controller.signal);
+        } else {
+          data = await api.adminExportRegistrationsPreview(payloadToFetch, controller.signal);
+        }
+
+        // Only commit if this request is still the active one
+        if (requestId === currentRequestIdRef.current) {
+          setPreviewData(data);
+        }
+      } catch (err: any) {
+        // Ignore aborted requests cleanly
+        if (err?.name === "AbortError" || controller.signal.aborted) {
+          return;
+        }
+
+        // Ignore errors from stale superseded requests
+        if (requestId !== currentRequestIdRef.current) {
+          return;
+        }
+
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[ExportModal] Error generating export preview:", err);
+        }
+
+        const rawMsg = err?.message || "";
+        let safeMsg = rawMsg;
+        if (
+          !rawMsg ||
+          rawMsg === "Failed to fetch" ||
+          rawMsg.includes("Failed to fetch") ||
+          rawMsg.includes("NetworkError") ||
+          rawMsg.includes("Network request failed") ||
+          err?.status === 0
+        ) {
+          safeMsg = "Unable to connect to the server. Please verify your network connection and that the API service is reachable.";
+        } else if (err?.status === 401) {
+          safeMsg = "Your session has expired or authentication is required. Please log in again.";
+        } else if (err?.status === 403) {
+          safeMsg = rawMsg || "Access denied. You do not have permission to export this data.";
+        }
+        setPreviewError(safeMsg);
+      } finally {
+        if (requestId === currentRequestIdRef.current) {
+          setIsLoadingPreview(false);
+        }
+      }
+    },
+    [isOpen, isTrackLeader, selectedFieldKeys.length, previewData]
+  );
+
+  // Initialize modal defaults strictly on closed -> open transition
   useEffect(() => {
-    if (isOpen) {
-      fetchPreview();
+    if (isOpen && !prevIsOpenRef.current) {
+      setSelectedStatusFilter("CONFIRMED");
+      setFieldSearch("");
+      setPreviewError(null);
+      setExportError(null);
+      setExportSuccessMsg(null);
+      setScope(isTrackLeader ? "my_track" : "all");
+      setCustomTrackId(activeFilters.trackId || "");
+      setCustomEventId(activeFilters.eventId || "");
+      setFormat("xlsx");
+      let opts = EXPORT_FIELD_OPTIONS.filter((f) => f.default);
+      if (isTrackLeader) {
+        opts = opts.filter((f) => f.key !== "paymentStatus");
+      }
+      setSelectedFieldKeys(opts.map((f) => f.key));
+      lastFetchedPayloadRef.current = "";
+    } else if (!isOpen && prevIsOpenRef.current) {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      lastFetchedPayloadRef.current = "";
     }
-  }, [fetchPreview, isOpen]);
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen, isTrackLeader, activeFilters.trackId, activeFilters.eventId]);
+
+  // Debounced, reactive preview fetch when payload changes and modal is open
+  const serializedPayloadKey = useMemo(() => JSON.stringify(currentPayload), [currentPayload]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const timer = setTimeout(() => {
+      executeFetchPreview(currentPayload);
+    }, 120);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [isOpen, serializedPayloadKey, executeFetchPreview, currentPayload]);
 
   // Selection actions
   const handleToggleField = (key: string, disabled?: boolean) => {
-    if (disabled) return;
+    if (disabled || (isTrackLeader && key === "paymentStatus")) return;
     setSelectedFieldKeys((prev) =>
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
   };
 
   const handleSelectAll = () => {
-    const selectableKeys = EXPORT_FIELD_OPTIONS.filter((f) => !f.disabled).map(
-      (f) => f.key
-    );
+    let available = EXPORT_FIELD_OPTIONS.filter((f) => !f.disabled);
+    if (isTrackLeader) {
+      available = available.filter((f) => f.key !== "paymentStatus");
+    }
+    const selectableKeys = available.map((f) => f.key);
     setSelectedFieldKeys(selectableKeys);
   };
 
@@ -214,9 +371,11 @@ export default function ExportModal({
   };
 
   const handleResetDefaults = () => {
-    setSelectedFieldKeys(
-      EXPORT_FIELD_OPTIONS.filter((f) => f.default && !f.disabled).map((f) => f.key)
-    );
+    let available = EXPORT_FIELD_OPTIONS.filter((f) => f.default && !f.disabled);
+    if (isTrackLeader) {
+      available = available.filter((f) => f.key !== "paymentStatus");
+    }
+    setSelectedFieldKeys(available.map((f) => f.key));
   };
 
   const handleToggleCategory = (categoryItems: ExportFieldOption[]) => {
@@ -263,8 +422,26 @@ export default function ExportModal({
         setExportSuccessMsg(null);
       }, 4000);
     } catch (err: any) {
-      console.error("Export execution failed:", err);
-      setExportError(err.message || "Failed to generate and download export file.");
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[ExportModal] Export execution failed:", err);
+      }
+      const rawMsg = err?.message || "";
+      let safeMsg = rawMsg;
+      if (
+        !rawMsg ||
+        rawMsg === "Failed to fetch" ||
+        rawMsg.includes("Failed to fetch") ||
+        rawMsg.includes("NetworkError") ||
+        rawMsg.includes("Network request failed") ||
+        err?.status === 0
+      ) {
+        safeMsg = "Unable to connect to the server to download export file. Please check your connection.";
+      } else if (err?.status === 401) {
+        safeMsg = "Your session has expired or authentication is required. Please log in again.";
+      } else if (err?.status === 403) {
+        safeMsg = rawMsg || "Access denied. You do not have permission to export this data.";
+      }
+      setExportError(safeMsg);
     } finally {
       setIsExporting(false);
     }
@@ -348,6 +525,52 @@ export default function ExportModal({
 
           {/* 2. Scrollable Body */}
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+            {/* Top Registration Status Dropdown (Default CONFIRMED for both Superadmin & Track Leader) */}
+            <div
+              className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                isLight
+                  ? "bg-slate-50 border-slate-200"
+                  : "bg-[#131929]/70 border-neutral-800"
+              }`}
+            >
+              <div>
+                <label
+                  htmlFor="export-status-filter"
+                  className="block text-xs font-mono uppercase tracking-wider font-bold text-[#35e0c9] mb-1"
+                >
+                  Registration Status
+                </label>
+                <p
+                  className={`text-[11px] font-mono ${
+                    isLight ? "text-slate-500" : "text-neutral-400"
+                  }`}
+                >
+                  Filter exported registrations by lifecycle status (defaults to CONFIRMED)
+                </p>
+              </div>
+
+              <div className="w-full sm:w-64">
+                <select
+                  id="export-status-filter"
+                  value={selectedStatusFilter}
+                  onChange={(e) => setSelectedStatusFilter(e.target.value)}
+                  className={`w-full px-3.5 py-2 rounded-xl text-xs font-mono font-semibold border transition focus:outline-none cursor-pointer ${
+                    isLight
+                      ? "bg-white border-slate-300 text-slate-900 focus:border-teal-600 shadow-sm"
+                      : "bg-[#0e131f] border-neutral-700 text-white focus:border-[#35e0c9]"
+                  }`}
+                >
+                  <option value="CONFIRMED">CONFIRMED (Default)</option>
+                  <option value="">All Statuses</option>
+                  <option value="PAYMENT_PENDING">PAYMENT_PENDING</option>
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="PAYMENT_SUCCESS">PAYMENT_SUCCESS</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                  <option value="PAYMENT_FAILED">PAYMENT_FAILED</option>
+                </select>
+              </div>
+            </div>
+
             {/* SECTION 1: EXPORT SCOPE */}
             <div>
               <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-[#35e0c9] mb-3 flex items-center gap-2">
@@ -537,8 +760,10 @@ export default function ExportModal({
                   {activeFilters.trackId && <span>Track: {tracks.find((t) => t.id === activeFilters.trackId)?.name || activeFilters.trackId} • </span>}
                   {activeFilters.eventId && <span>Event: {events.find((e) => e.id === activeFilters.eventId)?.name || activeFilters.eventId} • </span>}
                   {activeFilters.registrationType && <span>Type: {activeFilters.registrationType} • </span>}
-                  {activeFilters.status && <span>Status: {activeFilters.status} • </span>}
-                  {!activeFilters.search && !activeFilters.trackId && !activeFilters.eventId && !activeFilters.registrationType && !activeFilters.status && (
+                  {(isTrackLeader ? selectedStatusFilter : activeFilters.status) && (
+                    <span>Status: {isTrackLeader ? (selectedStatusFilter || "All Statuses") : activeFilters.status} • </span>
+                  )}
+                  {!activeFilters.search && !activeFilters.trackId && !activeFilters.eventId && !activeFilters.registrationType && !(isTrackLeader ? selectedStatusFilter : activeFilters.status) && (
                     <span>No active filters (matches full dataset)</span>
                   )}
                 </div>
@@ -785,8 +1010,20 @@ export default function ExportModal({
               </div>
 
               {previewError ? (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
-                  {previewError}
+                <div className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <svg className="w-4 h-4 shrink-0 text-red-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{previewError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => executeFetchPreview(currentPayload, true)}
+                    className="self-start sm:self-auto shrink-0 px-3 py-1 rounded bg-red-500/20 hover:bg-red-500/30 text-red-300 font-semibold uppercase tracking-wider text-[10px] transition cursor-pointer"
+                  >
+                    Retry
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">

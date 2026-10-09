@@ -36,6 +36,10 @@ export function resolveApiBaseUrl(): string {
   return "http://localhost:5000/api";
 }
 
+export function getApiBaseUrl(): string {
+  return resolveApiBaseUrl();
+}
+
 export const API_BASE_URL = resolveApiBaseUrl();
 
 // =============================================================================
@@ -918,7 +922,13 @@ export interface AdminRegistrationDetail {
       id: string;
       name: string;
       memberOrder: number;
-      createdAt: string;
+      email?: string;
+      phone?: string;
+      mobileNumber?: string;
+      institution?: string;
+      institutionName?: string;
+      standardClass?: string;
+      createdAt?: string;
     }>;
     memberCount: number;
     totalTeamSize: number;
@@ -1055,7 +1065,13 @@ export interface AdminTeamDetail {
     id: string;
     name: string;
     memberOrder: number;
-    createdAt: string;
+    email?: string;
+    phone?: string;
+    mobileNumber?: string;
+    institution?: string;
+    institutionName?: string;
+    standardClass?: string;
+    createdAt?: string;
   }>;
   registration: {
     id: string;
@@ -1950,9 +1966,11 @@ export const EXPORT_FIELD_OPTIONS: ExportFieldOption[] = [
   { key: "email", label: "Email", category: "PARTICIPANT DETAILS", default: true },
   { key: "phone", label: "Phone", category: "PARTICIPANT DETAILS", default: true },
   { key: "institution", label: "Institution", category: "PARTICIPANT DETAILS", default: true },
+  { key: "standardClass", label: "Class / Year", category: "PARTICIPANT DETAILS", default: false },
 
   // EVENT DETAILS
   { key: "eventName", label: "Event Name", category: "EVENT DETAILS", default: true },
+  { key: "eventSlug", label: "Event Slug", category: "EVENT DETAILS", default: false },
   { key: "trackName", label: "Track", category: "EVENT DETAILS", default: true },
   { key: "participationType", label: "Participation Type", category: "EVENT DETAILS", default: true },
   { key: "status", label: "Registration Status", category: "EVENT DETAILS", default: true },
@@ -1967,6 +1985,8 @@ export const EXPORT_FIELD_OPTIONS: ExportFieldOption[] = [
 
   // PAYMENT DETAILS
   { key: "paymentStatus", label: "Payment Status", category: "PAYMENT DETAILS", default: false },
+  { key: "paymentAmount", label: "Amount Paid", category: "PAYMENT DETAILS", default: false },
+  { key: "transactionId", label: "Transaction ID", category: "PAYMENT DETAILS", default: false },
 ];
 
 /**
@@ -1987,18 +2007,44 @@ export function downloadBlob(blob: Blob, filename: string): void {
  * POST /api/admin/registrations/export/preview
  */
 export async function adminExportRegistrationsPreview(
-  payload: ExportRequestPayload
+  payload: ExportRequestPayload,
+  signal?: AbortSignal
 ): Promise<ExportPreviewResponse> {
-  const response = await fetch(`${API_BASE_URL}/admin/registrations/export/preview`, {
-    method: "POST",
-    headers: getAdminHeaders(),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+  const url = `${getApiBaseUrl()}/admin/registrations/export/preview`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: getAdminHeaders(),
+      credentials: "include",
+      body: JSON.stringify(payload),
+      signal,
+    });
+  } catch (err: any) {
+    if (err?.name === "AbortError" || signal?.aborted) {
+      throw err;
+    }
+    const isNetwork =
+      err?.name === "TypeError" ||
+      err?.message === "Failed to fetch" ||
+      err?.message?.includes("NetworkError");
+    if (isNetwork) {
+      throw new ApiError(
+        "Unable to reach the server. Please check your network connection or verify that the API server is online.",
+        0
+      );
+    }
+    throw err;
+  }
 
   const json = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(json.message || "Failed to generate export preview", response.status, json);
+    const errorMsg =
+      (typeof json?.message === "string" && json.message) ||
+      (typeof json?.error?.message === "string" && json.error.message) ||
+      (typeof json?.error === "string" && json.error) ||
+      `Failed to generate export preview (${response.status})`;
+    throw new ApiError(errorMsg, response.status, json);
   }
   return json.data;
 }
@@ -2009,16 +2055,37 @@ export async function adminExportRegistrationsPreview(
 export async function adminExportRegistrations(
   payload: ExportRequestPayload
 ): Promise<{ blob: Blob; filename: string }> {
-  const response = await fetch(`${API_BASE_URL}/admin/registrations/export`, {
-    method: "POST",
-    headers: getAdminHeaders(),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+  const url = `${getApiBaseUrl()}/admin/registrations/export`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: getAdminHeaders(),
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+  } catch (err: any) {
+    const isNetwork =
+      err?.name === "TypeError" ||
+      err?.message === "Failed to fetch" ||
+      err?.message?.includes("NetworkError");
+    if (isNetwork) {
+      throw new ApiError(
+        "Unable to reach the server to download export file. Please check your connection.",
+        0
+      );
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     const json = await response.json().catch(() => ({}));
-    throw new ApiError(json.message || "Failed to download export file", response.status, json);
+    const errorMsg =
+      (typeof json?.message === "string" && json.message) ||
+      (typeof json?.error?.message === "string" && json.error.message) ||
+      (typeof json?.error === "string" && json.error) ||
+      `Failed to download export file (${response.status})`;
+    throw new ApiError(errorMsg, response.status, json);
   }
 
   const blob = await response.blob();
@@ -2038,18 +2105,44 @@ export async function adminExportRegistrations(
  * POST /api/track-leader/registrations/export/preview
  */
 export async function trackLeaderExportRegistrationsPreview(
-  payload: ExportRequestPayload
+  payload: ExportRequestPayload,
+  signal?: AbortSignal
 ): Promise<ExportPreviewResponse> {
-  const response = await fetch(`${API_BASE_URL}/track-leader/registrations/export/preview`, {
-    method: "POST",
-    headers: getTrackLeaderHeaders(),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+  const url = `${getApiBaseUrl()}/track-leader/registrations/export/preview`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: getTrackLeaderHeaders(),
+      credentials: "include",
+      body: JSON.stringify(payload),
+      signal,
+    });
+  } catch (err: any) {
+    if (err?.name === "AbortError" || signal?.aborted) {
+      throw err;
+    }
+    const isNetwork =
+      err?.name === "TypeError" ||
+      err?.message === "Failed to fetch" ||
+      err?.message?.includes("NetworkError");
+    if (isNetwork) {
+      throw new ApiError(
+        "Unable to reach the server. Please check your network connection or verify that the API server is online.",
+        0
+      );
+    }
+    throw err;
+  }
 
   const json = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(json.message || "Failed to generate export preview", response.status, json);
+    const errorMsg =
+      (typeof json?.message === "string" && json.message) ||
+      (typeof json?.error?.message === "string" && json.error.message) ||
+      (typeof json?.error === "string" && json.error) ||
+      `Failed to generate export preview (${response.status})`;
+    throw new ApiError(errorMsg, response.status, json);
   }
   return json.data;
 }
@@ -2060,16 +2153,37 @@ export async function trackLeaderExportRegistrationsPreview(
 export async function trackLeaderExportRegistrations(
   payload: ExportRequestPayload
 ): Promise<{ blob: Blob; filename: string }> {
-  const response = await fetch(`${API_BASE_URL}/track-leader/registrations/export`, {
-    method: "POST",
-    headers: getTrackLeaderHeaders(),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+  const url = `${getApiBaseUrl()}/track-leader/registrations/export`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: getTrackLeaderHeaders(),
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+  } catch (err: any) {
+    const isNetwork =
+      err?.name === "TypeError" ||
+      err?.message === "Failed to fetch" ||
+      err?.message?.includes("NetworkError");
+    if (isNetwork) {
+      throw new ApiError(
+        "Unable to reach the server to download export file. Please check your connection.",
+        0
+      );
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     const json = await response.json().catch(() => ({}));
-    throw new ApiError(json.message || "Failed to download export file", response.status, json);
+    const errorMsg =
+      (typeof json?.message === "string" && json.message) ||
+      (typeof json?.error?.message === "string" && json.error.message) ||
+      (typeof json?.error === "string" && json.error) ||
+      `Failed to download export file (${response.status})`;
+    throw new ApiError(errorMsg, response.status, json);
   }
 
   const blob = await response.blob();
@@ -2218,6 +2332,8 @@ export const api = {
   getTrackLeaderToken,
   setTrackLeaderToken,
   clearTrackLeaderToken,
+  getApiBaseUrl,
+  resolveApiBaseUrl,
   getTrackLeaderHeaders,
 };
 

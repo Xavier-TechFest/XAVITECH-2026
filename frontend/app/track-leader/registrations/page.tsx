@@ -18,26 +18,37 @@ export default function TrackLeaderRegistrationsPage() {
     assignedTrack,
     events,
     theme,
-    registrations: cachedRegistrations,
-    registrationsLoading,
-    registrationsRefreshing,
-    registrationsError,
-    registrationsLoaded,
-    refreshRegistrations,
   } = useTrackLeader();
   const isLight = theme === "light";
 
   // Export Modal state
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
-  // Filter & Search states (pure client-side)
+  // Filter & Search states
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [selectedEventId, setSelectedEventId] = useState("");
   const [selectedType, setSelectedType] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("CONFIRMED"); // Authoritative default: CONFIRMED
   const [page, setPage] = useState(1);
   const limit = 15;
+
+  // Server-side registration states
+  const [registrations, setRegistrations] = useState<AdminRegistrationListItem[]>([]);
+  const [pagination, setPagination] = useState<{
+    page: number;
+    limit: number;
+    totalRecords: number;
+    totalPages: number;
+  }>({
+    page: 1,
+    limit: 15,
+    totalRecords: 0,
+    totalPages: 1,
+  });
+  const [isRegistrationsLoading, setIsRegistrationsLoading] = useState(true);
+  const [isRegistrationsRefreshing, setIsRegistrationsRefreshing] = useState(false);
+  const [registrationsFetchError, setRegistrationsFetchError] = useState<string | null>(null);
 
   // Modal inspection states (read-only)
   const [inspectModalOpen, setInspectModalOpen] = useState(false);
@@ -46,76 +57,48 @@ export default function TrackLeaderRegistrationsPage() {
   const [isInspectLoading, setIsInspectLoading] = useState(false);
   const [inspectError, setInspectError] = useState<string | null>(null);
 
-  // Initial load: fetch once if not yet loaded in context
-  useEffect(() => {
-    if (!registrationsLoaded && !registrationsLoading) {
-      refreshRegistrations(false);
+  // Fetch registrations directly from server with applied filters and assigned track scoping
+  const fetchRegistrations = useCallback(async (isRefresh = false) => {
+    if (!trackLeader || loading) return;
+    if (isRefresh) {
+      setIsRegistrationsRefreshing(true);
+    } else {
+      setIsRegistrationsLoading(true);
     }
-  }, [registrationsLoaded, registrationsLoading, refreshRegistrations]);
+    setRegistrationsFetchError(null);
 
-  // Client-side filtering on cached registration dataset
-  const filteredRegistrations = useMemo(() => {
-    let list = cachedRegistrations || [];
-
-    // Filter by Event
-    if (selectedEventId) {
-      list = list.filter((r) => {
-        const evId = r.event?.id || (r as any).eventId;
-        return evId === selectedEventId;
+    try {
+      const data = await api.trackLeaderGetRegistrations({
+        page,
+        limit,
+        search: appliedSearch || undefined,
+        eventId: selectedEventId || undefined,
+        registrationType: selectedType || undefined,
+        status: selectedStatus || undefined,
       });
+
+      setRegistrations(data?.registrations || []);
+      setPagination(
+        data?.pagination || {
+          page,
+          limit,
+          totalRecords: (data?.registrations || []).length,
+          totalPages: 1,
+        }
+      );
+    } catch (err: any) {
+      console.error("Failed to load track leader registrations:", err);
+      setRegistrationsFetchError(err.message || "Failed to load registrations for your assigned track.");
+    } finally {
+      setIsRegistrationsLoading(false);
+      setIsRegistrationsRefreshing(false);
     }
+  }, [trackLeader, loading, page, limit, appliedSearch, selectedEventId, selectedType, selectedStatus]);
 
-    // Filter by Participation Type
-    if (selectedType) {
-      const typeUpper = selectedType.toUpperCase();
-      list = list.filter((r) => (r.registrationType || "").toUpperCase() === typeUpper);
-    }
-
-    // Filter by Registration Status
-    if (selectedStatus) {
-      const statusUpper = selectedStatus.toUpperCase();
-      list = list.filter((r) => (r.status || "").toUpperCase() === statusUpper);
-    }
-
-    // Filter by Search Query
-    if (appliedSearch) {
-      const q = appliedSearch.toLowerCase().trim();
-      list = list.filter((r) => {
-        const regId = (r.registrationId || r.id || "").toLowerCase();
-        const userName = (r.user?.name || "").toLowerCase();
-        const userEmail = (r.user?.email || "").toLowerCase();
-        const teamName = (r.team?.teamName || "").toLowerCase();
-        const eventName = (r.event?.name || "").toLowerCase();
-        const institution = (r.user?.institution || "").toLowerCase();
-        return (
-          regId.includes(q) ||
-          userName.includes(q) ||
-          userEmail.includes(q) ||
-          teamName.includes(q) ||
-          eventName.includes(q) ||
-          institution.includes(q)
-        );
-      });
-    }
-
-    return list;
-  }, [cachedRegistrations, selectedEventId, selectedType, selectedStatus, appliedSearch]);
-
-  // Client-side pagination metrics
-  const totalRecords = filteredRegistrations.length;
-  const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
-  const safePage = Math.min(page, totalPages);
-
-  const paginatedRegistrations = useMemo(() => {
-    const start = (safePage - 1) * limit;
-    return filteredRegistrations.slice(start, start + limit);
-  }, [filteredRegistrations, safePage, limit]);
-
+  // Initial and reactive fetch on filter change
   useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
+    fetchRegistrations();
+  }, [fetchRegistrations]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +116,7 @@ export default function TrackLeaderRegistrationsPage() {
     setAppliedSearch("");
     setSelectedEventId("");
     setSelectedType("");
-    setSelectedStatus("");
+    setSelectedStatus("CONFIRMED");
     setPage(1);
   };
 
@@ -219,8 +202,8 @@ export default function TrackLeaderRegistrationsPage() {
         <div className="flex items-center gap-4">
           <button
             type="button"
-            onClick={() => refreshRegistrations(true)}
-            disabled={registrationsLoading || registrationsRefreshing}
+            onClick={() => fetchRegistrations(true)}
+            disabled={isRegistrationsLoading || isRegistrationsRefreshing}
             className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 ${
               isLight
                 ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700 shadow-sm"
@@ -230,7 +213,7 @@ export default function TrackLeaderRegistrationsPage() {
           >
             <svg
               className={`w-3.5 h-3.5 ${isLight ? "text-teal-600" : "text-[#35e0c9]"} ${
-                registrationsRefreshing ? "animate-spin" : ""
+                isRegistrationsRefreshing ? "animate-spin" : ""
               }`}
               fill="none"
               stroke="currentColor"
@@ -243,7 +226,7 @@ export default function TrackLeaderRegistrationsPage() {
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            <span>{registrationsRefreshing ? "Refreshing..." : "Refresh"}</span>
+            <span>{isRegistrationsRefreshing ? "Refreshing..." : "Refresh"}</span>
           </button>
 
           <button
@@ -275,7 +258,7 @@ export default function TrackLeaderRegistrationsPage() {
                 isLight ? "text-teal-700" : "text-[#35e0c9]"
               }`}
             >
-              {!registrationsLoaded && registrationsLoading ? "—" : totalRecords}
+              {isRegistrationsLoading && !registrations.length ? "—" : pagination.totalRecords}
             </span>
           </div>
         </div>
@@ -313,7 +296,7 @@ export default function TrackLeaderRegistrationsPage() {
               >
                 Search
               </button>
-              {(appliedSearch || selectedEventId || selectedType || selectedStatus) && (
+              {(appliedSearch || selectedEventId || selectedType || selectedStatus !== "CONFIRMED") && (
                 <button
                   type="button"
                   onClick={handleClearFilters}
@@ -410,12 +393,13 @@ export default function TrackLeaderRegistrationsPage() {
                     : "bg-[#131929] border-neutral-700/80 text-white focus:border-[#35e0c9]"
                 }`}
               >
+                <option value="CONFIRMED">CONFIRMED (Default)</option>
                 <option value="">All Statuses</option>
-                <option value="CONFIRMED">CONFIRMED</option>
                 <option value="PAYMENT_PENDING">PAYMENT_PENDING</option>
                 <option value="DRAFT">DRAFT</option>
                 <option value="PAYMENT_SUCCESS">PAYMENT_SUCCESS</option>
                 <option value="CANCELLED">CANCELLED</option>
+                <option value="PAYMENT_FAILED">PAYMENT_FAILED</option>
               </select>
             </div>
           </div>
@@ -423,7 +407,7 @@ export default function TrackLeaderRegistrationsPage() {
       </div>
 
       {/* Error Alert */}
-      {registrationsError && (
+      {registrationsFetchError && (
         <div
           className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs font-mono ${
             isLight
@@ -445,11 +429,11 @@ export default function TrackLeaderRegistrationsPage() {
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
-            <span>{registrationsError}</span>
+            <span>{registrationsFetchError}</span>
           </div>
           <button
             type="button"
-            onClick={() => refreshRegistrations(true)}
+            onClick={() => fetchRegistrations(true)}
             className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-xs font-mono font-bold uppercase tracking-wider transition cursor-pointer self-start sm:self-auto"
           >
             Retry
@@ -492,7 +476,7 @@ export default function TrackLeaderRegistrationsPage() {
                 isLight ? "divide-slate-200" : "divide-neutral-800/60"
               }`}
             >
-              {!registrationsLoaded && registrationsLoading ? (
+              {isRegistrationsLoading && !isRegistrationsRefreshing ? (
                 <tr>
                   <td
                     colSpan={9}
@@ -524,23 +508,23 @@ export default function TrackLeaderRegistrationsPage() {
                     </div>
                   </td>
                 </tr>
-              ) : !registrationsLoaded && registrationsError ? (
+              ) : registrationsFetchError ? (
                 <tr>
                   <td
                     colSpan={9}
                     className="py-12 text-center font-mono"
                   >
-                    <div className="text-red-400 text-xs mb-3">{registrationsError}</div>
+                    <div className="text-red-400 text-xs mb-3">{registrationsFetchError}</div>
                     <button
                       type="button"
-                      onClick={() => refreshRegistrations(true)}
+                      onClick={() => fetchRegistrations(true)}
                       className="px-4 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-mono font-bold uppercase tracking-wider transition cursor-pointer"
                     >
                       Retry Loading
                     </button>
                   </td>
                 </tr>
-              ) : paginatedRegistrations.length === 0 ? (
+              ) : registrations.length === 0 ? (
                 <tr>
                   <td
                     colSpan={9}
@@ -550,8 +534,6 @@ export default function TrackLeaderRegistrationsPage() {
                   >
                     {!assignedTrack ? (
                       "No track is currently assigned to your account."
-                    ) : (cachedRegistrations || []).length === 0 ? (
-                      "No registrations found for your assigned track yet."
                     ) : (
                       <div className="space-y-2">
                         <p>No registrations match the selected filters.</p>
@@ -571,7 +553,7 @@ export default function TrackLeaderRegistrationsPage() {
                   </td>
                 </tr>
               ) : (
-                paginatedRegistrations.map((reg) => (
+                registrations.map((reg) => (
                   <tr
                     key={reg.id}
                     className={`transition ${
@@ -728,27 +710,25 @@ export default function TrackLeaderRegistrationsPage() {
 
         {/* Mobile Responsive Cards View */}
         <div className="md:hidden divide-y divide-neutral-800/40">
-          {!registrationsLoaded && registrationsLoading ? (
+          {isRegistrationsLoading && !isRegistrationsRefreshing ? (
             <div className="py-12 text-center text-xs font-mono text-neutral-400">
               Loading registrations for this track...
             </div>
-          ) : !registrationsLoaded && registrationsError ? (
+          ) : registrationsFetchError ? (
             <div className="py-12 text-center text-xs font-mono text-red-400 space-y-3 p-4">
-              <div>{registrationsError}</div>
+              <div>{registrationsFetchError}</div>
               <button
                 type="button"
-                onClick={() => refreshRegistrations(true)}
+                onClick={() => fetchRegistrations(true)}
                 className="px-4 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-mono font-bold uppercase tracking-wider transition cursor-pointer"
               >
                 Retry Loading
               </button>
             </div>
-          ) : paginatedRegistrations.length === 0 ? (
+          ) : registrations.length === 0 ? (
             <div className="py-12 text-center text-xs font-mono text-neutral-400">
               {!assignedTrack ? (
                 "No track is currently assigned to your account."
-              ) : (cachedRegistrations || []).length === 0 ? (
-                "No registrations found for your assigned track yet."
               ) : (
                 <div className="space-y-2 p-4">
                   <p>No registrations match the selected filters.</p>
@@ -767,7 +747,7 @@ export default function TrackLeaderRegistrationsPage() {
               )}
             </div>
           ) : (
-            paginatedRegistrations.map((reg) => (
+            registrations.map((reg) => (
               <div
                 key={reg.id}
                 className={`p-4 space-y-3 ${
@@ -863,24 +843,19 @@ export default function TrackLeaderRegistrationsPage() {
           }`}
         >
           <span>
-            {!registrationsLoaded && registrationsLoading ? (
+            {isRegistrationsLoading && !isRegistrationsRefreshing ? (
               <span>Loading track registrations...</span>
             ) : (
               <>
                 Showing page{" "}
                 <strong className={isLight ? "text-slate-900" : "text-white"}>
-                  {safePage}
+                  {pagination.page}
                 </strong>{" "}
                 of{" "}
                 <strong className={isLight ? "text-slate-900" : "text-white"}>
-                  {totalPages}
+                  {Math.max(1, pagination.totalPages)}
                 </strong>{" "}
-                ({totalRecords} total {totalRecords === 1 ? "registration" : "registrations"}
-                {filteredRegistrations.length !== (cachedRegistrations || []).length && (
-                  <span className={isLight ? "text-slate-500" : "text-neutral-500"}>
-                    {" "}• filtered from {(cachedRegistrations || []).length}
-                  </span>
-                )})
+                ({pagination.totalRecords} total {pagination.totalRecords === 1 ? "registration" : "registrations"})
               </>
             )}
           </span>
@@ -888,7 +863,7 @@ export default function TrackLeaderRegistrationsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={safePage <= 1 || (!registrationsLoaded && registrationsLoading)}
+              disabled={pagination.page <= 1 || (isRegistrationsLoading && !isRegistrationsRefreshing)}
               className={`px-3 py-1.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed border ${
                 isLight
                   ? "bg-white hover:bg-slate-200 border-slate-300 text-slate-700"
@@ -898,8 +873,8 @@ export default function TrackLeaderRegistrationsPage() {
               Previous
             </button>
             <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage >= totalPages || (!registrationsLoaded && registrationsLoading)}
+              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+              disabled={pagination.page >= pagination.totalPages || (isRegistrationsLoading && !isRegistrationsRefreshing)}
               className={`px-3 py-1.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed border ${
                 isLight
                   ? "bg-white hover:bg-slate-200 border-slate-300 text-slate-700"
@@ -1191,15 +1166,22 @@ export default function TrackLeaderRegistrationsPage() {
                           {inspectDetail.team.members.map((member) => (
                             <div
                               key={member.id}
-                              className={`p-2 rounded-lg text-xs font-mono flex items-center justify-between ${
+                              className={`p-2 rounded-lg text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-1 ${
                                 isLight
                                   ? "bg-white border border-slate-200 text-slate-800"
                                   : "bg-[#0a0e17] border border-neutral-800 text-neutral-300"
                               }`}
                             >
-                              <span>
-                                #{member.memberOrder} {member.name}
+                              <span className="font-semibold">
+                                #{member.memberOrder} {member.name || "—"}
                               </span>
+                              {(member.email && member.email !== "—" || (member.institutionName || member.institution) && (member.institutionName || member.institution) !== "—") && (
+                                <span className={`text-[11px] ${isLight ? "text-slate-500" : "text-neutral-400"}`}>
+                                  {member.email && member.email !== "—" ? member.email : ""}
+                                  {member.email && member.email !== "—" && (member.institutionName || member.institution) && (member.institutionName || member.institution) !== "—" ? " • " : ""}
+                                  {(member.institutionName || member.institution) && (member.institutionName || member.institution) !== "—" ? (member.institutionName || member.institution) : ""}
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>
