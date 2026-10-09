@@ -186,7 +186,7 @@ export const tracks: TrackData[] = [
 export const webTeam: Person[] = [
   m(
     "Ritesh Raj",
-    "rriteshthakur21feb@gmail.com",
+    "ritesh@xavitech.in",
     "https://www.linkedin.com/in/riteshthakur21022007"
   ),
   m(
