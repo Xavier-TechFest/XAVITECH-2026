@@ -18,7 +18,7 @@ export default function TrackLeaderRegistrationsPage() {
     assignedTrack,
     events,
     theme,
-    registrations: cachedRegistrations,
+    registrations: allRegistrations,
     registrationsLoading,
     registrationsRefreshing,
     registrationsError,
@@ -30,12 +30,12 @@ export default function TrackLeaderRegistrationsPage() {
   // Export Modal state
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
-  // Filter & Search states (pure client-side)
+  // Filter & Search states (pure client-side filtering)
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [selectedEventId, setSelectedEventId] = useState("");
   const [selectedType, setSelectedType] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("CONFIRMED"); // Authoritative default: CONFIRMED
   const [page, setPage] = useState(1);
   const limit = 15;
 
@@ -46,16 +46,32 @@ export default function TrackLeaderRegistrationsPage() {
   const [isInspectLoading, setIsInspectLoading] = useState(false);
   const [inspectError, setInspectError] = useState<string | null>(null);
 
-  // Initial load: fetch once if not yet loaded in context
+  // Initial load: trigger fetch once if not yet loaded in context
   useEffect(() => {
-    if (!registrationsLoaded && !registrationsLoading) {
+    if (!loading && trackLeader && !registrationsLoaded && !registrationsLoading) {
       refreshRegistrations(false);
     }
-  }, [registrationsLoaded, registrationsLoading, refreshRegistrations]);
+  }, [loading, trackLeader, registrationsLoaded, registrationsLoading, refreshRegistrations]);
 
-  // Client-side filtering on cached registration dataset
+  // Initial loading indicator is ONLY true during initial dataset load
+  const isInitialLoading = !registrationsLoaded && registrationsLoading;
+
+  // Client-side filtering strictly scoped to assigned track registrations
   const filteredRegistrations = useMemo(() => {
-    let list = cachedRegistrations || [];
+    let list = allRegistrations || [];
+
+    // Filter by Registration Status (authoritative default is CONFIRMED)
+    if (selectedStatus && selectedStatus.toUpperCase() !== "ALL") {
+      const statusUpper = selectedStatus.toUpperCase();
+      if (statusUpper === "CONFIRMED") {
+        list = list.filter((r) => {
+          const st = (r.status || "").toUpperCase();
+          return st === "CONFIRMED" || st === "PAYMENT_SUCCESS";
+        });
+      } else {
+        list = list.filter((r) => (r.status || "").toUpperCase() === statusUpper);
+      }
+    }
 
     // Filter by Event
     if (selectedEventId) {
@@ -66,15 +82,9 @@ export default function TrackLeaderRegistrationsPage() {
     }
 
     // Filter by Participation Type
-    if (selectedType) {
+    if (selectedType && ["INDIVIDUAL", "TEAM"].includes(selectedType.toUpperCase())) {
       const typeUpper = selectedType.toUpperCase();
       list = list.filter((r) => (r.registrationType || "").toUpperCase() === typeUpper);
-    }
-
-    // Filter by Registration Status
-    if (selectedStatus) {
-      const statusUpper = selectedStatus.toUpperCase();
-      list = list.filter((r) => (r.status || "").toUpperCase() === statusUpper);
     }
 
     // Filter by Search Query
@@ -99,23 +109,17 @@ export default function TrackLeaderRegistrationsPage() {
     }
 
     return list;
-  }, [cachedRegistrations, selectedEventId, selectedType, selectedStatus, appliedSearch]);
+  }, [allRegistrations, selectedStatus, selectedEventId, selectedType, appliedSearch]);
 
   // Client-side pagination metrics
   const totalRecords = filteredRegistrations.length;
   const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
-  const safePage = Math.min(page, totalPages);
+  const currentPage = Math.min(Math.max(1, page), totalPages);
 
   const paginatedRegistrations = useMemo(() => {
-    const start = (safePage - 1) * limit;
-    return filteredRegistrations.slice(start, start + limit);
-  }, [filteredRegistrations, safePage, limit]);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
+    const startIndex = (currentPage - 1) * limit;
+    return filteredRegistrations.slice(startIndex, startIndex + limit);
+  }, [filteredRegistrations, currentPage, limit]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,14 +132,31 @@ export default function TrackLeaderRegistrationsPage() {
     setPage(1);
   };
 
+  const handleTypeChange = (newType: string) => {
+    setSelectedType(newType);
+    setPage(1);
+  };
+
+  const handleStatusChange = (newStatus: string) => {
+    setSelectedStatus(newStatus);
+    setPage(1);
+  };
+
   const handleClearFilters = () => {
     setSearch("");
     setAppliedSearch("");
     setSelectedEventId("");
     setSelectedType("");
-    setSelectedStatus("");
+    setSelectedStatus("CONFIRMED");
     setPage(1);
   };
+
+  const isFiltered = Boolean(
+    appliedSearch ||
+    selectedEventId ||
+    selectedType ||
+    selectedStatus !== "CONFIRMED"
+  );
 
   // Open Details Modal
   const openInspectModal = async (registrationId: string) => {
@@ -275,7 +296,7 @@ export default function TrackLeaderRegistrationsPage() {
                 isLight ? "text-teal-700" : "text-[#35e0c9]"
               }`}
             >
-              {!registrationsLoaded && registrationsLoading ? "—" : totalRecords}
+              {isInitialLoading ? "—" : totalRecords}
             </span>
           </div>
         </div>
@@ -313,7 +334,7 @@ export default function TrackLeaderRegistrationsPage() {
               >
                 Search
               </button>
-              {(appliedSearch || selectedEventId || selectedType || selectedStatus) && (
+              {isFiltered && (
                 <button
                   type="button"
                   onClick={handleClearFilters}
@@ -373,10 +394,7 @@ export default function TrackLeaderRegistrationsPage() {
               </label>
               <select
                 value={selectedType}
-                onChange={(e) => {
-                  setSelectedType(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => handleTypeChange(e.target.value)}
                 className={`w-full px-3 py-2 border rounded-xl text-xs transition focus:outline-none ${
                   isLight
                     ? "bg-slate-50 border-slate-300 text-slate-900 focus:bg-white focus:border-teal-600"
@@ -400,22 +418,20 @@ export default function TrackLeaderRegistrationsPage() {
               </label>
               <select
                 value={selectedStatus}
-                onChange={(e) => {
-                  setSelectedStatus(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => handleStatusChange(e.target.value)}
                 className={`w-full px-3 py-2 border rounded-xl text-xs transition focus:outline-none ${
                   isLight
                     ? "bg-slate-50 border-slate-300 text-slate-900 focus:bg-white focus:border-teal-600"
                     : "bg-[#131929] border-neutral-700/80 text-white focus:border-[#35e0c9]"
                 }`}
               >
+                <option value="CONFIRMED">CONFIRMED (Default)</option>
                 <option value="">All Statuses</option>
-                <option value="CONFIRMED">CONFIRMED</option>
                 <option value="PAYMENT_PENDING">PAYMENT_PENDING</option>
                 <option value="DRAFT">DRAFT</option>
                 <option value="PAYMENT_SUCCESS">PAYMENT_SUCCESS</option>
                 <option value="CANCELLED">CANCELLED</option>
+                <option value="PAYMENT_FAILED">PAYMENT_FAILED</option>
               </select>
             </div>
           </div>
@@ -423,7 +439,7 @@ export default function TrackLeaderRegistrationsPage() {
       </div>
 
       {/* Error Alert */}
-      {registrationsError && (
+      {registrationsError && !registrationsLoaded && (
         <div
           className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs font-mono ${
             isLight
@@ -492,7 +508,7 @@ export default function TrackLeaderRegistrationsPage() {
                 isLight ? "divide-slate-200" : "divide-neutral-800/60"
               }`}
             >
-              {!registrationsLoaded && registrationsLoading ? (
+              {isInitialLoading ? (
                 <tr>
                   <td
                     colSpan={9}
@@ -524,7 +540,7 @@ export default function TrackLeaderRegistrationsPage() {
                     </div>
                   </td>
                 </tr>
-              ) : !registrationsLoaded && registrationsError ? (
+              ) : registrationsError && !allRegistrations.length ? (
                 <tr>
                   <td
                     colSpan={9}
@@ -550,22 +566,22 @@ export default function TrackLeaderRegistrationsPage() {
                   >
                     {!assignedTrack ? (
                       "No track is currently assigned to your account."
-                    ) : (cachedRegistrations || []).length === 0 ? (
-                      "No registrations found for your assigned track yet."
                     ) : (
                       <div className="space-y-2">
                         <p>No registrations match the selected filters.</p>
-                        <button
-                          type="button"
-                          onClick={handleClearFilters}
-                          className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition cursor-pointer border ${
-                            isLight
-                              ? "bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700"
-                              : "bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-neutral-300"
-                          }`}
-                        >
-                          Clear Filters
-                        </button>
+                        {isFiltered && (
+                          <button
+                            type="button"
+                            onClick={handleClearFilters}
+                            className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition cursor-pointer border ${
+                              isLight
+                                ? "bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700"
+                                : "bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-neutral-300"
+                            }`}
+                          >
+                            Clear Filters
+                          </button>
+                        )}
                       </div>
                     )}
                   </td>
@@ -728,11 +744,11 @@ export default function TrackLeaderRegistrationsPage() {
 
         {/* Mobile Responsive Cards View */}
         <div className="md:hidden divide-y divide-neutral-800/40">
-          {!registrationsLoaded && registrationsLoading ? (
+          {isInitialLoading ? (
             <div className="py-12 text-center text-xs font-mono text-neutral-400">
               Loading registrations for this track...
             </div>
-          ) : !registrationsLoaded && registrationsError ? (
+          ) : registrationsError && !allRegistrations.length ? (
             <div className="py-12 text-center text-xs font-mono text-red-400 space-y-3 p-4">
               <div>{registrationsError}</div>
               <button
@@ -747,22 +763,22 @@ export default function TrackLeaderRegistrationsPage() {
             <div className="py-12 text-center text-xs font-mono text-neutral-400">
               {!assignedTrack ? (
                 "No track is currently assigned to your account."
-              ) : (cachedRegistrations || []).length === 0 ? (
-                "No registrations found for your assigned track yet."
               ) : (
                 <div className="space-y-2 p-4">
                   <p>No registrations match the selected filters.</p>
-                  <button
-                    type="button"
-                    onClick={handleClearFilters}
-                    className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition cursor-pointer border ${
-                      isLight
-                        ? "bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700"
-                        : "bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-neutral-300"
-                    }`}
-                  >
-                    Clear Filters
-                  </button>
+                  {isFiltered && (
+                    <button
+                      type="button"
+                      onClick={handleClearFilters}
+                      className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition cursor-pointer border ${
+                        isLight
+                          ? "bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700"
+                          : "bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-neutral-300"
+                      }`}
+                    >
+                      Clear Filters
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -863,24 +879,19 @@ export default function TrackLeaderRegistrationsPage() {
           }`}
         >
           <span>
-            {!registrationsLoaded && registrationsLoading ? (
+            {isInitialLoading ? (
               <span>Loading track registrations...</span>
             ) : (
               <>
                 Showing page{" "}
                 <strong className={isLight ? "text-slate-900" : "text-white"}>
-                  {safePage}
+                  {currentPage}
                 </strong>{" "}
                 of{" "}
                 <strong className={isLight ? "text-slate-900" : "text-white"}>
                   {totalPages}
                 </strong>{" "}
-                ({totalRecords} total {totalRecords === 1 ? "registration" : "registrations"}
-                {filteredRegistrations.length !== (cachedRegistrations || []).length && (
-                  <span className={isLight ? "text-slate-500" : "text-neutral-500"}>
-                    {" "}• filtered from {(cachedRegistrations || []).length}
-                  </span>
-                )})
+                ({totalRecords} total {totalRecords === 1 ? "registration" : "registrations"})
               </>
             )}
           </span>
@@ -888,7 +899,7 @@ export default function TrackLeaderRegistrationsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={safePage <= 1 || (!registrationsLoaded && registrationsLoading)}
+              disabled={currentPage <= 1 || isInitialLoading}
               className={`px-3 py-1.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed border ${
                 isLight
                   ? "bg-white hover:bg-slate-200 border-slate-300 text-slate-700"
@@ -899,7 +910,7 @@ export default function TrackLeaderRegistrationsPage() {
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage >= totalPages || (!registrationsLoaded && registrationsLoading)}
+              disabled={currentPage >= totalPages || isInitialLoading}
               className={`px-3 py-1.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed border ${
                 isLight
                   ? "bg-white hover:bg-slate-200 border-slate-300 text-slate-700"
@@ -1191,15 +1202,22 @@ export default function TrackLeaderRegistrationsPage() {
                           {inspectDetail.team.members.map((member) => (
                             <div
                               key={member.id}
-                              className={`p-2 rounded-lg text-xs font-mono flex items-center justify-between ${
+                              className={`p-2 rounded-lg text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-1 ${
                                 isLight
                                   ? "bg-white border border-slate-200 text-slate-800"
                                   : "bg-[#0a0e17] border border-neutral-800 text-neutral-300"
                               }`}
                             >
-                              <span>
-                                #{member.memberOrder} {member.name}
+                              <span className="font-semibold">
+                                #{member.memberOrder} {member.name || "—"}
                               </span>
+                              {(member.email && member.email !== "—" || (member.institutionName || member.institution) && (member.institutionName || member.institution) !== "—") && (
+                                <span className={`text-[11px] ${isLight ? "text-slate-500" : "text-neutral-400"}`}>
+                                  {member.email && member.email !== "—" ? member.email : ""}
+                                  {member.email && member.email !== "—" && (member.institutionName || member.institution) && (member.institutionName || member.institution) !== "—" ? " • " : ""}
+                                  {(member.institutionName || member.institution) && (member.institutionName || member.institution) !== "—" ? (member.institutionName || member.institution) : ""}
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>

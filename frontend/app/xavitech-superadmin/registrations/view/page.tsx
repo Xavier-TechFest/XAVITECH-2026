@@ -406,12 +406,14 @@ function RegistrationDetailContent() {
               </p>
             </div>
 
-            <Link
-              href={`/xavitech-superadmin/teams/view?teamId=${registration.team.id}`}
-              className="text-xs font-mono text-[#35e0c9] hover:underline"
-            >
-              Inspect Team Profile →
-            </Link>
+            {registration.team.id && (
+              <Link
+                href={`/xavitech-superadmin/teams/view?teamId=${registration.team.id}`}
+                className="text-xs font-mono text-[#35e0c9] hover:underline"
+              >
+                Inspect Team Profile →
+              </Link>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -443,16 +445,22 @@ function RegistrationDetailContent() {
                 </tr>
 
                 {registration.team.members.map((member, idx) => (
-                  <tr key={member.id} className="hover:bg-[#131929]/20">
+                  <tr key={member.id || idx} className="hover:bg-[#131929]/20">
                     <td className="py-3 px-3 text-neutral-500 text-[11px]">
                       Member #{member.memberOrder || idx + 1}
                     </td>
-                    <td className="py-3 px-3 text-white font-medium">{member.name}</td>
+                    <td className="py-3 px-3 text-white font-medium">{member.name || "—"}</td>
                     <td className="py-3 px-3 text-neutral-400 text-[11px]">
-                      {registration.participants?.find((p) => p.participantOrder === (member.memberOrder || idx + 1))?.email || "—"}
+                      {member.email && member.email !== "—"
+                        ? member.email
+                        : registration.participants?.find((p) => p.fullName === member.name || p.participantOrder === (member.memberOrder || idx + 1) + 1)?.email || "—"}
                     </td>
                     <td className="py-3 px-3 text-neutral-400 text-[11px]">
-                      {registration.participants?.find((p) => p.participantOrder === (member.memberOrder || idx + 1))?.institutionName || "—"}
+                      {member.institutionName && member.institutionName !== "—"
+                        ? member.institutionName
+                        : member.institution && member.institution !== "—"
+                        ? member.institution
+                        : registration.participants?.find((p) => p.fullName === member.name || p.participantOrder === (member.memberOrder || idx + 1) + 1)?.institutionName || "—"}
                     </td>
                   </tr>
                 ))}

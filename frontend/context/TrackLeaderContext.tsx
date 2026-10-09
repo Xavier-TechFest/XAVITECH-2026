@@ -7,6 +7,7 @@ import React, {
   useState,
   useCallback,
   useRef,
+  useMemo,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -296,7 +297,7 @@ export function TrackLeaderProvider({
     }
   }, [trackLeader, loading, pathname, router]);
 
-  const login = async (email: string, pass: string) => {
+  const login = useCallback(async (email: string, pass: string) => {
     setError(null);
     try {
       const res = await api.trackLeaderLogin(email, pass);
@@ -316,9 +317,9 @@ export function TrackLeaderProvider({
       setError(msg);
       throw err;
     }
-  };
+  }, [refreshTrackAndEvents, refreshRegistrations, router]);
 
-  const changePassword = async (curr: string, next: string) => {
+  const changePassword = useCallback(async (curr: string, next: string) => {
     setError(null);
     try {
       await api.trackLeaderChangePassword(curr, next);
@@ -332,9 +333,9 @@ export function TrackLeaderProvider({
       setError(msg);
       throw err;
     }
-  };
+  }, [refreshTrackAndEvents, refreshRegistrations, router]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await api.trackLeaderLogout();
     } catch (err) {
@@ -351,38 +352,67 @@ export function TrackLeaderProvider({
       setRegistrationsError(null);
       router.replace("/track-leader/login");
     }
-  };
+  }, [router]);
+
+  const contextValue = useMemo<TrackLeaderContextType>(
+    () => ({
+      trackLeader,
+      assignedTrack,
+      events,
+      dashboardStats,
+      isStatsLoading,
+      refreshDashboardStats,
+      loading,
+      isEventsLoading,
+      error,
+      registrations,
+      registrationsLoading,
+      registrationsRefreshing,
+      registrationsError,
+      registrationsLoaded,
+      refreshRegistrations,
+      login,
+      logout,
+      changePassword,
+      refreshProfile,
+      refreshTrackAndEvents,
+      isSidebarCollapsed,
+      toggleSidebar,
+      theme,
+      toggleTheme,
+      setTheme,
+    }),
+    [
+      trackLeader,
+      assignedTrack,
+      events,
+      dashboardStats,
+      isStatsLoading,
+      refreshDashboardStats,
+      loading,
+      isEventsLoading,
+      error,
+      registrations,
+      registrationsLoading,
+      registrationsRefreshing,
+      registrationsError,
+      registrationsLoaded,
+      refreshRegistrations,
+      login,
+      logout,
+      changePassword,
+      refreshProfile,
+      refreshTrackAndEvents,
+      isSidebarCollapsed,
+      toggleSidebar,
+      theme,
+      toggleTheme,
+      setTheme,
+    ]
+  );
 
   return (
-    <TrackLeaderContext.Provider
-      value={{
-        trackLeader,
-        assignedTrack,
-        events,
-        dashboardStats,
-        isStatsLoading,
-        refreshDashboardStats,
-        loading,
-        isEventsLoading,
-        error,
-        registrations,
-        registrationsLoading,
-        registrationsRefreshing,
-        registrationsError,
-        registrationsLoaded,
-        refreshRegistrations,
-        login,
-        logout,
-        changePassword,
-        refreshProfile,
-        refreshTrackAndEvents,
-        isSidebarCollapsed,
-        toggleSidebar,
-        theme,
-        toggleTheme,
-        setTheme,
-      }}
-    >
+    <TrackLeaderContext.Provider value={contextValue}>
       {children}
     </TrackLeaderContext.Provider>
   );

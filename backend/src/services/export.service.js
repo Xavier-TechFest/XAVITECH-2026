@@ -25,6 +25,90 @@ const formatDate = (dateStr) => {
     return dateStr;
   }
 };
+/**
+ * Resolve canonical participant roster and squad metrics for consistent export mapping.
+ */
+export const resolveCanonicalExportRoster = (reg) => {
+  const rawParticipants = Array.isArray(reg.participants) ? [...reg.participants] : [];
+  rawParticipants.sort((a, b) => (a.participant_order || 0) - (b.participant_order || 0));
+
+  const leaderPart =
+    rawParticipants.find((p) => p.participant_role === 'LEADER' || p.participant_order === 1) ||
+    rawParticipants[0] ||
+    null;
+
+  const memberParts = rawParticipants.filter(
+    (p) => p.id !== leaderPart?.id && (p.participant_role === 'MEMBER' || p.participant_order > 1)
+  );
+
+  const teamMembers = Array.isArray(reg.team?.members) ? [...reg.team.members] : [];
+  teamMembers.sort((a, b) => (a.member_order || 0) - (b.member_order || 0));
+
+  const additionalMembers = [];
+
+  // 1. Authoritative member participants from registration_participants
+  for (const p of memberParts) {
+    const isLeaderDupe =
+      leaderPart &&
+      p.full_name &&
+      leaderPart.full_name &&
+      p.full_name.toLowerCase().trim() === leaderPart.full_name.toLowerCase().trim() &&
+      (!p.email || !leaderPart.email || p.email.toLowerCase().trim() === leaderPart.email.toLowerCase().trim());
+
+    if (isLeaderDupe) continue;
+
+    additionalMembers.push({
+      id: p.id,
+      name: p.full_name || '—',
+      email: p.email || '—',
+      phone: p.mobile_number || '—',
+      institution: p.institution_name || '—',
+      standardClass: p.standard_class || '—',
+    });
+  }
+
+  // 2. Members from team_members table not already accounted for
+  for (const tm of teamMembers) {
+    const tmName = (tm.name || '').toLowerCase().trim();
+    const isLeader =
+      (reg.user?.name && tmName === reg.user.name.toLowerCase().trim()) ||
+      (leaderPart?.full_name && tmName === leaderPart.full_name.toLowerCase().trim());
+
+    const alreadyCovered = additionalMembers.some(
+      (m) => (m.id && m.id === tm.id) || (tmName && m.name && m.name.toLowerCase().trim() === tmName)
+    );
+
+    if (!alreadyCovered && (!isLeader || rawParticipants.length === 0)) {
+      additionalMembers.push({
+        id: tm.id,
+        name: tm.name || '—',
+        email: '—',
+        phone: '—',
+        institution: '—',
+        standardClass: '—',
+      });
+    }
+  }
+
+  const teamSize = reg.registration_type === 'TEAM' ? 1 + additionalMembers.length : 1;
+
+  const leader = {
+    name: leaderPart?.full_name || reg.user?.name || reg.team?.leader?.name || '—',
+    email: leaderPart?.email || reg.user?.email || reg.team?.leader?.email || '—',
+    phone: leaderPart?.mobile_number || reg.user?.phone || reg.team?.leader?.phone || '—',
+    institution: leaderPart?.institution_name || reg.user?.college_name || reg.team?.leader?.college_name || '—',
+    standardClass: leaderPart?.standard_class || '—',
+  };
+
+  const actualTeamName = reg.team?.team_name || '—';
+
+  return {
+    leader,
+    additionalMembers,
+    teamSize,
+    actualTeamName,
+  };
+};
 
 /**
  * Definitive Map of Supported Export Fields
@@ -35,31 +119,37 @@ export const EXPORT_FIELDS_MAP = {
     label: 'Registration ID',
     category: 'PARTICIPANT DETAILS',
     default: true,
-    extract: (reg) => reg.registration_id || reg.id || '',
+    extract: (reg) => reg.registration_id || reg.id || '—',
   },
   participantName: {
     label: 'Participant Name',
     category: 'PARTICIPANT DETAILS',
     default: true,
-    extract: (reg) => reg.user?.name || (reg.team?.leader?.name ? `${reg.team.leader.name} (Team Leader)` : 'N/A'),
+    extract: (reg) => resolveCanonicalExportRoster(reg).leader.name,
   },
   email: {
     label: 'Email',
     category: 'PARTICIPANT DETAILS',
     default: true,
-    extract: (reg) => reg.user?.email || reg.team?.leader?.email || 'N/A',
+    extract: (reg) => resolveCanonicalExportRoster(reg).leader.email,
   },
   phone: {
     label: 'Phone',
     category: 'PARTICIPANT DETAILS',
     default: true,
-    extract: (reg) => reg.user?.phone || reg.team?.leader?.phone || 'N/A',
+    extract: (reg) => resolveCanonicalExportRoster(reg).leader.phone,
   },
   institution: {
     label: 'Institution',
     category: 'PARTICIPANT DETAILS',
     default: true,
-    extract: (reg) => reg.user?.college_name || reg.team?.leader?.college_name || 'N/A',
+    extract: (reg) => resolveCanonicalExportRoster(reg).leader.institution,
+  },
+  standardClass: {
+    label: 'Class / Year',
+    category: 'PARTICIPANT DETAILS',
+    default: false,
+    extract: (reg) => resolveCanonicalExportRoster(reg).leader.standardClass,
   },
 
   // EVENT DETAILS
@@ -67,13 +157,19 @@ export const EXPORT_FIELDS_MAP = {
     label: 'Event Name',
     category: 'EVENT DETAILS',
     default: true,
-    extract: (reg) => reg.event?.name || 'N/A',
+    extract: (reg) => reg.event?.name || '—',
+  },
+  eventSlug: {
+    label: 'Event Slug',
+    category: 'EVENT DETAILS',
+    default: false,
+    extract: (reg) => reg.event?.slug || '—',
   },
   trackName: {
     label: 'Track',
     category: 'EVENT DETAILS',
     default: true,
-    extract: (reg) => reg.event?.track?.name || 'N/A',
+    extract: (reg) => reg.event?.track?.name || '—',
   },
   participationType: {
     label: 'Participation Type',
@@ -105,39 +201,67 @@ export const EXPORT_FIELDS_MAP = {
     label: 'Team Name',
     category: 'TEAM DETAILS',
     default: true,
-    extract: (reg) => reg.team?.team_name || (reg.registration_type === 'TEAM' ? 'Pending' : 'N/A'),
+    extract: (reg) => (reg.registration_type === 'TEAM' ? resolveCanonicalExportRoster(reg).actualTeamName : '—'),
   },
   teamLeader: {
     label: 'Team Leader',
     category: 'TEAM DETAILS',
     default: false,
-    extract: (reg) => reg.team?.leader?.name || reg.user?.name || 'N/A',
+    extract: (reg) => (reg.registration_type === 'TEAM' ? resolveCanonicalExportRoster(reg).leader.name : '—'),
   },
   teamSize: {
     label: 'Team Size',
     category: 'TEAM DETAILS',
     default: true,
-    extract: (reg) => (reg.registration_type === 'TEAM' ? 1 + (reg.team?.members?.length || 0) : 1),
+    extract: (reg) => resolveCanonicalExportRoster(reg).teamSize,
   },
   teamMembers: {
     label: 'Team Members',
     category: 'TEAM DETAILS',
     default: true,
     extract: (reg) => {
-      if (reg.registration_type !== 'TEAM' || !reg.team?.members || reg.team.members.length === 0) {
-        return reg.registration_type === 'TEAM' ? 'Leader Only' : 'N/A';
-      }
-      const sorted = [...reg.team.members].sort((a, b) => (a.member_order || 0) - (b.member_order || 0));
-      return sorted.map((m) => m.name).join('; ');
+      if (reg.registration_type !== 'TEAM') return '—';
+      const { additionalMembers } = resolveCanonicalExportRoster(reg);
+      if (additionalMembers.length === 0) return '—';
+      return additionalMembers.map((m) => m.name).join('; ');
     },
   },
 
-  // PAYMENT DETAILS (Only real data model fields; frozen gateway information omitted)
+  // PAYMENT DETAILS
   paymentStatus: {
     label: 'Payment Status',
     category: 'PAYMENT DETAILS',
     default: false,
-    extract: (reg) => reg.status || 'DRAFT',
+    extract: (reg) => {
+      const txs = Array.isArray(reg.payment_transactions) ? [...reg.payment_transactions] : [];
+      txs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const latestTx = txs[0] || null;
+      const isPaid = reg.status === 'CONFIRMED' || reg.status === 'PAYMENT_SUCCESS';
+      return latestTx ? latestTx.status : isPaid ? 'SUCCESS' : reg.status === 'PAYMENT_PENDING' ? 'PENDING' : reg.status || 'INITIATED';
+    },
+  },
+  paymentAmount: {
+    label: 'Payment Amount',
+    category: 'PAYMENT DETAILS',
+    default: false,
+    extract: (reg) => {
+      const txs = Array.isArray(reg.payment_transactions) ? [...reg.payment_transactions] : [];
+      txs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const latestTx = txs[0] || null;
+      if (latestTx && latestTx.amount != null) return `₹${Number(latestTx.amount).toFixed(2)}`;
+      if (reg.event?.fee != null) return `₹${Number(reg.event.fee).toFixed(2)}`;
+      return '₹0.00';
+    },
+  },
+  transactionId: {
+    label: 'Transaction ID',
+    category: 'PAYMENT DETAILS',
+    default: false,
+    extract: (reg) => {
+      const txs = Array.isArray(reg.payment_transactions) ? [...reg.payment_transactions] : [];
+      txs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      return txs[0]?.transaction_id || '—';
+    },
   },
 };
 
@@ -258,13 +382,18 @@ export const exportService = {
       `
       id,
       registration_id,
+      user_id,
+      event_id,
+      team_id,
       registration_type,
       status,
       created_at,
       updated_at,
       event:events(id, name, slug, category, registration_type, fee, track_id, track:tracks(id, name, slug)),
       user:users(id, name, email, phone, college_name, profile_image, firebase_uid),
-      team:teams(id, team_name, status, leader:users(id, name, email, phone, college_name), members:team_members(id, name, member_order))
+      team:teams(id, team_name, status, leader:users(id, name, email, phone, college_name), members:team_members(id, name, member_order)),
+      participants:registration_participants(*),
+      payment_transactions(id, transaction_id, gateway, amount, currency, status, failure_reason, created_at)
     `,
       { count: 'exact' }
     );
@@ -320,7 +449,7 @@ export const exportService = {
     }
 
     // 6. Status filter
-    if (status) {
+    if (status && status.toUpperCase() !== 'ALL') {
       query = query.eq('status', status.toUpperCase());
     }
 
@@ -333,7 +462,48 @@ export const exportService = {
       throw error;
     }
 
-    return rows || [];
+    const resultRows = rows || [];
+
+    // Batch resolve fallback teams for unlinked team registrations
+    const unlinkedRows = resultRows.filter(
+      (r) => r.registration_type === 'TEAM' && !r.team && (r.user_id || r.user?.id) && (r.event_id || r.event?.id)
+    );
+    if (unlinkedRows.length > 0) {
+      const userIds = Array.from(new Set(unlinkedRows.map((r) => r.user_id || r.user?.id).filter(Boolean)));
+      const evIds = Array.from(new Set(unlinkedRows.map((r) => r.event_id || r.event?.id).filter(Boolean)));
+      if (userIds.length > 0 && evIds.length > 0) {
+        const { data: fbTeams } = await client
+          .from('teams')
+          .select(`
+            id,
+            team_name,
+            status,
+            event_id,
+            leader_user_id,
+            leader:users(id, name, email, phone, college_name),
+            members:team_members(id, name, member_order)
+          `)
+          .in('leader_user_id', userIds)
+          .in('event_id', evIds);
+
+        if (Array.isArray(fbTeams)) {
+          const teamMap = new Map();
+          for (const t of fbTeams) {
+            teamMap.set(`${t.leader_user_id}_${t.event_id}`, t);
+          }
+          for (const r of resultRows) {
+            if (!r.team && r.registration_type === 'TEAM') {
+              const key = `${r.user_id || r.user?.id}_${r.event_id || r.event?.id}`;
+              if (teamMap.has(key)) {
+                r.team = teamMap.get(key);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return resultRows;
   },
 
   /**
@@ -416,22 +586,22 @@ export const exportService = {
       trackId = '';
       eventId = '';
       registrationType = '';
-      status = '';
+      status = filters.status || '';
     } else if (scope === 'my_track' && trackIdConstraint) {
       search = '';
       eventId = '';
       registrationType = '';
-      status = '';
+      status = filters.status || '';
       trackId = trackIdConstraint;
     } else if (scope === 'track') {
       search = '';
       eventId = '';
       registrationType = '';
-      status = '';
+      status = filters.status || '';
     } else if (scope === 'event') {
       search = '';
       registrationType = '';
-      status = '';
+      status = filters.status || '';
     }
 
     const { trackName, eventName } = await exportService.resolveLabels({
@@ -497,22 +667,22 @@ export const exportService = {
       trackId = '';
       eventId = '';
       registrationType = '';
-      status = '';
+      status = filters.status || '';
     } else if (scope === 'my_track' && trackIdConstraint) {
       search = '';
       eventId = '';
       registrationType = '';
-      status = '';
+      status = filters.status || '';
       trackId = trackIdConstraint;
     } else if (scope === 'track') {
       search = '';
       eventId = '';
       registrationType = '';
-      status = '';
+      status = filters.status || '';
     } else if (scope === 'event') {
       search = '';
       registrationType = '';
-      status = '';
+      status = filters.status || '';
     }
 
     const { trackName, eventName } = await exportService.resolveLabels({
