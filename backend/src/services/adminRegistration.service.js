@@ -151,18 +151,15 @@ export const adminRegistrationService = {
       }
     }
 
-    // 5. Fetch team members and teams
-    let totalTeams = 0;
-    const teamIds = Array.from(new Set(allRegs.filter((r) => r.team_id).map((r) => r.team_id)));
-
-    if (resolvedTrackId) {
-      totalTeams = teamIds.length;
-    } else {
-      const { count: globalTeamsCount } = await client
-        .from('teams')
-        .select('id', { count: 'exact', head: true });
-      totalTeams = globalTeamsCount || teamIds.length;
-    }
+    // 5. Calculate total registered teams
+    // Scoped automatically (allRegs is already scoped to track events if resolvedTrackId is set):
+    // Count unique registered teams: registrations where registration_type is TEAM.
+    // For team registrations with a linked team_id, count unique team_ids.
+    // For team registrations without a team_id, count each registration as an independent team squad.
+    const teamRegs = allRegs.filter((r) => r.registration_type === 'TEAM');
+    const linkedTeamIds = new Set(teamRegs.filter((r) => r.team_id).map((r) => r.team_id));
+    const unlinkedTeamRegs = teamRegs.filter((r) => !r.team_id);
+    const totalTeams = linkedTeamIds.size + unlinkedTeamRegs.length;
 
     // 6. Fetch registration_participants for accurate participant counts
     let totalParticipants = 0;
