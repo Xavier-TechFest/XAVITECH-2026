@@ -92,7 +92,7 @@ export default function EventCard({ event, variant }: EventCardProps) {
         <div className="flex-1" />
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-3 border-t border-white/20 py-4 font-space text-xs leading-snug text-slate-100 sm:text-sm">
-          <div><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Date · Time</span><span className="mt-1 block">{event.date} · {event.time}</span></div>
+          <div><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Date</span><span className="mt-1 block">{event.date}</span></div>
           {event.team !== "TBA" && <div><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Participants</span><span className="mt-1 block">{event.team}</span></div>}
           <div className="truncate"><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Venue</span><span className="mt-1 block truncate">{event.venue}</span></div>
           <div><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Registration Fee</span><span className="mt-1 block">{event.price}</span></div>

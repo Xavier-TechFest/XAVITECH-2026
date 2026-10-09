@@ -94,9 +94,8 @@ export default function EventModal({ event, onClose }: EventModalProps) {
           {/* Key Metadata Grid */}
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 rounded-2xl border border-line bg-surface-raised p-4 font-oxanium text-xs">
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider">Date & Time</span>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">Date</span>
               <span className="mt-1 block font-semibold text-ink">{event.date}</span>
-              <span className="text-[11px] text-circuit">{event.time}</span>
             </div>
             <div>
               <span className="text-muted block text-[10px] uppercase tracking-wider">Exciting Gifts &amp; Prizes</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Calendar, Clock, Download, MapPin, Users, ChevronLeft } from "lucide-react";
+import { ArrowRight, Calendar, Download, MapPin, Users, ChevronLeft } from "lucide-react";
 import { EventItem, TRACKS } from "@/lib/eventsData";
 import { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
 import EventExploreSections from "@/components/sections/EventExploreSections";
@@ -28,7 +28,6 @@ export default function EventDetailView({ event }: { event: EventItem }) {
 
   const facts = [
     { label: "Date", value: event.date },
-    { label: "Time", value: event.time },
     { label: "Venue", value: event.venue },
     ...(event.team !== "TBA" ? [{ label: "Participants", value: event.team }] : []),
     { label: "Registration Fee", value: event.price },
@@ -111,7 +110,6 @@ export default function EventDetailView({ event }: { event: EventItem }) {
               </div>
               <div className="mb-5 grid grid-cols-2 gap-x-4 gap-y-4 border border-white/15 bg-[#03080d]/85 p-4 backdrop-blur-sm">
                 <CardFact icon={<Calendar size={14} />} label="DATE" value={event.date} accent={event.accentColor} />
-                <CardFact icon={<Clock size={14} />} label="TIME" value={event.time} accent={event.accentColor} />
                 <CardFact icon={<MapPin size={14} />} label="VENUE" value={event.venue} accent={event.accentColor} />
                 {event.team !== "TBA" && <CardFact icon={<Users size={14} />} label="PARTICIPANTS" value={event.team} accent={event.accentColor} />}
               </div>
