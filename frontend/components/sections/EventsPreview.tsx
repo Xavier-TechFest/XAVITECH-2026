@@ -18,6 +18,7 @@ const FILTERS: { label: string; id: Filter }[] = [
 
 /** Card artwork: the event's poster, dimmed under a scrim — or a generated blueprint pattern when there's no poster. */
 function CardArt({ event, active }: { event: FestEvent; active: boolean }) {
+  const isRuntimeRush = event.name === "RUNTIME RUSH";
   return (
     <>
       {event.image ? (
@@ -31,7 +32,9 @@ function CardArt({ event, active }: { event: FestEvent; active: boolean }) {
           decoding="async"
           draggable={false}
           className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-all duration-500 ${
-            active ? "scale-110 opacity-80" : "scale-100 opacity-50"
+            isRuntimeRush
+              ? active ? "scale-110 opacity-40" : "scale-100 opacity-30"
+              : active ? "scale-110 opacity-65" : "scale-100 opacity-40"
           }`}
         />
       ) : (

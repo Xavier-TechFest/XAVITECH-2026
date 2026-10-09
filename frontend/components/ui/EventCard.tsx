@@ -54,7 +54,7 @@ export default function EventCard({ event, variant }: EventCardProps) {
         src={event.image}
         alt={event.name}
         loading="lazy"
-        className={`absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04] ${event.id === "hack-the-skill" ? "opacity-[0.85] group-hover:opacity-100" : "opacity-75 group-hover:opacity-95"}`}
+        className={`absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04] ${event.id === "hack-the-skill" ? "opacity-[0.85] group-hover:opacity-100" : event.id === "runtime-rush" ? "opacity-30 group-hover:opacity-40" : "opacity-[0.58] group-hover:opacity-70"}`}
         style={cropStyle(imageCrop)}
       />
       <div className={`absolute inset-0 bg-gradient-to-b ${event.id === "hack-the-skill" ? "from-[#03080d]/55 via-[#03080d]/20 via-45% to-[#03080d]/65" : "from-[#03080d]/85 via-[#03080d]/45 via-45% to-[#03080d]/92"}`} />
