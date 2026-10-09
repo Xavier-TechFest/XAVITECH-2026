@@ -186,7 +186,7 @@ export default function EventsDirectory() {
                   <div>
                     <div className="flex items-center gap-2 font-oxanium text-xs font-black text-cyan-400 tracking-wider">
                       <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-                      {track.num} // TRACK {track.letter} SECTOR
+                      TRACK {track.letter}
                     </div>
 
                     <h2 className="mt-1 font-display text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">

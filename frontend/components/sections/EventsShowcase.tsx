@@ -130,7 +130,7 @@ export default function EventsShowcase() {
                   transition={{ delay: 0.4, duration: 0.5 }}
                   className="font-space text-base md:text-lg text-slate-300 max-w-xl mb-8"
                 >
-                  {currentEvent.fullTitle}
+                  {currentEvent.shortDesc}
                 </motion.p>
 
                 {/* METADATA STRIP */}
@@ -146,13 +146,13 @@ export default function EventsShowcase() {
                   </div>
                   {currentEvent.team !== "TBA" && <><div className="w-px h-8 bg-white/10 hidden md:block" />
                   <div className="flex flex-col">
-                    <span className="text-white/40 uppercase tracking-widest text-[10px] mb-1">{currentEvent.team === "Individual" ? "Participation Type" : "Team Size"}</span>
+                    <span className="text-white/40 uppercase tracking-widest text-[10px] mb-1">Participants</span>
                     <span className="font-bold text-white">{currentEvent.team}</span>
                   </div></>}
                   <div className="w-px h-8 bg-white/10 hidden md:block" />
                   <div className="flex flex-col">
-                    <span className="text-white/40 uppercase tracking-widest text-[10px] mb-1">Prize Pool</span>
-                    <span className="font-bold text-marigold text-lg">{currentEvent.prize === "TBA" ? "Exciting Gifts & Prizes" : currentEvent.prize}</span>
+                    <span className="text-white/40 uppercase tracking-widest text-[10px] mb-1">Exciting Gifts &amp; Prizes</span>
+                    <span className="font-bold text-marigold text-lg">Exciting Gifts &amp; Prizes</span>
                   </div>
                 </motion.div>
 

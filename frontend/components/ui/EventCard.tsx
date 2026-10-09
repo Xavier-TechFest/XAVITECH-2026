@@ -67,7 +67,7 @@ export default function EventCard({ event, variant }: EventCardProps) {
       <div className="relative flex h-full flex-col p-5 sm:p-6">
         <div className="flex items-center justify-between gap-2 border-b border-white/15 pb-3">
           <span className="truncate font-oxanium text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300 sm:text-xs">
-            {track?.name || event.trackName}
+            {event.badge}
           </span>
             <span className="flex shrink-0 items-center gap-1.5 border px-2 py-1 font-oxanium text-[9px] font-bold uppercase tracking-widest text-[var(--event-accent)]" style={{ borderColor: `${accent}99`, backgroundColor: `${accent}18` }}>
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--event-accent)] shadow-[0_0_8px_var(--event-accent)]" /> {status || (event.registrationConfig ? "DETAILS" : "TBA")}
@@ -75,14 +75,11 @@ export default function EventCard({ event, variant }: EventCardProps) {
         </div>
 
         <div className="pt-5">
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            {isFlagship && <span className="font-oxanium text-[9px] font-black uppercase tracking-widest text-[var(--event-accent)]">★ Featured</span>}
-            <span className="font-oxanium text-[9px] font-bold uppercase tracking-widest text-slate-300">{event.badge}</span>
-          </div>
           <h3 className="font-space text-3xl font-black uppercase leading-[0.95] tracking-tight text-white sm:text-4xl" style={{ textShadow: `0 0 24px ${accent}55` }}>
             {event.name}
           </h3>
-          <p className="mt-3 max-w-[34ch] font-space text-xs leading-relaxed text-slate-200 sm:text-sm">{event.shortDesc}</p>
+          <p className="mt-2 font-oxanium text-sm font-bold uppercase tracking-wider text-slate-200 sm:text-base">{event.shortDesc}</p>
+          {isFlagship && <span className="mt-2 inline-block font-oxanium text-[9px] font-black uppercase tracking-widest text-[var(--event-accent)]">★ Featured</span>}
           <div className="mt-4 flex flex-wrap gap-2">
             {tags.map((tag) => (
               <span key={tag} className="border px-2.5 py-1 font-oxanium text-[9px] font-bold uppercase tracking-wider text-[var(--event-accent)]" style={{ borderColor: `${accent}99`, backgroundColor: "rgba(2,8,13,.62)" }}>
@@ -94,16 +91,15 @@ export default function EventCard({ event, variant }: EventCardProps) {
 
         <div className="flex-1" />
 
-        <div className="grid grid-cols-2 gap-x-3 gap-y-3 border-t border-white/20 py-4 font-space text-[10px] text-slate-100 sm:text-xs">
-          <div><span className="block font-oxanium text-[9px] uppercase tracking-widest text-[var(--event-accent)]">Date · Time</span><span className="mt-1 block">{event.date} · {event.time}</span></div>
-          {event.team !== "TBA" && <div><span className="block font-oxanium text-[9px] uppercase tracking-widest text-[var(--event-accent)]">{event.team === "Individual" ? "Participation" : "Team size"}</span><span className="mt-1 block">{event.team}</span></div>}
-          <div className="truncate"><span className="block font-oxanium text-[9px] uppercase tracking-widest text-[var(--event-accent)]">Venue</span><span className="mt-1 block truncate">{event.venue}</span></div>
-          <div><span className="block font-oxanium text-[9px] uppercase tracking-widest text-[var(--event-accent)]">Registration Fee</span><span className="mt-1 block">{event.price}</span></div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-3 border-t border-white/20 py-4 font-space text-xs leading-snug text-slate-100 sm:text-sm">
+          <div><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Date · Time</span><span className="mt-1 block">{event.date} · {event.time}</span></div>
+          {event.team !== "TBA" && <div><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Participants</span><span className="mt-1 block">{event.team}</span></div>}
+          <div className="truncate"><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Venue</span><span className="mt-1 block truncate">{event.venue}</span></div>
+          <div><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Registration Fee</span><span className="mt-1 block">{event.price}</span></div>
         </div>
 
-        <div className="mb-3 flex items-center justify-between border bg-black/50 px-3 py-2.5" style={{ borderColor: `${accent}99` }}>
-          <span className="font-oxanium text-xs font-bold uppercase tracking-wider text-slate-200">Prize pool</span>
-          <span className="font-oxanium text-lg font-black tracking-wide" style={{ color: accent, textShadow: `0 0 12px ${accent}66` }}>{event.prize === "TBA" ? "Exciting Gifts & Prizes" : event.prize}</span>
+        <div className="mb-3 border bg-black/50 px-3 py-2.5 text-center" style={{ borderColor: `${accent}99` }}>
+          <span className="font-oxanium text-base font-black uppercase tracking-wide sm:text-lg" style={{ color: accent, textShadow: `0 0 12px ${accent}66` }}>Exciting Gifts &amp; Prizes</span>
         </div>
 
         <div className="grid grid-cols-5 gap-2">

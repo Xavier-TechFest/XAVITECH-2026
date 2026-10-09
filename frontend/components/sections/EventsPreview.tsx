@@ -70,7 +70,7 @@ function CardText({ event, number, active, large = false }: { event: FestEvent; 
           {event.name}
         </h3>
         {/* what the event really is */}
-        <p className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-circuit/50 bg-bg/70 px-2.5 py-1 font-mono text-[10px] uppercase leading-none tracking-[0.12em] text-circuit backdrop-blur-sm">
+        <p className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-circuit/50 bg-bg/70 px-3 py-1.5 font-oxanium text-xs font-semibold uppercase leading-tight tracking-wider text-circuit backdrop-blur-sm">
           <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-circuit" />
           <span className="truncate">{event.realName}</span>
         </p>

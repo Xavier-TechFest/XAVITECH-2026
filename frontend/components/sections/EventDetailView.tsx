@@ -30,7 +30,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
     { label: "Date", value: event.date },
     { label: "Time", value: event.time },
     { label: "Venue", value: event.venue },
-    ...(event.team !== "TBA" ? [{ label: event.team === "Individual" ? "Participation Type" : "Team Size", value: event.team }] : []),
+    ...(event.team !== "TBA" ? [{ label: "Participants", value: event.team }] : []),
     { label: "Registration Fee", value: event.price },
     { label: "Registration Deadline", value: config?.deadline ?? "TBA" },
     ...(eventData?.capacity !== null && eventData?.capacity !== undefined
@@ -49,8 +49,9 @@ export default function EventDetailView({ event }: { event: EventItem }) {
     <Link href="/events" className="mb-8 inline-flex items-center gap-2 font-oxanium text-xs uppercase tracking-widest text-slate-400 hover:text-cyan-300"><ChevronLeft size={16} />All events</Link>
     <div className="grid gap-8 lg:grid-cols-[1.1fr_480px] xl:gap-12">
       <section>
-        <p className="mb-4 font-oxanium text-xs font-bold uppercase tracking-[.2em] text-cyan-300">{track?.name ?? event.trackName} <span className="px-2 text-slate-600">/</span> XAVITECH 2026</p>
+        <p className="mb-4 font-oxanium text-xs font-bold uppercase tracking-[.2em] text-cyan-300">{event.badge} <span className="px-2 text-slate-600">/</span> XAVITECH 2026</p>
         <h1 className="font-space text-4xl font-black uppercase leading-tight tracking-tight text-white sm:text-6xl">{event.name}</h1>
+        <p className="mt-2 font-oxanium text-base font-bold uppercase tracking-wider text-cyan-200">{event.shortDesc}</p>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-300">{event.fullDesc}</p>
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">{facts.map((fact) => <Fact key={fact.label} label={fact.label} value={fact.value} />)}</div>
         {(config?.details || event.highlights.length > 0) && <section className="mt-10 space-y-4">
@@ -84,7 +85,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
           <div className="pointer-events-none absolute inset-0 -z-10 opacity-[.14]" style={{ backgroundImage: `linear-gradient(${event.accentColor} 1px, transparent 1px), linear-gradient(to right, ${event.accentColor} 1px, transparent 1px)`, backgroundSize: "30px 30px" }} />
           <div className="relative flex min-h-[680px] flex-col p-5 sm:min-h-[800px] sm:p-7 lg:h-full lg:min-h-0 lg:justify-between">
             <div className="flex items-center justify-between gap-3 border-b border-white/20 pb-4">
-              <span className="font-oxanium text-xs font-bold uppercase tracking-[.15em] text-white/85">{track?.name ?? event.trackName}</span>
+              <span className="font-oxanium text-xs font-bold uppercase tracking-[.15em] text-white/85">{event.badge}</span>
               <span
                 className="flex items-center gap-2 border px-3 py-1.5 font-oxanium text-[10px] font-bold uppercase tracking-widest"
                 style={{
@@ -105,14 +106,14 @@ export default function EventDetailView({ event }: { event: EventItem }) {
             </div>
             <div className="mt-auto pt-52 sm:pt-64 lg:pt-0">
               <div className="mb-5 flex items-end justify-between gap-4 border-b border-white/20 pb-5">
-                <div><span className="mb-1 block font-oxanium text-xs font-bold uppercase tracking-[.18em]" style={{ color: event.accentColor }}>PRIZE POOL</span><span className="font-space text-4xl font-black text-white sm:text-5xl" style={{ textShadow: `0 0 20px ${event.accentColor}88` }}>{event.prize === "TBA" ? "Exciting Gifts & Prizes" : event.prize}</span><p className="mt-2 max-w-sm text-xs leading-relaxed text-white/70">Prizes may vary depending on the number of registrations for this event.</p></div>
+                <div><span className="mb-1 block font-oxanium text-xs font-bold uppercase tracking-[.18em]" style={{ color: event.accentColor }}>EXCITING GIFTS &amp; PRIZES</span><span className="font-space text-4xl font-black text-white sm:text-5xl" style={{ textShadow: `0 0 20px ${event.accentColor}88` }}>Exciting Gifts &amp; Prizes</span><p className="mt-2 max-w-sm text-xs leading-relaxed text-white/70">Prizes may vary depending on the number of registrations for this event.</p></div>
                 <span className="mb-1 font-oxanium text-[10px] font-bold uppercase tracking-widest text-white/70">{event.name}</span>
               </div>
               <div className="mb-5 grid grid-cols-2 gap-x-4 gap-y-4 border border-white/15 bg-[#03080d]/85 p-4 backdrop-blur-sm">
                 <CardFact icon={<Calendar size={14} />} label="DATE" value={event.date} accent={event.accentColor} />
                 <CardFact icon={<Clock size={14} />} label="TIME" value={event.time} accent={event.accentColor} />
                 <CardFact icon={<MapPin size={14} />} label="VENUE" value={event.venue} accent={event.accentColor} />
-                {event.team !== "TBA" && <CardFact icon={<Users size={14} />} label={event.team === "Individual" ? "PARTICIPATION" : "TEAM SIZE"} value={event.team} accent={event.accentColor} />}
+                {event.team !== "TBA" && <CardFact icon={<Users size={14} />} label="PARTICIPANTS" value={event.team} accent={event.accentColor} />}
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 {isAvailable ? (
