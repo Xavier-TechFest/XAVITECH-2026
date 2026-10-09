@@ -43,6 +43,12 @@ export interface PrizeBreakdown {
   note?: string;
 }
 
+/** Reader-friendly sections for long event briefs shown in Explore. */
+export interface EventExploreSection {
+  title: string;
+  items: string[];
+}
+
 /**
  * Event-specific registration policy and workflow rules.
  */
@@ -168,6 +174,7 @@ export interface EventItem {
   requirements?: string[];
   prizeBreakdown?: PrizeBreakdown;
   documents?: DocumentRequirement[];
+  exploreSections?: EventExploreSection[];
 }
 
 /**
@@ -342,8 +349,8 @@ const debugDerbyFields: ParticipantFieldSpec[] = [
   { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "Valid mobile number" },
   { id: "email", label: "Email address", type: "email", required: true, placeholder: "For event updates" },
   { id: "city", label: "City (optional)", type: "text", required: false, placeholder: "Home city" },
-  { id: "hackerRank", label: "HackerRank username / account email", type: "text", required: true, placeholder: "Verified HackerRank account" },
-  { id: "language", label: "Debugging language", type: "select", required: true, options: ["Python", "Java", "C", "C++", "JavaScript"] },
+  { id: "hackerRank", label: "HackerRank username / account email", type: "text", required: true, placeholder: "Valid HackerRank account" },
+  { id: "language", label: "Programming language", type: "text", required: true, placeholder: "A language enabled for the contest" },
   { ...idPhoto, label: "Valid School / College ID Card" },
   { ...profilePhoto, label: "Profile photo (optional)", required: false },
 ];
@@ -450,7 +457,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "InnoCraft is a team hackathon for school and college participants. Teams register together through one team leader.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "Exciting Gifts & Prizes",
     price: "₹800 per school team / ₹1,000 per college team",
     team: "Exactly 4 members",
     venue: "TBA",
@@ -474,8 +481,8 @@ export const EVENTS: EventItem[] = [
       "Every participant must verify email/mobile and upload a valid school/college ID card.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
-      note: "Prizes will be announced closer to the event date.",
+      total: "Exciting Gifts & Prizes",
+      note: "Exciting gifts and prizes await participants.",
     },
     documents: [
       {
@@ -557,7 +564,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "WebWeave is a team web development challenge for school students in Class 10 and above and undergraduate students, including BCA students. Teams of two bring their own laptop and charger, then build around one shared theme in a four-hour build phase.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "Exciting Gifts & Prizes",
     price: "₹300 registration fee",
     team: "Exactly 2 members",
     venue: "TBA",
@@ -589,7 +596,7 @@ export const EVENTS: EventItem[] = [
       "Basic HTML, CSS, and JavaScript knowledge is required. Bring one laptop and charger per team.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -658,8 +665,8 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Runtime Rush is a coding challenge open to school and college students. Participate individually or register with one teammate. Participants compete using Java, C, C++, Python, or JavaScript.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
-    price: "₹300 registration fee",
+    prize: "Exciting Gifts & Prizes",
+    price: "₹150 per participant",
     team: "Individual or 2 participants",
     venue: "TBA",
     accentColor: "#35e0c9",
@@ -687,7 +694,7 @@ export const EVENTS: EventItem[] = [
       "Programming language options: Java, C, C++, Python, and JavaScript.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -710,9 +717,10 @@ export const EVENTS: EventItem[] = [
       eventFormat: "team",
       minTeamSize: 1,
       maxTeamSize: 2,
-      feeAmount: 300,
-      feeDisplay: "₹300 registration fee",
-      deadline: "To be decided by Overall Coordinators",
+      feeAmount: 150,
+      feeBasis: "per_participant",
+      feeDisplay: "₹150 per participant",
+      deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
         { id: "teamName", label: "Team name", type: "text", required: true },
@@ -766,7 +774,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "XAVITECH 2026 Data Analytics is a team competition for pairs. Participants should know Excel and Power BI. The event is open to Class 7–12, undergraduate, and postgraduate students over 16 years old.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "Exciting Gifts & Prizes",
     price: "₹300 registration fee",
     team: "2 participants",
     venue: "TBA",
@@ -796,7 +804,7 @@ export const EVENTS: EventItem[] = [
       "Prerequisite: knowledge of Excel and Power BI.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -822,7 +830,7 @@ export const EVENTS: EventItem[] = [
       feeAmount: 300,
       feeBasis: "per_team",
       feeDisplay: "₹300 registration fee",
-      deadline: "To be decided by overall coordinators",
+      deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
         { id: "teamName", label: "Team name", type: "text", required: true },
@@ -871,11 +879,11 @@ export const EVENTS: EventItem[] = [
     trackId: "track-b",
     trackName: "TRACK B — CODING & DEVELOPMENT",
     shortDesc: "An individual debugging challenge for school and undergraduate students.",
-    fullDesc: "Debug Derby is an individual programming challenge for Class 11, Class 12, and undergraduate students. Participants compete in two debugging rounds with a combined duration of 90 minutes: basic debugging followed by advanced debugging. A verified HackerRank account is required at least 24 hours before the event.",
-    date: "TBA",
-    time: "TBA",
+    fullDesc: "Debug Derby is an individual debugging challenge for Class 11, Class 12, and undergraduate students. Qualify through a pen-and-paper MCQ round, then solve coding and debugging problems on HackerRank.",
+    date: "31 October 2026",
+    time: "09:30 AM – 11:30 AM",
     prize: "₹3,000",
-    price: "₹200 per participant",
+    price: "₹150 per participant",
     team: "Individual",
     venue: "TBA",
     accentColor: "#35e0c9",
@@ -883,28 +891,74 @@ export const EVENTS: EventItem[] = [
     borderColor: "rgba(53,224,201,.4)",
     image: "/images/events/event-02.jpeg",
     highlights: [
-      "Two debugging rounds · 90 minutes combined.",
-      "Round 1: basic debugging. Round 2: advanced debugging.",
+      "Two rounds · 31 October 2026 · 09:30 AM–11:30 AM.",
+      "Round 1 qualifiers advance to HackerRank-based Round 2.",
       "Prizes: 1st ₹3,000, 2nd ₹2,000, and 3rd ₹1,000.",
     ],
     rules: [
-      "Individual participation only. Use your own verified HackerRank account and work independently.",
+      "Individual participation only. Use your own valid HackerRank account and work independently.",
       "AI assistants, code-generation tools, collaboration, copied code, and other unauthorized assistance are prohibited and may lead to immediate disqualification.",
-      "Report technical failures to an invigilator immediately. Verified organizer-side infrastructure failures may receive time compensation or a move to a pre-tested backup computer. HackerRank-wide outages are handled by the faculty/event coordinator.",
+      "Report technical failures to an invigilator immediately. The event team will verify reported issues and follow the event policy for confirmed event/system failures.",
     ],
     eligibility: [
       "Eligible participants are Class 11, Class 12, and undergraduate students.",
-      "No department restriction; participants should have basic programming knowledge. All UG years/semesters are eligible.",
-      "No separate age restriction is specified; eligibility is based on the stated education categories.",
+      "Participants should know at least one programming language supported by the HackerRank contest and be familiar with basic submissions.",
     ],
     registrationInfo: [
-      "Individual registration only.",
-      "Create and verify your HackerRank account at least 24 hours before the competition. Use that account during the event.",
+      "Register as an individual for ₹150.",
+      "Bring a valid HackerRank account for Round 2 and know your login credentials.",
     ],
     requirements: [
-      "Required: full name, current school/college/university, class/course, mobile number, email, valid school/college ID, HackerRank username/account email, and selected debugging language.",
-      "Year/semester, profile photo, and city are optional. Student ID/roll number and section are not collected.",
-      "Supported debugging languages: Python, Java, C, C++, and JavaScript. Basic knowledge of at least one is a prerequisite.",
+      "Required: full name, current school/college/university, class/course, mobile number, email, valid school/college ID, HackerRank username/account email, and a programming language enabled for the contest.",
+      "Year/semester, profile photo, and city are optional.",
+      "Know at least one programming language. Supported languages: TBA.",
+    ],
+    exploreSections: [
+      { title: "Who can participate?", items: [
+        "Open to Class 11, Class 12, and undergraduate students.",
+        "Registration is individual. Participants should know at least one programming language and the basics of submitting code on HackerRank.",
+        "Carry a valid student ID when required.",
+      ] },
+      { title: "How does the challenge work?", items: [
+        "The competition has two rounds. You must qualify in Round 1 to continue to Round 2.",
+        "Round 1 — Bug Hunt: pen-and-paper multiple-choice questions on programming and debugging fundamentals.",
+        "Round 2 — Code Rescue: coding and debugging problems on HackerRank.",
+      ] },
+      { title: "Round 1: Bug Hunt", items: [
+        "Time: 09:30 AM–10:15 AM. The round tests basic programming concepts and your ability to spot common errors.",
+        "Topics may include syntax errors, variables and declarations, input/output, conditionals, loops, arrays, strings, basic logic errors, and programming fundamentals.",
+        "Bring your own pen and mark answers on the provided sheet. Electronic devices cannot be used to solve this round, and answers are not accepted after time is called.",
+        "Round 1 evaluation and qualification: 10:15 AM–10:25 AM.",
+      ] },
+      { title: "Round 2: Code Rescue", items: [
+        "Time: 10:25 AM–11:25 AM, followed by submission closure from 11:25 AM–11:30 AM.",
+        "Problems may cover complex logic and runtime errors, array indexing, string manipulation, nested loops, algorithms, edge cases, and programs with multiple bugs.",
+        "Submit all Round 2 solutions through HackerRank. Supported languages: TBA.",
+      ] },
+      { title: "How are results decided?", items: [
+        "Round 1 is evaluated from the MCQ answers on the provided sheet. Round 2 is evaluated using HackerRank test cases and automated scoring.",
+        "Marking distribution: TBA.",
+        "For a tie, completely solved questions are considered first, followed by successful submission time. Additional tie-breaker: TBA.",
+        "Prizes: 1st ₹3,000, 2nd ₹2,000, and 3rd ₹1,000.",
+      ] },
+      { title: "How do I register?", items: [
+        "Register individually. The registration fee is ₹150 per participant.",
+        "Provide your name, institution, class/course, contact details, HackerRank username or account email, and a valid school/college ID.",
+        "Have a valid HackerRank account ready for Round 2. Know your login details, test your account before the event, and practise the basic submission process.",
+      ] },
+      { title: "When and where is the event?", items: [
+        "Date: 31 October 2026. Competition hours: 09:30 AM–11:30 AM.",
+        "Venue: TBA.",
+        "09:30–10:15 AM: Bug Hunt · 10:15–10:25 AM: evaluation and qualification · 10:25–11:25 AM: Code Rescue · 11:25–11:30 AM: submission closure and conclusion.",
+      ] },
+      { title: "Full rules and participant guide", items: [
+        "Work independently. Do not communicate with other participants, copy answers or code, or share or receive solutions.",
+        "AI and code-generation tools are prohibited, including ChatGPT, Google Gemini, GitHub Copilot, and other online assistance. Unauthorized electronic devices or assistance are not allowed.",
+        "Do not access another participant’s system or account, interfere with another participant’s computer or HackerRank account, or violate any competition rule. Violations may result in disqualification.",
+        "Follow coordinator and invigilator instructions, stop when time is called, respect other participants, and keep your assigned workspace clean. Event coordinators/faculty make the final decision on rule violations.",
+        "Bring a valid student ID, a pen, registration confirmation/details, and your HackerRank login credentials.",
+        "If a computer or internet problem occurs during Round 2, tell an invigilator immediately and do not make unauthorized system changes. The event team will verify the issue. Backup system and time compensation: TBA.",
+      ] },
     ],
     prizeBreakdown: {
       total: "₹6,000 combined across 3 places",
@@ -933,10 +987,10 @@ export const EVENTS: EventItem[] = [
       eventFormat: "individual",
       minTeamSize: 1,
       maxTeamSize: 1,
-      feeAmount: 200,
+      feeAmount: 150,
       feeBasis: "per_participant",
-      feeDisplay: "₹200 per participant",
-      deadline: "As announced by the Tech Fest organizers",
+      feeDisplay: "₹150 per participant",
+      deadline: "TBA",
       participantFields: debugDerbyFields,
       coordinator: {
         name: "Priyanshu Kumar",
@@ -945,11 +999,11 @@ export const EVENTS: EventItem[] = [
         coCoordinator: "Akshat Raj",
       },
       details: {
-        duration: "Two rounds · 90 minutes combined",
-        format: "Round 1: basic debugging · Round 2: advanced debugging",
+        duration: "31 October 2026 · 09:30 AM–11:30 AM",
+        format: "Round 1: Bug Hunt (pen-and-paper MCQ) · Round 2: Code Rescue (HackerRank)",
       },
       declarations: baseDeclarations,
-      customDeclaration: "I will use my own verified HackerRank account during the competition.",
+      customDeclaration: "I will use my own valid HackerRank account during the competition.",
       documents: [
         {
           key: "collegeId",
@@ -988,21 +1042,20 @@ export const EVENTS: EventItem[] = [
     fullDesc: "XAVITECH 2026 Model United Nations (MUN) is an individual delegate event for the United Nations Commission on Science and Technology for Development (CSTD).",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
-    price: "₹400",
+    prize: "Exciting Gifts & Prizes",
+    price: "₹500 per delegate",
     team: "Individual",
     venue: "TBA",
     accentColor: "#34d399",
     glowColor: "rgba(52,211,153,.2)",
     borderColor: "rgba(52,211,153,.4)",
-    image: "/images/events/event-11.jpeg",
+    image: "/events/MUN.jpg",
     highlights: [
-      "Expected participation: 60–70 delegates.",
+      "Expected participation: TBA.",
     ],
     rules: [],
     eligibility: [
-      "Open to eligible college/university students. All courses and academic years/semesters are eligible unless restricted by the final event policy.",
-      "External participants are allowed subject to final Techfest eligibility and organiser approval. No separate age restriction is proposed.",
+      "Open to college/university students. Course, academic-year, external-participant, and age restrictions: TBA.",
     ],
     registrationInfo: [
       "Individual delegate registration; one registration per delegate.",
@@ -1013,7 +1066,7 @@ export const EVENTS: EventItem[] = [
       "Delegates must follow committee rules, the event code of conduct, and organiser instructions.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1033,9 +1086,9 @@ export const EVENTS: EventItem[] = [
     ],
     registrationConfig: {
       eventFormat: "individual",
-      feeAmount: 400,
+      feeAmount: 500,
       feeBasis: "per_participant",
-      feeDisplay: "₹400 per delegate",
+      feeDisplay: "₹500 per delegate",
       deadline: "TBA",
       participantFields: [
         ...common,
@@ -1094,7 +1147,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "Tech Quiz is a team-based event with fixed two-member teams.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "Exciting Gifts & Prizes",
     price: "₹300 per team",
     team: "Exactly 2 members",
     venue: "TBA",
@@ -1103,12 +1156,11 @@ export const EVENTS: EventItem[] = [
     borderColor: "rgba(52,211,153,.4)",
     image: "/images/events/event-09.jpeg",
     highlights: [
-      "Expected participation: 20–30 teams (approximately 40–60 participants).",
+      "Expected participation: TBA.",
     ],
     rules: [],
     eligibility: [
-      "Open to eligible college/university students. All courses and academic years/semesters are eligible unless restricted by final event policy.",
-      "External participants are allowed subject to final XAVITECH eligibility rules and organiser approval. No separate age restriction has been proposed.",
+      "Open to college/university students. Course, academic-year, external-participant, and age restrictions: TBA.",
     ],
     registrationInfo: [
       "One team member submits a single registration for the team and enters the second member’s details during the same form.",
@@ -1120,7 +1172,7 @@ export const EVENTS: EventItem[] = [
       "Valid student identity proof and completion of the online registration form are prerequisites.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1193,10 +1245,10 @@ export const EVENTS: EventItem[] = [
     trackId: "track-b",
     trackName: "TRACK B — CODING & DEVELOPMENT",
     shortDesc: "An AI prompt battle for individual participants and small teams.",
-    fullDesc: "Battle of Bots is an AI prompt battle open to individual participants and teams of up to three. Event rules will be shared by the organizers. Further event details are to be announced.",
+    fullDesc: "Battle of Bots is an AI prompt battle for individual participants and teams of up to three. Further event details: TBA.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "Exciting Gifts & Prizes",
     price: "₹550 registration fee",
     team: "Individual or teams of 2–3",
     venue: "TBA",
@@ -1206,7 +1258,7 @@ export const EVENTS: EventItem[] = [
     image: "/images/events/event-10.jpeg",
     highlights: [],
     rules: [
-      "Event rules and regulations will be shared by the organizers.",
+      "Event rules and regulations: TBA.",
       "Team leaders are responsible for the accuracy of submitted team information and must follow the event rules.",
     ],
     eligibility: [
@@ -1216,7 +1268,7 @@ export const EVENTS: EventItem[] = [
     registrationInfo: [
       "Choose individual registration or a team of up to three. A team leader submits team registration and enters all members during registration.",
       "A team name and team leader are required for teams. Separate member registrations and joining multiple teams are not allowed.",
-      "Registration deadline: 27 October 2026. Registration fee: ₹550; the source does not specify whether this is charged per participant or per team.",
+      "Registration deadline: 27 October 2026. Registration fee: ₹550. Fee basis: TBA.",
     ],
     requirements: [
       "Each participant must provide full name, institution, department/course, year/semester, mobile number, email address, and a valid college ID card.",
@@ -1226,7 +1278,7 @@ export const EVENTS: EventItem[] = [
       "Coordinator access should include participant and team lists, contact details, uploaded ID cards, submitted project/material files, registration and attendance status, and CSV/Excel export.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1288,7 +1340,7 @@ export const EVENTS: EventItem[] = [
     fullDesc: "XAVITECH 2026 Ideathon is a team event for groups of two to four. A team leader submits the registration, adds one teammate, and invites any remaining members to join through a link.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
+    prize: "Exciting Gifts & Prizes",
     price: "₹500 per team",
     team: "2–4 members",
     venue: "TBA",
@@ -1298,12 +1350,10 @@ export const EVENTS: EventItem[] = [
     image: "/images/events/event-12.jpeg",
     highlights: [],
     rules: [
-      "Participants must follow the event rules and code of conduct. No additional restriction is proposed unless required by the final event policy.",
+      "Follow the event rules and code of conduct. Additional restrictions: TBA.",
     ],
     eligibility: [
-      "Open to eligible college/university students, subject to final event eligibility rules.",
-      "All courses/departments and academic years/semesters are eligible unless restricted by the final policy. No separate age restriction is proposed.",
-      "External participants are allowed, subject to applicable event eligibility requirements.",
+      "Eligible participants: college/university students. Course, academic-year, external-participant, and age restrictions: TBA.",
     ],
     registrationInfo: [
       "Team name and team leader are required. One team leader submits the registration and enters one additional member; remaining members join through an invite/link workflow.",
@@ -1315,7 +1365,7 @@ export const EVENTS: EventItem[] = [
       "A valid student identity proof and completed online registration are required.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1389,38 +1439,127 @@ export const EVENTS: EventItem[] = [
     badgeLevel: "Crucible",
     trackId: "track-c",
     trackName: "TRACK C — GAMING & ADVENTURE",
-    shortDesc: "A BGMI esports squad competition.",
-    fullDesc: "Battlefield Blitz is XAVITECH 2026's BGMI esports competition. Each squad registers four core players and may add one optional substitute. Matches use Advanced Custom Rooms in a best-of-three format across Erangel, Miramar, and Rondo.",
-    date: "TBA",
-    time: "TBA",
-    prize: "₹6,000",
+    shortDesc: "A squad-based BGMI tournament played across three maps.",
+    fullDesc: "Battlefield Blitz is XAVITECH 2026's squad-based Battlegrounds Mobile India tournament. Up to 25 squads play one Best-of-3 series across Erangel, Miramar, and Rondo. The winner is decided by cumulative placement and kill points, with live coverage for spectators at De Nobili Hall.",
+    date: "31 October 2026",
+    time: "8:00 AM–1:00 PM",
+    prize: "₹12,000",
     price: "₹200 per player",
-    team: "4 core players + 1 optional substitute",
-    venue: "TBA",
+    team: "4–5 members",
+    venue: "De Nobili Hall (Track C)",
     accentColor: "#60a5fa",
     glowColor: "rgba(96,165,250,.2)",
     borderColor: "rgba(96,165,250,.4)",
-    image: "/assets/event-images/LootGoblins.png",
+    image: "/events/Bgmi.jpg",
     highlights: [
-      "Best of 3 across Erangel, Miramar, and Rondo.",
-      "Prize standings: 1st ₹6,000, 2nd ₹4,000, MVP ₹2,000.",
+      "One three-map series · all registered squads play all three maps.",
+      "4 main players + 1 optional substitute · ₹200 per registered player · 25-squad cap.",
+      "Cumulative placement and kill points decide the standings.",
+      "Prize pool: ₹12,000 · 1st ₹6,000 · 2nd ₹4,000 · MVP ₹2,000.",
     ],
     rules: [
       "Advanced Custom Room restrictions apply. Emulators, unauthorized peripherals, macros, hacks, cheats, exploits, and unauthorized software/hardware are prohibited.",
       "Match-fixing, account sharing, ID spoofing, and impersonation are prohibited. Violations may result in disqualification, forfeiture of prizes/certificates, and referral to university administration.",
     ],
     eligibility: [
-      "Open to Xavier University Patna students and external participants.",
-      "All courses/departments and years/semesters are eligible. No age restriction is specified.",
+      "Open to Xavier University Patna students and external participants of all skill levels.",
+      "All courses, departments, and academic years are eligible. No age restriction is specified.",
     ],
     registrationInfo: [
-      "Team name and team leader are required. The team leader submits registration for the squad; separate member registrations and participation on multiple teams are not allowed.",
-      "Four core players are compulsory. One substitute (P5) may be added during registration.",
+      "Register one squad with four main players and up to one optional substitute. Provide a team name and choose one team leader to submit the squad registration.",
+      "The fee is ₹200 per registered player, payable through the official Tech Fest portal. A player may not join more than one squad.",
+      "Entries are limited to 25 squads and accepted first come, first served. Registration closes on 20 October 2026 or when all places are filled.",
+      "Fees are non-refundable. The organising committee may accept or decline an entry without stating a reason.",
     ],
     requirements: [
       "Each player must provide full name, institution, active mobile number, verified email, BGMI IGN, and Character ID/UID. Department/course, year/semester, profile photo, and city are optional; section is not collected.",
       "Every player must provide valid ID: XUP students upload their college ID, and external players upload a government-issued photo ID. Student ID/roll number is required only for XUP students.",
       "Four core-player entries are required. The P5 substitute's fields are optional.",
+    ],
+    exploreSections: [
+      {
+        title: "Eligibility",
+        items: [
+          "Open to Xavier University Patna students and external participants of all skill levels. All courses, departments, and academic years are eligible; no age restriction is specified.",
+          "Each squad has 4 main players and may register 1 optional substitute. The tournament is capped at 25 squads; entries are accepted first come, first served.",
+        ],
+      },
+      {
+        title: "How does the tournament work?",
+        items: [
+          "All registered squads play together in one custom-room lobby. There are no qualifying or elimination rounds: each squad plays all three maps in the Best-of-3 (BO3) series.",
+          "Map order: Erangel → Miramar → Rondo. Scores from all three maps are added together to determine the final standings.",
+          "The custom-room ID and password are shared with squad leaders before each map. Allow 15–20 minutes between maps for breaks and score updates.",
+        ],
+      },
+      {
+        title: "Which maps will we play?",
+        items: [
+          "Map 1 · Erangel — the opening match.",
+          "Map 2 · Miramar — the second match.",
+          "Map 3 · Rondo — the deciding match.",
+          "All registered squads compete in all three matches. The 25-squad cap fits the stated custom-room capacity.",
+        ],
+      },
+      {
+        title: "What device do I need?",
+        items: [
+          "Play on your own physical mobile device. Emulators are not allowed for players or room hosting; BGMI permanently bans accounts played on emulators.",
+          "The host room runs on a high-performance physical phone or tablet; an iPhone or iPad is preferred. An Advance Room Pass is required to host the custom room.",
+          "The venue provides dedicated high-speed internet, with a backup hotspot/dongle. Charging stations are available between maps; players are responsible for bringing their own devices.",
+        ],
+      },
+      {
+        title: "How is the winner decided?",
+        items: [
+          "The tournament uses placement-plus-kill scoring. Placement points per map: 1st place — 10; 2nd — 6; 3rd — 5; 4th — 4; 5th — 3; 6th — 2; 7th–8th — 1; 9th place and below — 0.",
+          "Add 1 point for every kill. Each squad's placement and kill points are totalled across Erangel, Miramar, and Rondo; the highest combined score wins.",
+          "Tie-breakers: 1) total kills across all three maps; 2) number of Chicken Dinners (first-place finishes); 3) a short decider match during the scheduled buffer if the tie remains.",
+        ],
+      },
+      {
+        title: "How do I register my squad?",
+        items: [
+          "One team leader submits one registration for the squad. Register 4 main players and, if needed, 1 substitute. A player cannot be registered on more than one squad.",
+          "Registration costs ₹200 per player through the official Tech Fest portal. The 25-squad cap is first come, first served; registration closes 20 October 2026 or once all places are filled. Fees are non-refundable.",
+          "A Squad ID is generated after registration. The custom-room ID and password are shared with the squad leader before each map.",
+          "Provide each player's full name, institution, active mobile number, verified email, BGMI in-game name (IGN), and Character ID/UID. Department/course, year/semester, profile photo, and city are optional; no section field is required.",
+          "Upload valid ID for every player: Xavier University Patna students use their college ID; external players use a government-issued photo ID. XUP student ID/roll number is required for XUP students.",
+          "All squad members must check in together with valid college/school ID. Arrive by 8:30 AM, at least 30 minutes before the 9:00 AM tournament start.",
+        ],
+      },
+      {
+        title: "When and where is it happening?",
+        items: [
+          "Date: 31 October 2026 · Venue: De Nobili Hall, Track C · Tournament and result window: 8:00 AM–1:00 PM.",
+          "8:00–8:30 AM · Squad check-in, ID and device verification at the De Nobili Hall entrance. Check in together and bring valid college/school ID.",
+          "8:30–8:45 AM · Briefing on the BO3 format, maps, scoring, and conduct rules.",
+          "8:45–9:00 AM · Lobby setup, room details, and warm-up.",
+          "9:00–9:45 AM · Erangel · 9:45–10:00 AM · Break and standings update.",
+          "10:00–10:50 AM · Miramar · 10:50–11:05 AM · Break, standings update, and refreshments.",
+          "11:05–11:50 AM · Rondo · 11:50 AM–12:15 PM · Final scoring and tie-breaker check.",
+          "12:15–12:45 PM · Buffer for a decider match if scores remain tied · 12:45–1:00 PM · Final results and winner announcement.",
+        ],
+      },
+      {
+        title: "Full rules and participant guide",
+        items: [
+          "Be at your station at least 15 minutes before each map. Squads that do not join the room on time receive zero points for that map.",
+          "Aimbots, trigger-bots, ESP, hacks, and other third-party software result in instant disqualification and may incur an additional committee-decided penalty.",
+          "Macros, unauthorized peripherals or software/hardware, match-fixing, account sharing, ID spoofing, impersonation, exploiting glitches, or leaving a match without a valid reason result in disqualification. All squads involved in teaming are disqualified.",
+          "Violations may also lead to prize or certificate forfeiture, additional committee penalties, or referral to the university administration.",
+          "Treat players, referees, and volunteers respectfully. Toxicity or abusive behaviour may result in a penalty or disqualification. Referees may disqualify squads involved in unfair play.",
+          "Raise disputes promptly at the admin/referee table after a match. The referee panel's decision is final; unresolved disputes may be escalated to Track C Leader Bittu Raj.",
+          "Player-side connectivity problems do not qualify for a replay. Players are responsible for their own devices; the event team does not provide backup devices. If a device fails, the squad continues with its remaining functional devices and players.",
+          "For a venue internet outage, a backup hotspot/dongle is available. Matches are paused and resumed where possible rather than replayed.",
+          "Venue zones include player stations with charging access, a spectator seating area facing the large display, a streaming/casting desk, and a central admin/referee table. Directional signs guide attendees to De Nobili Hall; spectator capacity is enforced and volunteers manage seating and entry.",
+          "The host device streams with PRISM Mobile, paired through the app's CONNECT feature with PRISM Live Studio on a laptop. The laptop sends the feed to the large display; screen recordings provide a backup if the stream drops.",
+          "A live scoring sheet is updated after every map and shown at the admin table. Power backup (UPS/generator) covers charging stations, the streaming desk, and displays.",
+          "A sound system supports announcements, commentary, and result calls. First aid, water, and refreshments are available at the venue.",
+          "Seventeen event volunteers support check-in (2), device checks (2), refereeing (3), streaming/AV (2), commentary (2), scoring (2), crowd management (2), and logistics (2). Referees handle disputes; the Track C Leader monitors the schedule and any overrun.",
+          "Live commentary supports the in-venue audience and social-media coverage. Certificates are issued to all registered squads; formal prize distribution takes place at the Valedictory Ceremony. The event schedule is coordinated with Death Race and Tech Treasure Hunt in Track C.",
+        ],
+      },
     ],
     prizeBreakdown: {
       total: "₹12,000 prize pool",
@@ -1470,7 +1609,7 @@ export const EVENTS: EventItem[] = [
         game: "BGMI",
         maps: ["Erangel", "Miramar", "Rondo"],
         format: "Best of 3 · Advanced Custom Room",
-        note: "Room ID/password should be sent to the registered team leader shortly before each round. Round schedule confirmation and Squad ID are generated after registration.",
+        note: "The custom-room ID and password are shared with squad leaders before each map.",
       },
       declarations: baseDeclarations,
       customDeclaration: "I confirm that the squad details are accurate and each member has agreed to participate.",
@@ -1509,21 +1648,23 @@ export const EVENTS: EventItem[] = [
     badgeLevel: "Intermediate",
     trackId: "track-c",
     trackName: "TRACK C — GAMING & ADVENTURE",
-    shortDesc: "A large-team campus treasure hunt.",
-    fullDesc: "Cipher Chase is a campus treasure hunt for teams of 20–30 students. Clues may use QR codes, Morse code, binary code, and other puzzle formats. Teams must stay within their assigned area and follow the event rules.",
+    shortDesc: "A team-based campus treasure hunt with clue rounds and eliminations.",
+    fullDesc: "Cipher Chase is a team-based campus treasure hunt with club-based eliminations. Teams follow clues through the Green Card round, a QR-code Smiley, and three hunts before the six surviving teams enter the final rounds.",
     date: "TBA",
     time: "TBA",
-    prize: "To Be Announced",
-    price: "₹200 registration fee",
-    team: "20–30 members",
-    venue: "Campus",
+    prize: "₹4,000",
+    price: "₹400 per team",
+    team: "Exactly 4 members",
+    venue: "TBA",
     accentColor: "#60a5fa",
     glowColor: "rgba(96,165,250,.2)",
     borderColor: "rgba(96,165,250,.4)",
     image: "/images/events/event-07.jpeg",
     highlights: [
-      "Clues may use QR codes, Morse code, binary code, and similar formats.",
-      "Team leader enters up to four members; the rest join by invite or coordinator entry.",
+      "Teams of 4 · ₹400 per team.",
+      "Club groupings organize elimination rounds; teams in a club do not play as one combined team.",
+      "Winning team prize: ₹4,000. Participants receive participation certificates.",
+      "Clues may use QR codes, Morse code, binary code, and other puzzle formats.",
     ],
     rules: [
       "Do not damage college property. Damage may result in a penalty or fine.",
@@ -1537,20 +1678,103 @@ export const EVENTS: EventItem[] = [
       "All courses and departments are eligible. External participants are allowed. No age restriction is specified.",
     ],
     registrationInfo: [
-      "A team must have 20–30 members. Team name is not required; a team leader is required.",
-      "The team leader submits one registration and enters up to four members. Remaining members join by invite/link or are added by the coordinator later. Separate registrations and joining multiple teams are not allowed.",
+      "Register exactly 4 members. A team name is not required; choose one team leader to submit the team's registration.",
+      "The team leader registers all four members together. Separate member registrations and joining multiple teams are not allowed.",
       "Use an email address and mobile number that are not already registered to another team.",
-      "The registration fee is ₹200. The deadline is before 30 October 2026.",
+      "The fee is ₹400 per team. Register before 30 October 2026.",
     ],
     requirements: [
       "Every member must provide full name, institution, student ID/roll number, city, and a valid college ID card. Department/course is optional.",
       "Only the team leader must provide a mobile number, email address, and optional profile photo. Year/semester and section are not collected.",
     ],
+    exploreSections: [
+      {
+        title: "Eligibility",
+        items: [
+          "Open to students in Classes 9–12 and undergraduate or postgraduate students. All courses and departments are eligible; external participants are welcome. No age restriction is specified.",
+          "Each registered team has exactly 4 members. The registration fee is ₹400 per team.",
+        ],
+      },
+      {
+        title: "How does the club system work?",
+        items: [
+          "Clubs are groups used to organize the elimination rounds. Teams assigned to the same club remain separate teams; they do not play as one combined team.",
+          "The number of clubs depends on participation. For example, 30 teams are divided into 6 clubs of 5 teams each. Each club competes independently during elimination stages.",
+          "Follow the clues and instructions given by the organizers at every stage. The organizing committee makes the final decisions on qualification and elimination.",
+        ],
+      },
+      {
+        title: "Round 1: How do teams find the Green Card?",
+        items: [
+          "Each club is assigned a different location on campus, and teams receive clues leading to their club’s location.",
+          "At a five-team club’s location, 4 Green Cards are placed. Find a card, return to De Nobili Hall, and submit it to the designated volunteers.",
+          "The first 4 teams in each club to submit a valid Green Card qualify. The remaining team is eliminated, reducing the 30-team example from 30 teams to 24.",
+        ],
+      },
+      {
+        title: "What happens at the Smiley and during Hunts 1–3?",
+        items: [
+          "Qualified teams receive a clue to a Smiley placed somewhere on campus. Scan its QR code to get the next instruction.",
+          "After the Smiley stage, teams continue directly from the QR-code instructions; they do not need to return to De Nobili Hall after each hunt.",
+          "Complete Hunt 1, Hunt 2, and Hunt 3 by following the clues and instructions. One team from each club is eliminated after each hunt.",
+          "In the 30-team example, the count progresses: 30 start → 24 after the Green Card round → 18 after Hunt 1 → 12 after Hunt 2 → 6 after Hunt 3.",
+          "After Hunt 3, the remaining teams return to De Nobili Hall at the designated time for the Final Round.",
+        ],
+      },
+      {
+        title: "What happens in the Final Round?",
+        items: [
+          "Mind Game: all 6 remaining teams compete and are evaluated by score. The team with the lowest score is eliminated; the other 5 advance.",
+          "Physical Game: the qualified teams take part in a Physical/Run-to-Hunt challenge.",
+          "Physical Game rules, scoring, and elimination criteria: TBA.",
+          "The overall winning team receives the ₹4,000 prize.",
+        ],
+      },
+      {
+        title: "How do I register my team?",
+        items: [
+          "Register exactly 4 team members. One team leader submits all four members in a single registration; a team name is not required.",
+          "The fee is ₹400 per team. Register before 30 October 2026. Fees are non-refundable after cancellation.",
+          "Each member provides their full name, institution, student ID/roll number, city, and a valid college ID. Department/course is optional.",
+          "The team leader provides a mobile number and email address that are not used by another team. A profile photo is optional; year/semester and section are not collected.",
+          "Separate member registrations and participation on multiple teams are not allowed.",
+        ],
+      },
+      {
+        title: "What prizes and certificates are provided?",
+        items: [
+          "The winning team receives a prize of ₹4,000 and a winning certificate. A trophy is optional.",
+          "Participants receive participation certificates.",
+          "Participation ID and refreshments: TBA.",
+        ],
+      },
+      {
+        title: "When and where is it happening?",
+        items: [
+          "Venue and event time: TBA.",
+          "The event takes place on campus. Follow your club's clue set and proceed only to the locations assigned to your team.",
+        ],
+      },
+      {
+        title: "Full rules and participant guide",
+        items: [
+          "Stay within your team's assigned area. Leaving it eliminates the entire team.",
+          "Do not damage college property. Damage may result in a penalty or fine.",
+          "Cheating, disrupting equipment, or using a proxy disqualifies the entire team.",
+          "Teams may visit campus before their assigned time to become familiar with it, but must not search for clues. Anyone caught searching for clues early is immediately eliminated.",
+          "Follow organizers’ and volunteers’ instructions and your team’s clues at every stage. Qualification and elimination decisions made by the organizing committee are final.",
+          "Do not tamper with clues, QR codes, Green Cards, or other game materials. Disrupting the game or obstructing other teams may lead to disqualification.",
+          "Physical/Run-to-Hunt rules, scoring, and elimination criteria: TBA. The organizing committee may make necessary changes to the format; its decision is final.",
+        ],
+      },
+    ],
     coordinatorRequirements: [
       "Provide coordinators with team-wise participant lists, contact details, uploaded ID cards, registration/payment/check-in status, and records for cancelled teams.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "₹4,000 for the winning team",
+      first: "₹4,000",
+      note: "The winning team receives a certificate; a trophy is optional. Participants receive participation certificates.",
     },
     documents: [
       {
@@ -1571,10 +1795,11 @@ export const EVENTS: EventItem[] = [
     ],
     registrationConfig: {
       eventFormat: "team",
-      minTeamSize: 20,
-      maxTeamSize: 30,
-      feeAmount: 200,
-      feeDisplay: "₹200 registration fee",
+      minTeamSize: 4,
+      maxTeamSize: 4,
+      feeAmount: 400,
+      feeBasis: "per_team",
+      feeDisplay: "₹400 per team",
       deadline: "Before 30 October 2026",
       deadlineDate: "2026-10-29",
       teamNameRequired: false,
@@ -1625,32 +1850,48 @@ export const EVENTS: EventItem[] = [
     badgeLevel: "Advanced",
     trackId: "track-c",
     trackName: "TRACK C — GAMING & ADVENTURE",
-    shortDesc: "A Death Race competition.",
-    fullDesc: "Death Race is a team-based competition.",
-    date: "TBA",
+    shortDesc: "Build and pilot a robot through a timed obstacle course.",
+    fullDesc: "Build. Pilot. Survive the Track. Death Race is a robotic obstacle race that tests engineering, durability, and piloting skill. Teams guide their custom-built robots through rough terrain, a shallow water pit, an incline, and other challenges on one modular course.",
+    date: "31 October 2026",
     time: "TBA",
-    prize: "To Be Announced",
-    price: "Paid (Amount TBA)",
-    team: "2–3 members",
+    prize: "Exciting Gifts & Prizes",
+    price: "₹700 per team",
+    team: "2–4 members",
     venue: "TBA",
     accentColor: "#60a5fa",
     glowColor: "rgba(96,165,250,.2)",
     borderColor: "rgba(96,165,250,.4)",
     image: "/images/events/event-08.jpeg",
-    highlights: [],
-    rules: [],
+    highlights: [
+      "Pilot a custom robot through a timed, five-zone obstacle course.",
+      "Teams of 2–4 · ₹700 per team · 31 October 2026.",
+      "The course tests robot control, traction, durability, and driving precision.",
+    ],
+    rules: [
+      "Pilots must stand behind the marked control barrier and operate by remote control or approved onboard automation.",
+      "Do not touch the robot after a run begins. A pilot may request one manual reset if the robot is trapped; a 15-second penalty applies.",
+      "Runs have a five-minute time limit. An unfinished run is recorded as incomplete.",
+      "Interfering with marshals, timing equipment, or another lane results in disqualification.",
+      "Robots must not use weapons, sharp exposed edges, liquid sprays, combustion engines, flames, or untethered projectiles.",
+      "Robots must have a clearly marked master power cutoff and a securely fastened battery enclosure. Unsafe operation or fire risk results in disqualification.",
+    ],
     registrationInfo: [
-      "Team name and team leader are required.",
-      "The team leader submits one registration for the team and enters the other members during registration. Separate member registrations are not allowed.",
-      "Teams must have 2–3 participants.",
+      "Choose one team leader to submit a single registration for the team.",
+      "Register all 2–4 team members together and provide a team name. Duplicate registrations are not allowed.",
+      "The fee is ₹700 per team.",
     ],
     requirements: [
-      "Each member must provide full name, college/university, mobile number, and student ID/roll number.",
-      "Each member must upload a valid college ID card and verify email/mobile.",
-      "Department/course is not required; year/semester, email, profile photo, and city are optional.",
+      "Bring a custom-built terrestrial robot no larger than 30 cm long × 30 cm wide × 30 cm high. Maximum weight: TBA.",
+      "Robots must use onboard rechargeable batteries only (LiPo, NiMH, or sealed lead-acid), at no more than 24 V.",
+      "Manual wired, manual wireless (RF, Bluetooth, Wi-Fi), or fully autonomous control is allowed.",
+      "Each member provides their name, institution, mobile number, and student ID/roll number; each uploads a valid college ID and verifies email/mobile.",
+    ],
+    eligibility: [
+      "Designed for engineering students, robotics enthusiasts, and student clubs. Spectators are welcome to watch from the designated area.",
+      "Each competing team must register 2–4 members and bring a robot that passes the safety and technical inspection.",
     ],
     prizeBreakdown: {
-      total: "To Be Announced",
+      total: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1668,11 +1909,100 @@ export const EVENTS: EventItem[] = [
         accept: "image/*",
       },
     ],
+    exploreSections: [
+      {
+        title: "Eligibility",
+        items: [
+          "The event is designed for engineering students, robotics enthusiasts, and student clubs. Spectators can watch from the designated area.",
+          "Competing teams must have 2–4 members and bring a robot that passes the safety and technical inspection.",
+        ],
+      },
+      {
+        title: "How does the competition work?",
+        items: [
+          "Qualifiers: each team completes an individual timed run. Time begins at the green start signal, and penalties are added to the run time.",
+          "Knockouts: teams advance through elimination heats, semifinals, and a final. Number of qualifying teams and knockout bracket size: TBA.",
+          "For a course at least 1.2 m wide, teams race in parallel lanes. For a course under 1 m wide, teams make back-to-back timed runs. Lane format for a course between 1 m and 1.2 m: TBA.",
+          "Final: two-lap endurance run. Number of finalists: TBA.",
+        ],
+      },
+      {
+        title: "What are the five course zones?",
+        items: [
+          "1. Start signal: begin when the light turns green. A false start adds 5 seconds.",
+          "2. Zig-zag and rough terrain: steer around bends, wooden cleats, sand, gravel, and small tyres without getting stuck or crossing the track boundary.",
+          "3. Water pit: cross a lined tray with water up to 3 cm deep. Protect electrical components and maintain wheel traction.",
+          "4. Incline: climb and descend a 30° ramp with a high-grip surface. Avoid slipping, rolling backwards, or tipping over.",
+          "5. Endurance finish: cross staggered wooden blocks and a ground-level rope 1–2 cm high, then reach the timing checkpoint.",
+        ],
+      },
+      {
+        title: "What robot can I bring?",
+        items: [
+          "Robot type: custom-built terrestrial robot. Maximum dimensions: 30 cm long × 30 cm wide × 30 cm high.",
+          "Maximum weight: TBA.",
+          "Power: onboard rechargeable batteries only (LiPo, NiMH, or sealed lead-acid), at a maximum of 24 V.",
+          "Control: manual wired, manual wireless (RF, Bluetooth, or Wi-Fi), or fully autonomous.",
+        ],
+      },
+      {
+        title: "What are the safety rules?",
+        items: [
+          "Weapons and destructive mechanisms, including wedges, spinners, and saws, are prohibited.",
+          "Do not use exposed sharp metal edges, untaped glass or hard acrylic corners, liquid sprays, combustion engines, flames, or untethered projectiles.",
+          "Fit a clearly marked master power cutoff switch and secure the battery enclosure. Protect electrical components, especially when crossing the water pit.",
+          "Pilots must remain behind the marked control barrier. Do not touch the robot after a run begins; request a manual reset if it is trapped. A reset adds 15 seconds.",
+          "Do not interfere with marshals, timing equipment, or another lane. Unsafe operation or fire risk results in disqualification.",
+        ],
+      },
+      {
+        title: "How is the winner decided?",
+        items: [
+          "Complete the full course to qualify. Your adjusted run time starts with your raw time and includes any time penalties.",
+          "False start: +5 seconds. Stalling: +5 seconds for each 5-second interval. Skipped obstacle: +20 seconds. Manual reset: +15 seconds. Boundary violation: +5 seconds.",
+          "A boundary violation occurs when all of the robot’s wheels or tracks cross outside the marked course.",
+          "The fastest time is the ranking baseline; final placements also consider completion efficiency and penalty count. Unsafe operation or fire risk results in disqualification.",
+          "A run is limited to 5 minutes. An unfinished run is recorded as incomplete.",
+        ],
+      },
+      {
+        title: "How do I register?",
+        items: [
+          "Register one team of 2–4 members. One team leader submits a single registration with every member’s details; a team name is required.",
+          "Each member provides their name, institution, mobile number, and student ID or roll number, and uploads a valid college ID.",
+          "The fee is ₹700 per team. Verify the email address and mobile number provided during registration.",
+          "Registration deadline: TBA.",
+        ],
+      },
+      {
+        title: "When and where is it happening?",
+        items: [
+          "Date: 31 October 2026 · Event time: TBA.",
+          "Venue: TBA.",
+          "Event schedule: TBA.",
+        ],
+      },
+      {
+        title: "Full rules and event guide",
+        items: [
+          "The course is one continuous 20–30 m modular route, arranged as a straight or U-shaped track. Sections may be adjusted between qualifying runs.",
+          "Track materials include 12 mm plywood, 2×4 timber studs, PVC framing pipes, rubber sheets, plastic lining, tarpaulin, used tyres, gravel, sand, sandbags, and wooden slats. Track assembly takes about 3 hours; dismantling takes under 1.5 hours.",
+          "Timing and safety equipment includes a handheld red/green light controller, digital stopwatch or infrared timing gate, safety mesh, and a public-address speaker.",
+          "The pit area has workbenches, extension power boards, multi-plug extension cords, and a battery-charging mat. Spectator seating is provided.",
+          "Seven event volunteers support the race: two track marshals monitor zones and penalties; one controller manages starts and lap times; one safety controller oversees hazards and cutoff; two registration/pit managers manage the queue; and one crowd manager guides spectators. Volunteers also build the track before the event.",
+          "A manual reset may be requested if a robot is permanently trapped. The reset adds 15 seconds; team members must not touch the robot without requesting it.",
+          "Knockout heats use parallel lanes when the track is at least 1.2 m wide and back-to-back timed runs when it is under 1 m wide. Lane format for widths between 1 m and 1.2 m: TBA.",
+          "Spectators must remain in the designated viewing area and follow marshal instructions.",
+        ],
+      },
+    ],
     registrationConfig: {
       eventFormat: "team",
       minTeamSize: 2,
-      maxTeamSize: 3,
-      feeDisplay: "Paid (Amount TBA)",
+      maxTeamSize: 4,
+      feeAmount: 700,
+      feeBasis: "per_team",
+      feeDisplay: "₹700 per team",
       deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
@@ -1683,7 +2013,7 @@ export const EVENTS: EventItem[] = [
         name: "Jai Vardhan",
         phone: "7856802097",
         email: "jaivardhan27062007@gmail.com",
-        coCoordinator: "Kaushik",
+        coCoordinator: "Ayush Kumar",
       },
       declarations: deathRaceDeclarations,
       documents: [
@@ -1721,19 +2051,19 @@ export const EVENTS: EventItem[] = [
     trackId: "track-e",
     trackName: "TRACK E — WORKSHOPS & KNOWLEDGE",
     shortDesc: "A hands-on technical workshop for school and college students.",
-    fullDesc: "Hack the Skills is a technical workshop open to students from Class 8 through postgraduate level. Register individually or as a team of two to four. Workshop schedule and venue details will be announced later.",
+    fullDesc: "Hack the Skills is a technical workshop open to students from Class 8 through postgraduate level. Register individually or as a team of two to four. Schedule and venue: TBA.",
     date: "TBA",
     time: "TBA",
-    prize: "No prize",
+    prize: "Exciting Gifts & Prizes",
     price: "₹300 registration fee",
     team: "Individual or teams of 2–4",
     venue: "TBA",
     accentColor: "#f472b6",
     glowColor: "rgba(244,114,182,.2)",
     borderColor: "rgba(244,114,182,.4)",
-    image: "/images/events/event-13.jpeg",
+    image: "/events/hack-the-skill.png",
     highlights: [
-      "Technical workshop · Schedule and venue to be announced.",
+      "Technical workshop · Schedule and venue: TBA.",
     ],
     rules: [],
     eligibility: [

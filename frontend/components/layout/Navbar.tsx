@@ -61,17 +61,23 @@ export default function Navbar() {
         </div>
 
         <ul className="hidden items-center gap-8 md:flex">
-          {links.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className="group relative text-sm text-muted transition-colors hover:text-ink"
-              >
-                {link.label}
-                <span className="absolute -bottom-1.5 left-0 h-px w-full origin-left scale-x-0 bg-marigold transition-transform duration-300 ease-out group-hover:scale-x-100" />
-              </Link>
-            </li>
-          ))}
+          {links.map((link) => {
+            const route = link.href.split("#")[0];
+            const isActive = !link.href.includes("#") &&
+              (pathname === route || (route === "/tracks" && pathname.startsWith("/events/")));
+            return (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`group relative text-sm transition-colors ${isActive ? "text-white" : "text-muted hover:text-ink"}`}
+                >
+                  {link.label}
+                  <span className={`absolute -bottom-1.5 left-0 h-px w-full origin-left bg-marigold transition-transform duration-300 ease-out ${isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`} />
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -147,7 +153,8 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="flex min-h-12 items-center text-base text-muted transition-colors hover:text-ink active:text-ink"
+                  aria-current={(pathname === link.href.split("#")[0] || (link.href === "/tracks" && pathname.startsWith("/events/"))) && !link.href.includes("#") ? "page" : undefined}
+                  className={`flex min-h-12 items-center border-l-2 pl-3 text-base transition-colors ${(pathname === link.href.split("#")[0] || (link.href === "/tracks" && pathname.startsWith("/events/"))) && !link.href.includes("#") ? "border-marigold text-white" : "border-transparent text-muted hover:text-ink active:text-ink"}`}
                 >
                   {link.label}
                 </Link>

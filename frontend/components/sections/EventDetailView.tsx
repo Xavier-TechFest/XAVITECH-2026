@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar, Clock, Download, MapPin, Users, ChevronLeft } from "lucide-react";
 import { EventItem, TRACKS } from "@/lib/eventsData";
 import { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
+import EventExploreSections from "@/components/sections/EventExploreSections";
 import { useEventRegistrationStatus } from "@/lib/hooks/useEventRegistrationStatus";
 
 export default function EventDetailView({ event }: { event: EventItem }) {
@@ -37,7 +38,10 @@ export default function EventDetailView({ event }: { event: EventItem }) {
       : []),
   ];
   const downloadBrochure = () => {
-    const text = [`XAVITECH 2026 — ${event.name}`, `Category: ${track?.name ?? event.trackName}`, ...facts.map((fact) => `${fact.label}: ${fact.value}`), "", event.fullDesc, ...[...(event.eligibility ?? []), ...(event.highlights ?? []), ...(event.registrationInfo ?? []), ...(event.requirements ?? []), ...(event.rules ?? [])].map((item) => `• ${item}`)].join("\n");
+    const guideContent = event.exploreSections?.length
+      ? event.exploreSections.flatMap((section) => [section.title, ...section.items.map((item) => `• ${item}`)])
+      : [...(event.eligibility ?? []), ...(event.highlights ?? []), ...(event.registrationInfo ?? []), ...(event.requirements ?? []), ...(event.rules ?? [])].map((item) => `• ${item}`);
+    const text = [`XAVITECH 2026 — ${event.name}`, `Category: ${track?.name ?? event.trackName}`, ...facts.map((fact) => `${fact.label}: ${fact.value}`), "", event.fullDesc, ...guideContent].join("\n");
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
     const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${event.id}-xavitech-2026.txt`; anchor.click(); URL.revokeObjectURL(url);
   };
@@ -50,7 +54,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-300">{event.fullDesc}</p>
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">{facts.map((fact) => <Fact key={fact.label} label={fact.label} value={fact.value} />)}</div>
         {(config?.details || event.highlights.length > 0) && <section className="mt-10 space-y-4">
-          <h2 className="font-space text-xl font-bold text-white">Event Information</h2>
+          <h2 className="font-space text-xl font-bold text-white">{event.exploreSections?.length ? "About the challenge" : "Event Information"}</h2>
           {config?.details?.committee && <InfoBlock title="Committee" value={config.details.committee} />}
           {config?.details?.agenda && <InfoBlock title="Agenda" value={config.details.agenda} />}
           {config?.details?.duration && <InfoBlock title="Expected duration" value={config.details.duration} />}
@@ -58,14 +62,15 @@ export default function EventDetailView({ event }: { event: EventItem }) {
           {config?.details?.maps && <InfoBlock title="Maps" value={config.details.maps.join(", ")} />}
           {event.highlights.map((item) => <p key={item} className="border-l border-cyan-400/60 pl-4 text-sm leading-relaxed text-slate-300">{item}</p>)}
         </section>}
-        <InfoList title="Eligibility" items={event.eligibility ?? []} />
-        <InfoList title="Registration" items={event.registrationInfo ?? []} />
-        <InfoList title="Requirements" items={event.requirements ?? []} />
-        <InfoList title="Rules" items={event.rules} />
+        {!event.exploreSections?.length && <InfoList title="Eligibility" items={event.eligibility ?? []} />}
+        {!event.exploreSections?.length && <InfoList title="Registration" items={event.registrationInfo ?? []} />}
+        {!event.exploreSections?.length && <InfoList title="Requirements" items={event.requirements ?? []} />}
+        {!event.exploreSections?.length && <InfoList title="Rules" items={event.rules} />}
+        {event.exploreSections?.length ? <EventExploreSections sections={event.exploreSections} /> : null}
         {config?.coordinator && <section className="mt-10 rounded border border-white/10 bg-white/[.03] p-5">
           <h2 className="font-space font-bold text-white">Event Contact</h2>
           <Contact name={config.coordinator.name} role="Event Coordinator" email={config.coordinator.email} phone={config.coordinator.phone} />
-          {config.coordinator.coCoordinator && <Contact name={config.coordinator.coCoordinator} role="Co-Coordinator" />}
+          {config.coordinator.coCoordinator && <Contact name={config.coordinator.coCoordinator} role="Event Coordinator" />}
         </section>}
       </section>
       <aside className="w-full lg:sticky lg:top-24 lg:self-start">
@@ -100,7 +105,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
             </div>
             <div className="mt-auto pt-52 sm:pt-64 lg:pt-0">
               <div className="mb-5 flex items-end justify-between gap-4 border-b border-white/20 pb-5">
-                <div><span className="mb-1 block font-oxanium text-xs font-bold uppercase tracking-[.18em]" style={{ color: event.accentColor }}>PRIZE POOL</span><span className="font-space text-4xl font-black text-white sm:text-5xl" style={{ textShadow: `0 0 20px ${event.accentColor}88` }}>{event.prize === "TBA" ? "To Be Announced" : event.prize}</span></div>
+                <div><span className="mb-1 block font-oxanium text-xs font-bold uppercase tracking-[.18em]" style={{ color: event.accentColor }}>PRIZE POOL</span><span className="font-space text-4xl font-black text-white sm:text-5xl" style={{ textShadow: `0 0 20px ${event.accentColor}88` }}>{event.prize === "TBA" ? "Exciting Gifts & Prizes" : event.prize}</span><p className="mt-2 max-w-sm text-xs leading-relaxed text-white/70">Prizes may vary depending on the number of registrations for this event.</p></div>
                 <span className="mb-1 font-oxanium text-[10px] font-bold uppercase tracking-widest text-white/70">{event.name}</span>
               </div>
               <div className="mb-5 grid grid-cols-2 gap-x-4 gap-y-4 border border-white/15 bg-[#03080d]/85 p-4 backdrop-blur-sm">

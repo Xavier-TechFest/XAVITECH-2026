@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EventItem } from "@/lib/eventsData";
 import Link from "next/link";
+import EventExploreSections from "@/components/sections/EventExploreSections";
 
 interface EventModalProps {
   event: EventItem | null;
@@ -97,7 +98,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
             </div>
             <div>
               <span className="text-muted block text-[10px] uppercase tracking-wider">Prize Pool</span>
-              <span className="mt-1 block font-extrabold text-marigold text-sm">{event.prize === "TBA" ? "To Be Announced" : event.prize}</span>
+              <span className="mt-1 block font-extrabold text-marigold text-sm">{event.prize === "TBA" ? "Exciting Gifts & Prizes" : event.prize}</span>
             </div>
             {event.team !== "TBA" && <div>
               <span className="text-muted block text-[10px] uppercase tracking-wider">{event.team === "Individual" ? "Participation Type" : "Team Size"}</span>
@@ -118,7 +119,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
                 <svg className="h-4 w-4 text-circuit" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Event Information
+                {event.exploreSections?.length ? "About the challenge" : "Event Information"}
               </h3>
               {event.registrationConfig?.details?.committee && <p className="mt-3 rounded-xl border border-line/60 bg-surface-raised p-3 font-space text-xs text-ink"><strong>Committee: </strong>{event.registrationConfig.details.committee}</p>}
               {event.registrationConfig?.details?.agenda && <p className="mt-2 rounded-xl border border-line/60 bg-surface-raised p-3 font-space text-xs text-ink"><strong>Agenda: </strong>{event.registrationConfig.details.agenda}</p>}
@@ -136,14 +137,15 @@ export default function EventModal({ event, onClose }: EventModalProps) {
             </div>
           )}
 
-          {event.eligibility?.length ? <ContentList title="Eligibility" items={event.eligibility} /> : null}
-          {event.registrationInfo?.length ? <ContentList title="Registration" items={event.registrationInfo} /> : null}
-          {event.requirements?.length ? <ContentList title="Requirements" items={event.requirements} /> : null}
+          {!event.exploreSections?.length && event.eligibility?.length ? <ContentList title="Eligibility" items={event.eligibility} /> : null}
+          {!event.exploreSections?.length && event.registrationInfo?.length ? <ContentList title="Registration" items={event.registrationInfo} /> : null}
+          {!event.exploreSections?.length && event.requirements?.length ? <ContentList title="Requirements" items={event.requirements} /> : null}
+          {event.exploreSections?.length ? <EventExploreSections sections={event.exploreSections} /> : null}
 
-          {event.registrationConfig?.coordinator && <div className="mt-6 border-t border-line pt-5"><h3 className="font-oxanium text-xs font-bold uppercase tracking-wider text-circuit">Event Contact</h3><Contact name={event.registrationConfig.coordinator.name} role="Event Coordinator" email={event.registrationConfig.coordinator.email} phone={event.registrationConfig.coordinator.phone}/>{event.registrationConfig.coordinator.coCoordinator && <Contact name={event.registrationConfig.coordinator.coCoordinator} role="Co-Coordinator"/>}</div>}
+          {event.registrationConfig?.coordinator && <div className="mt-6 border-t border-line pt-5"><h3 className="font-oxanium text-xs font-bold uppercase tracking-wider text-circuit">Event Contact</h3><Contact name={event.registrationConfig.coordinator.name} role="Event Coordinator" email={event.registrationConfig.coordinator.email} phone={event.registrationConfig.coordinator.phone}/>{event.registrationConfig.coordinator.coCoordinator && <Contact name={event.registrationConfig.coordinator.coCoordinator} role="Event Coordinator"/>}</div>}
 
           {/* Protocol & Rules */}
-          {event.rules && event.rules.length > 0 && (
+          {!event.exploreSections?.length && event.rules && event.rules.length > 0 && (
             <div className="mt-6">
               <h3 className="font-oxanium text-xs font-bold uppercase tracking-wider text-marigold flex items-center gap-2">
                 <svg className="h-4 w-4 text-marigold" fill="none" viewBox="0 0 24 24" stroke="currentColor">

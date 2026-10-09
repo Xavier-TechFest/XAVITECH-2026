@@ -152,7 +152,7 @@ export default function EventsShowcase() {
                   <div className="w-px h-8 bg-white/10 hidden md:block" />
                   <div className="flex flex-col">
                     <span className="text-white/40 uppercase tracking-widest text-[10px] mb-1">Prize Pool</span>
-                    <span className="font-bold text-marigold text-lg">{currentEvent.prize === "TBA" ? "To Be Announced" : currentEvent.prize}</span>
+                    <span className="font-bold text-marigold text-lg">{currentEvent.prize === "TBA" ? "Exciting Gifts & Prizes" : currentEvent.prize}</span>
                   </div>
                 </motion.div>
 

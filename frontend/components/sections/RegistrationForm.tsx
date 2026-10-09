@@ -367,7 +367,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
           <h1 className="mt-3 font-space text-3xl font-black uppercase text-white sm:text-5xl">
             {event.name}
           </h1>
-          <p className="mt-5 text-slate-300">Registration details will be announced soon.</p>
+          <p className="mt-5 text-slate-300">Registration details: TBA.</p>
           <p className="mt-6 rounded border border-amber-300/20 bg-amber-300/5 p-4 text-sm text-amber-100">
             Participation: TBA <span className="px-2 text-amber-100/40">·</span> Fee: TBA{" "}
             <span className="px-2 text-amber-100/40">·</span> Deadline: TBA
@@ -418,6 +418,13 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   // Calculate fee and counts
   const feeTotal = getRegistrationTotal(event, config, participantPool, teamSize);
   const participantCount = getFormParticipantCount(event, teamSize);
+  const participantFieldsFor = (index: number) => {
+    const fields = config?.participantFields ?? [];
+    const leaderOnlyTeam = config?.eventFormat === "team" && teamSize <= 3 && participantCount > 1;
+    if (!leaderOnlyTeam || index === 0) return fields;
+    const memberFieldIds = new Set(["fullName", "college", "course", "collegeId"]);
+    return fields.filter((field) => memberFieldIds.has(field.id));
+  };
 
   // Validate and proceed to Review
   const handleReviewStep = (e: FormEvent<HTMLFormElement>) => {
@@ -477,7 +484,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
       const isLeader = index === 0;
       const isOptionalSub = config.maxTeamSize === 5 && index === 4;
 
-      config.participantFields.forEach((field) => {
+      participantFieldsFor(index).forEach((field) => {
         const fieldKey = `${index}-${field.id}`;
         const val = (formDataState[fieldKey] || "").trim();
         const fileVal = fileDataState[fieldKey];
@@ -623,7 +630,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
           : "Your Details";
 
       const entries: ReviewEntry[] = [];
-      config.participantFields.forEach((field) => {
+      participantFieldsFor(index).forEach((field) => {
         if (field.type !== "file") {
           const val = formDataState[`${index}-${field.id}`];
           if (val) {
@@ -829,7 +836,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
 
         // Extra custom fields
         const extraFields: Record<string, any> = {};
-        config.participantFields.forEach((field) => {
+        participantFieldsFor(index).forEach((field) => {
           if (!["fullName", "college", "mobile", "email", "city", "studentId", "year"].includes(field.id)) {
             const val = formDataState[`${index}-${field.id}`];
             if (val) extraFields[field.id] = val;
@@ -1793,7 +1800,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                   </div>
 
                   <div className="grid gap-5 sm:grid-cols-2">
-                    {config.participantFields
+                    {participantFieldsFor(index)
                       .filter(
                         (f) =>
                           !(
@@ -2496,7 +2503,7 @@ function BillSummary({
         <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-3">
           <span className="text-white font-semibold">Total Payable</span>
           <span className="font-space text-xl font-bold text-cyan-300">
-            {total === null ? "To Be Announced" : `₹${total.toLocaleString("en-IN")}`}
+            {total === null ? "TBA" : `₹${total.toLocaleString("en-IN")}`}
           </span>
         </div>
         {total === null && (
