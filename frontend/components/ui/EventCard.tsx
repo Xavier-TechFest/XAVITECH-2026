@@ -33,7 +33,8 @@ export default function EventCard({ event, variant }: EventCardProps) {
   }
   const isHackathon = event.id === "innocraft";
   const isWebDev = event.id === "webweave";
-  const accent = isHackathon ? "#ff6848" : isWebDev ? "#f0a15b" : event.accentColor || "#35e0c9";
+  const isTrackB = event.trackId === "track-b";
+  const accent = isHackathon ? "#ff6848" : isTrackB ? "#f0a15b" : event.accentColor || "#35e0c9";
   const tags = isHackathon
     ? ["Hackathon", "Prototype", "Full-Stack"]
     : isWebDev
