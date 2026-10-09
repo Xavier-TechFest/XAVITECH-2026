@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../config/database.js';
 import logger from '../utils/logger.util.js';
+import { calculatePayableAmount } from './payment.service.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -515,7 +516,9 @@ export const adminRegistrationService = {
         ? 'PENDING'
         : 'INITIATED';
 
-      const payableAmount = latestTx ? Number(latestTx.amount) : Number(reg.event?.fee || 0);
+      const payableAmount = latestTx
+        ? Number(latestTx.amount)
+        : calculatePayableAmount(reg.event, reg, reg.participants || []);
 
       return {
         id: reg.id,
@@ -733,7 +736,9 @@ export const adminRegistrationService = {
       ? 'PENDING'
       : 'INITIATED';
 
-    const payableAmount = latestTx ? Number(latestTx.amount) : Number(reg.event?.fee || 0);
+    const payableAmount = latestTx
+      ? Number(latestTx.amount)
+      : calculatePayableAmount(reg.event, reg, participants);
 
     return {
       id: reg.id,
@@ -1007,11 +1012,52 @@ export const adminRegistrationService = {
       throw error;
     }
 
+    // For teams with no registration linked via foreign key, check for fallback registration matching event and leader
+    const unlinkedTeams = (rows || []).filter((t) => !t.registration || t.registration.length === 0);
+    const fallbackRegsMap = {};
+    if (unlinkedTeams.length > 0) {
+      const leaderIds = Array.from(new Set(unlinkedTeams.map((t) => t.leader?.id).filter(Boolean)));
+      const evIds = Array.from(new Set(unlinkedTeams.map((t) => t.event?.id).filter(Boolean)));
+      if (leaderIds.length > 0 && evIds.length > 0) {
+        const { data: fbRegs } = await client
+          .from('registrations')
+          .select(`
+            id,
+            registration_id,
+            user_id,
+            event_id,
+            status,
+            created_at,
+            payment_transactions(id, status, amount, created_at),
+            participants:registration_participants(id, participant_order, participant_role)
+          `)
+          .in('user_id', leaderIds)
+          .in('event_id', evIds)
+          .order('created_at', { ascending: false });
+
+        if (Array.isArray(fbRegs)) {
+          for (const reg of fbRegs) {
+            const key = `${reg.user_id}_${reg.event_id}`;
+            if (!fallbackRegsMap[key]) {
+              fallbackRegsMap[key] = reg;
+            }
+          }
+        }
+      }
+    }
+
     const formattedTeams = (rows || []).map((t) => {
       const members = t.members || [];
       const regList = Array.isArray(t.registration) ? [...t.registration] : [];
       regList.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-      const activeReg = regList.find((r) => r.status !== 'CANCELLED') || regList[0] || null;
+      let activeReg = regList.find((r) => r.status !== 'CANCELLED') || regList[0] || null;
+
+      if (!activeReg && t.leader?.id && t.event?.id) {
+        const key = `${t.leader.id}_${t.event.id}`;
+        if (fallbackRegsMap[key]) {
+          activeReg = fallbackRegsMap[key];
+        }
+      }
 
       let resolvedPaymentStatus = null;
       if (activeReg) {
@@ -1027,6 +1073,13 @@ export const adminRegistrationService = {
           ? 'PENDING'
           : 'INITIATED';
       }
+
+      const participantsList = activeReg?.participants || [];
+      const memberParticipants = participantsList.filter(
+        (p) => p.participant_order > 1 || p.participant_role === 'MEMBER'
+      );
+      const effectiveMemberCount = members.length > 0 ? members.length : memberParticipants.length;
+      const totalTeamSize = Math.max(1 + effectiveMemberCount, participantsList.length > 0 ? participantsList.length : 1);
 
       return {
         id: t.id,
@@ -1064,8 +1117,8 @@ export const adminRegistrationService = {
               institution: t.leader.college_name,
             }
           : null,
-        memberCount: members.length,
-        totalTeamSize: 1 + members.length,
+        memberCount: effectiveMemberCount,
+        totalTeamSize,
         registration: activeReg
           ? {
               id: activeReg.id,
@@ -1147,7 +1200,33 @@ export const adminRegistrationService = {
 
     const regList = Array.isArray(team.registration) ? [...team.registration] : [];
     regList.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-    const reg = regList.find((r) => r.status !== 'CANCELLED') || regList[0] || null;
+    let reg = regList.find((r) => r.status !== 'CANCELLED') || regList[0] || null;
+
+    if (!reg && team.leader?.id) {
+      const targetEventId = team.event?.id || team.event_id;
+      if (targetEventId) {
+        const { data: fallbackReg } = await client
+          .from('registrations')
+          .select(`
+            id,
+            registration_id,
+            status,
+            registration_type,
+            created_at,
+            payment_transactions(id, status, amount, created_at),
+            participants:registration_participants(*)
+          `)
+          .eq('user_id', team.leader.id)
+          .eq('event_id', targetEventId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (fallbackReg) {
+          reg = fallbackReg;
+        }
+      }
+    }
 
     let resolvedPaymentStatus = null;
     if (reg) {
@@ -1171,6 +1250,28 @@ export const adminRegistrationService = {
       );
     }
 
+    // Resolve members roster: If team_members is empty but participants has secondary members, show them
+    let resolvedMembers = members.map((m) => ({
+      id: m.id,
+      name: m.name,
+      memberOrder: m.member_order,
+      createdAt: m.created_at,
+    }));
+
+    if (resolvedMembers.length === 0 && participants.length > 1) {
+      resolvedMembers = participants
+        .filter((p) => p.participant_order > 1 || p.participant_role === 'MEMBER')
+        .map((p, idx) => ({
+          id: p.id,
+          name: p.full_name,
+          memberOrder: p.participant_order ? p.participant_order - 1 : idx + 1,
+          createdAt: p.created_at || team.created_at,
+        }));
+    }
+
+    const effectiveMemberCount = resolvedMembers.length;
+    const totalTeamSize = Math.max(1 + effectiveMemberCount, participants.length > 0 ? participants.length : 1);
+
     return {
       id: team.id,
       teamName: team.team_name,
@@ -1180,7 +1281,7 @@ export const adminRegistrationService = {
       paymentStatus: resolvedPaymentStatus,
       createdAt: team.created_at,
       updatedAt: team.updated_at,
-      totalTeamSize: 1 + members.length,
+      totalTeamSize,
       event: team.event
         ? {
             id: team.event.id,
@@ -1217,13 +1318,8 @@ export const adminRegistrationService = {
             createdAt: team.leader.created_at,
           }
         : null,
-      members: members.map((m) => ({
-        id: m.id,
-        name: m.name,
-        memberOrder: m.member_order,
-        createdAt: m.created_at,
-      })),
-      memberCount: members.length,
+      members: resolvedMembers,
+      memberCount: effectiveMemberCount,
       registration: reg
         ? {
             id: reg.id,

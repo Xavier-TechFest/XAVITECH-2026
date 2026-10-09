@@ -3,6 +3,7 @@ import RegistrationParticipantModel from '../models/registrationParticipant.mode
 import UserModel from '../models/user.model.js';
 import TeamModel from '../models/team.model.js';
 import EventModel from '../models/event.model.js';
+import { getSupabaseClient } from '../config/database.js';
 import eventService from './event.service.js';
 import teamService from './team.service.js';
 import userService from './user.service.js';
@@ -73,6 +74,7 @@ export const formatRegistrationResponse = (reg) => {
       : undefined,
     participants: (reg.participants || []).map((p) => ({
       id: p.id,
+      teamMemberId: p.team_member_id || null,
       participantOrder: p.participant_order,
       participantRole: p.participant_role,
       fullName: p.full_name,
@@ -206,17 +208,32 @@ export const registrationService = {
 
     // 4. Team Association & Validation for TEAM registrations
     let teamIdToAssociate = null;
+    let newlyCreatedTeamId = null;
     const requestedTeamId = (payload.team_id || payload.teamId || '').trim();
+    const rawParticipants = payload.participants || payload.participantDetails;
+    const rawParticipantsCount = Array.isArray(rawParticipants) ? rawParticipants.length : 0;
 
     if (registrationType === 'TEAM') {
       let teamValidation = null;
       if (requestedTeamId) {
-        teamValidation = await teamService.validateTeamForRegistration(requestedTeamId, eventId, user.id);
+        teamValidation = await teamService.validateTeamForRegistration(
+          requestedTeamId,
+          eventId,
+          user.id,
+          rawParticipantsCount,
+          ['DRAFT', 'SUBMITTED']
+        );
       } else {
         // Find existing active team created by this leader for this event
         const activeTeam = await TeamModel.findActiveTeamByLeaderAndEvent(user.id, eventId);
         if (activeTeam) {
-          teamValidation = await teamService.validateTeamForRegistration(activeTeam.id, eventId, user.id);
+          teamValidation = await teamService.validateTeamForRegistration(
+            activeTeam.id,
+            eventId,
+            user.id,
+            rawParticipantsCount,
+            ['DRAFT', 'SUBMITTED']
+          );
         }
       }
 
@@ -227,6 +244,22 @@ export const registrationService = {
           throw error;
         }
         teamIdToAssociate = teamValidation.team.id;
+      } else {
+        // Automatically create team record so team registrations are never orphaned without a team
+        const requestedTeamName = (
+          payload.team_name ||
+          payload.teamName ||
+          `${user.name || 'Participant'}'s Team`
+        ).trim();
+
+        const createdTeam = await TeamModel.createTeam({
+          event_id: eventId,
+          leader_user_id: user.id,
+          team_name: requestedTeamName,
+          status: 'DRAFT',
+        });
+        teamIdToAssociate = createdTeam.id;
+        newlyCreatedTeamId = createdTeam.id;
       }
     }
 
@@ -256,53 +289,149 @@ export const registrationService = {
       status: initialStatus,
     });
 
-    // 7. Store participant snapshot records in registration_participants table if provided
-    const rawParticipants = payload.participants || payload.participantDetails;
-    if (Array.isArray(rawParticipants) && rawParticipants.length > 0) {
-      const participantsToInsert = rawParticipants.map((p, index) => {
-        const fullName = (p.full_name || p.fullName || p.name || (index === 0 ? user.name : '') || `Participant ${index + 1}`).trim();
-        const institutionName = (p.institution_name || p.institution || p.college || user.college_name || '').trim();
-        const mobileNumber = (p.mobile_number || p.mobile || p.phone || (index === 0 ? user.phone : '') || '').trim();
-        const email = (p.email || (index === 0 ? user.email : '') || '').trim();
-        const city = (p.city || '').trim();
-        const studentId = (p.student_id || p.studentId || '').trim();
-        const standardClass = (p.standard_class || p.standard || p.year || p.course || '').trim();
-        const idCardUrl = p.id_card_url || p.idCardUrl || null;
-        const profilePhotoUrl = p.profile_photo_url || p.profilePhotoUrl || null;
+    // 7. Store participant snapshot records and persist team members
+    const createdTeamMemberIds = [];
+    try {
+      let participantsToInsert = [];
 
-        // Collect extra event-specific fields into custom_fields
-        const {
-          full_name, fullName: _fn, name: _n,
-          institution_name: _in, institution: _i, college: _c,
-          mobile_number: _mn, mobile: _m, phone: _p,
-          email: _e, city: _ct, student_id: _si, studentId: _sid,
-          id_card_url: _icu, idCardUrl: _icurl,
-          profile_photo_url: _ppu, profilePhotoUrl: _ppurl,
-          ...customFields
-        } = p;
+      if (Array.isArray(rawParticipants) && rawParticipants.length > 0) {
+        // If team is associated, fetch existing team members
+        let existingMembers = [];
+        if (teamIdToAssociate) {
+          existingMembers = await TeamModel.getTeamMembers(teamIdToAssociate);
+        }
 
-        return {
+        for (let index = 0; index < rawParticipants.length; index++) {
+          const p = rawParticipants[index];
+          const fullName = (p.full_name || p.fullName || p.name || (index === 0 ? user.name : '') || `Participant ${index + 1}`).trim();
+          const institutionName = (p.institution_name || p.institution || p.college || user.college_name || '').trim();
+          const mobileNumber = (p.mobile_number || p.mobile || p.phone || (index === 0 ? user.phone : '') || '').trim();
+          const email = (p.email || (index === 0 ? user.email : '') || '').trim();
+          const city = (p.city || '').trim();
+          const studentId = (p.student_id || p.studentId || '').trim();
+          const standardClass = (p.standard_class || p.standard || p.year || p.course || '').trim();
+          const idCardUrl = p.id_card_url || p.idCardUrl || null;
+          const profilePhotoUrl = p.profile_photo_url || p.profilePhotoUrl || null;
+
+          const {
+            full_name, fullName: _fn, name: _n,
+            institution_name: _in, institution: _i, college: _c,
+            mobile_number: _mn, mobile: _m, phone: _p,
+            email: _e, city: _ct, student_id: _si, studentId: _sid,
+            id_card_url: _icu, idCardUrl: _icurl,
+            profile_photo_url: _ppu, profilePhotoUrl: _ppurl,
+            ...customFields
+          } = p;
+
+          let teamMemberId = null;
+          // For TEAM registrations, persist additional members (index >= 1) in team_members
+          // Never duplicate the team leader as an additional member (leader is teams.leader_user_id)
+          if (teamIdToAssociate && index > 0) {
+            const memberName = fullName || `Member ${index + 1}`;
+            const matchedMember = existingMembers.find(
+              (m) => m.member_order === index || m.name.toLowerCase().trim() === memberName.toLowerCase()
+            );
+
+            if (matchedMember) {
+              teamMemberId = matchedMember.id;
+            } else {
+              const newMember = await TeamModel.addTeamMember({
+                team_id: teamIdToAssociate,
+                name: memberName,
+                member_order: index,
+              });
+              teamMemberId = newMember.id;
+              createdTeamMemberIds.push(newMember.id);
+              existingMembers.push(newMember);
+            }
+          }
+
+          participantsToInsert.push({
+            registration_id: registrationRecord.id,
+            team_member_id: teamMemberId,
+            participant_order: index + 1,
+            participant_role: index === 0 ? 'LEADER' : 'MEMBER',
+            full_name: fullName,
+            institution_name: institutionName,
+            mobile_number: mobileNumber,
+            email: email,
+            city: city,
+            student_id: studentId,
+            standard_class: standardClass,
+            id_card_url: idCardUrl,
+            profile_photo_url: profilePhotoUrl,
+            custom_fields: customFields || {},
+          });
+        }
+      } else if (teamIdToAssociate) {
+        // If rawParticipants was not provided but a team is linked, build roster from leader and team_members
+        const existingMembers = await TeamModel.getTeamMembers(teamIdToAssociate);
+
+        // Leader
+        participantsToInsert.push({
           registration_id: registrationRecord.id,
-          participant_order: index + 1,
-          participant_role: index === 0 ? 'LEADER' : 'MEMBER',
-          full_name: fullName,
-          institution_name: institutionName,
-          mobile_number: mobileNumber,
-          email: email,
-          city: city,
-          student_id: studentId,
-          standard_class: standardClass,
-          id_card_url: idCardUrl,
-          profile_photo_url: profilePhotoUrl,
-          custom_fields: customFields || {},
-        };
-      });
+          team_member_id: null,
+          participant_order: 1,
+          participant_role: 'LEADER',
+          full_name: (user.name || 'Team Leader').trim(),
+          institution_name: (user.college_name || '').trim(),
+          mobile_number: (user.phone || '').trim(),
+          email: (user.email || '').trim(),
+          city: '',
+          student_id: '',
+          standard_class: '',
+          id_card_url: null,
+          profile_photo_url: null,
+          custom_fields: {},
+        });
 
-      try {
-        await RegistrationParticipantModel.createParticipants(participantsToInsert);
-      } catch (partErr) {
-        logger.error(`Error saving participants for registration ${registrationId}:`, partErr);
+        // Members
+        existingMembers.forEach((m, idx) => {
+          participantsToInsert.push({
+            registration_id: registrationRecord.id,
+            team_member_id: m.id,
+            participant_order: idx + 2,
+            participant_role: 'MEMBER',
+            full_name: m.name,
+            institution_name: (user.college_name || '').trim(),
+            mobile_number: '',
+            email: '',
+            city: '',
+            student_id: '',
+            standard_class: '',
+            id_card_url: null,
+            profile_photo_url: null,
+            custom_fields: {},
+          });
+        });
       }
+
+      if (participantsToInsert.length > 0) {
+        await RegistrationParticipantModel.createParticipants(participantsToInsert);
+      }
+    } catch (partErr) {
+      logger.error(`Error saving participants or members for registration ${registrationId}:`, partErr);
+      // Atomic rollback on failure
+      for (const mId of createdTeamMemberIds) {
+        try {
+          await TeamModel.removeTeamMember(mId);
+        } catch (e) {
+          logger.warn(`Rollback cleanup: unable to remove team member ${mId}:`, e);
+        }
+      }
+      if (newlyCreatedTeamId) {
+        try {
+          await TeamModel.deleteTeam(newlyCreatedTeamId);
+        } catch (e) {
+          logger.warn(`Rollback cleanup: unable to delete team ${newlyCreatedTeamId}:`, e);
+        }
+      }
+      try {
+        await RegistrationModel.deleteRegistration(registrationRecord.id);
+      } catch (e) {
+        logger.warn(`Rollback cleanup: unable to delete registration ${registrationRecord.id}:`, e);
+      }
+      throw partErr;
     }
 
     logger.info(
@@ -511,13 +640,31 @@ export const registrationService = {
         const teamValidation = await teamService.validateTeamForRegistration(
           registration.team_id,
           registration.event_id,
-          user.id
+          user.id,
+          participants.length,
+          ['DRAFT', 'SUBMITTED']
         );
         if (!teamValidation.isValid) {
           const error = new Error(teamValidation.message);
           error.statusCode = teamValidation.statusCode || 400;
           throw error;
         }
+      } else {
+        // Resolve or create team if missing
+        let activeTeam = await TeamModel.findActiveTeamByLeaderAndEvent(user.id, registration.event_id);
+        if (!activeTeam) {
+          activeTeam = await TeamModel.createTeam({
+            event_id: registration.event_id,
+            leader_user_id: user.id,
+            team_name: `${user.name || 'Participant'}'s Team`,
+            status: 'SUBMITTED',
+          });
+        }
+        const client = getSupabaseClient();
+        if (client) {
+          await client.from('registrations').update({ team_id: activeTeam.id }).eq('id', registration.id);
+        }
+        registration.team_id = activeTeam.id;
       }
 
       if (participants.length > 0 && participants.length < minSize) {
@@ -564,6 +711,15 @@ export const registrationService = {
 
     // 6. Transition status to PAYMENT_PENDING
     const updated = await RegistrationModel.updateRegistrationStatus(registration.id, 'PAYMENT_PENDING');
+
+    // 7. Ensure linked team status transitions to SUBMITTED
+    if (registration.team_id) {
+      try {
+        await TeamModel.updateTeam(registration.team_id, { status: 'SUBMITTED' });
+      } catch (tErr) {
+        logger.warn(`Notice: could not update team status for team ${registration.team_id}:`, tErr);
+      }
+    }
 
     logger.info(
       `Registration ${registration.registration_id} transitioned to PAYMENT_PENDING for user ${user.id} (${user.email})`

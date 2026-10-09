@@ -796,19 +796,44 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
             eventId: event.id,
             teamName,
           });
-          createdTeamId = teamRes.team.id;
+          createdTeamId = teamRes?.team?.id || (teamRes as any)?.id;
 
           // Add secondary members to team
-          for (let i = 1; i < participantCount; i++) {
-            const memberName = (formDataState[`${i}-fullName`] || `Member ${i + 1}`).trim();
-            if (memberName) {
-              await api.addTeamMember(token, createdTeamId, { name: memberName });
+          if (createdTeamId) {
+            for (let i = 1; i < participantCount; i++) {
+              const memberName = (formDataState[`${i}-fullName`] || `Member ${i + 1}`).trim();
+              if (memberName) {
+                try {
+                  await api.addTeamMember(token, createdTeamId, { name: memberName });
+                } catch (memberErr) {
+                  console.warn(`Non-blocking notice: could not add member ${i + 1} to team:`, memberErr);
+                }
+              }
             }
           }
         } catch (teamErr: any) {
           // If team already created by leader, retrieve and link existing team
-          if (teamErr.status === 409 && teamErr.data?.existingTeamId) {
-            createdTeamId = teamErr.data.existingTeamId;
+          const existingId =
+            teamErr.data?.existingTeamId ||
+            teamErr.data?.error?.existingTeamId ||
+            teamErr.data?.team?.id ||
+            teamErr.data?.id;
+
+          if (teamErr.status === 409 && existingId) {
+            createdTeamId = existingId;
+            // Also ensure secondary members are added if existing team was incomplete
+            if (createdTeamId) {
+              for (let i = 1; i < participantCount; i++) {
+                const memberName = (formDataState[`${i}-fullName`] || `Member ${i + 1}`).trim();
+                if (memberName) {
+                  try {
+                    await api.addTeamMember(token, createdTeamId, { name: memberName });
+                  } catch {
+                    // Ignore if already added
+                  }
+                }
+              }
+            }
           } else {
             throw teamErr;
           }
@@ -865,12 +890,13 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
         eventId: event.id,
         registrationType: isTeam ? "TEAM" : "INDIVIDUAL",
         teamId: createdTeamId,
+        teamName: teamName || undefined,
         participants: participantsPayload,
       });
 
       // 4. Upload Selected Participant Documents to Cloudinary
       const fileEntries = Object.entries(fileDataState);
-      if (fileEntries.length > 0 && registrationRes.participants) {
+      if (fileEntries.length > 0 && registrationRes?.participants && registrationRes?.id) {
         for (const [key, file] of fileEntries) {
           const [indexStr, fieldId] = key.split("-");
           const pIdx = Number(indexStr);
@@ -903,43 +929,42 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
       // 5. Finalize Registration -> Transition status to PAYMENT_PENDING
       setUploadStatusMessage("Finalizing registration submission...");
       let finalRegistration = registrationRes;
-      try {
-        finalRegistration = await api.submitRegistration(
-          token,
-          registrationRes.id || registrationRes.registrationId
-        );
-      } catch (submitErr: any) {
-        console.warn("Status transition to PAYMENT_PENDING warning, attempting refresh:", submitErr);
+      const targetIdentifier = registrationRes?.id || registrationRes?.registrationId;
+      if (targetIdentifier) {
         try {
-          finalRegistration = await api.fetchRegistrationDetails(
-            token,
-            registrationRes.id || registrationRes.registrationId
-          );
-        } catch {
-          // If fetch fails, keep registrationRes
+          finalRegistration = await api.submitRegistration(token, targetIdentifier);
+        } catch (submitErr: any) {
+          console.warn("Status transition to PAYMENT_PENDING warning, attempting refresh:", submitErr);
+          try {
+            finalRegistration = await api.fetchRegistrationDetails(token, targetIdentifier);
+          } catch {
+            // If fetch fails, keep registrationRes
+          }
         }
       }
 
-      setSubmitResult(finalRegistration);
+      const activeResult = finalRegistration || registrationRes;
+      setSubmitResult(activeResult);
       setStep("confirmed");
       window.scrollTo({ top: 0, behavior: "smooth" });
       refreshRegistrations().catch(() => {});
 
-      if (typeof window !== "undefined") {
+      const activeRegCode = activeResult?.registrationId || activeResult?.id;
+      if (typeof window !== "undefined" && activeRegCode) {
         const url = new URL(window.location.href);
-        url.searchParams.set("registrationId", finalRegistration.registrationId || finalRegistration.id);
+        url.searchParams.set("registrationId", activeRegCode);
         url.searchParams.set("step", "confirmed");
         window.history.replaceState(null, "", url.toString());
       }
 
       // 6. Automatic Payment Initiation for New Registration in PAYMENT_PENDING
       if (
-        finalRegistration.status === "PAYMENT_PENDING" &&
+        activeResult?.status === "PAYMENT_PENDING" &&
         event.id !== "velocityx" &&
-        finalRegistration.payableAmount !== 0
+        activeResult?.payableAmount !== 0
       ) {
         setUploadStatusMessage("Registration submitted! Opening secure payment gateway...");
-        await initiatePaymentFlow(finalRegistration, token);
+        await initiatePaymentFlow(activeResult, token);
       }
     } catch (err: any) {
       console.error("Registration submission failed:", err);

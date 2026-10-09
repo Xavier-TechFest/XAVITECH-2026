@@ -536,7 +536,7 @@ export const teamService = {
    * Validate team readiness and size for registration creation.
    * Ensures team leader is verified, team is DRAFT, and total size is within min/max bounds.
    */
-  validateTeamForRegistration: async (teamId, eventId, leaderUserId) => {
+  validateTeamForRegistration: async (teamId, eventId, leaderUserId, suppliedParticipantsCount = 0, allowedStatuses = ['DRAFT', 'SUBMITTED']) => {
     const team = await TeamModel.getTeamWithMembers(teamId);
 
     if (!team) {
@@ -563,7 +563,7 @@ export const teamService = {
       };
     }
 
-    if (team.status !== 'DRAFT') {
+    if (!allowedStatuses.includes(team.status)) {
       return {
         isValid: false,
         statusCode: 400,
@@ -571,30 +571,32 @@ export const teamService = {
       };
     }
 
-    const totalTeamSize = 1 + (team.members?.length || 0);
+    const membersCount = team.members?.length || 0;
+    const totalTeamSize = 1 + membersCount;
+    const effectiveTeamSize = Math.max(totalTeamSize, Number(suppliedParticipantsCount) || 0);
     const minSize = team.event?.min_team_size || 1;
     const maxSize = team.event?.max_team_size || 1;
 
-    if (totalTeamSize < minSize) {
+    if (effectiveTeamSize < minSize) {
       return {
         isValid: false,
         statusCode: 400,
-        message: `Team size (${totalTeamSize}) is less than the required minimum of ${minSize} participants (including team leader)`,
+        message: `Team size (${effectiveTeamSize}) is less than the required minimum of ${minSize} participants (including team leader)`,
       };
     }
 
-    if (totalTeamSize > maxSize) {
+    if (effectiveTeamSize > maxSize) {
       return {
         isValid: false,
         statusCode: 400,
-        message: `Team size (${totalTeamSize}) exceeds the maximum allowed ${maxSize} participants (including team leader)`,
+        message: `Team size (${effectiveTeamSize}) exceeds the maximum allowed ${maxSize} participants (including team leader)`,
       };
     }
 
     return {
       isValid: true,
       team,
-      totalTeamSize,
+      totalTeamSize: effectiveTeamSize,
     };
   },
 };

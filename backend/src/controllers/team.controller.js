@@ -20,14 +20,14 @@ export const teamController = {
     try {
       const validation = validateTeamCreate(req.body);
       if (!validation.isValid) {
-        return sendError(res, validation.errors.join(', '), 400);
+        return sendError(res, validation.errors.join(', '), null, 400);
       }
 
       const team = await teamService.createTeam(req.user, req.body);
-      return sendSuccess(res, team, 201);
+      return sendSuccess(res, 'Team created successfully', team, 201);
     } catch (error) {
       if (error.statusCode) {
-        return sendError(res, error.message, error.statusCode, error.data);
+        return sendError(res, error.message, error.data || null, error.statusCode);
       }
       logger.error('Error creating team:', error);
       next(error);
@@ -41,10 +41,10 @@ export const teamController = {
   getMyTeams: async (req, res, next) => {
     try {
       const teams = await teamService.getMyTeams(req.user);
-      return sendSuccess(res, teams, 200);
+      return sendSuccess(res, 'My teams retrieved successfully', teams, 200);
     } catch (error) {
       if (error.statusCode) {
-        return sendError(res, error.message, error.statusCode);
+        return sendError(res, error.message, null, error.statusCode);
       }
       logger.error('Error fetching my teams:', error);
       next(error);
@@ -59,10 +59,10 @@ export const teamController = {
     try {
       const { teamId } = req.params;
       const team = await teamService.getTeamDetails(req.user, teamId);
-      return sendSuccess(res, team, 200);
+      return sendSuccess(res, 'Team details retrieved successfully', team, 200);
     } catch (error) {
       if (error.statusCode) {
-        return sendError(res, error.message, error.statusCode);
+        return sendError(res, error.message, null, error.statusCode);
       }
       logger.error('Error fetching team details:', error);
       next(error);
@@ -78,14 +78,14 @@ export const teamController = {
       const { teamId } = req.params;
       const validation = validateTeamUpdate(req.body);
       if (!validation.isValid) {
-        return sendError(res, validation.errors.join(', '), 400);
+        return sendError(res, validation.errors.join(', '), null, 400);
       }
 
       const updated = await teamService.updateTeam(req.user, teamId, req.body);
-      return sendSuccess(res, updated, 200);
+      return sendSuccess(res, 'Team updated successfully', updated, 200);
     } catch (error) {
       if (error.statusCode) {
-        return sendError(res, error.message, error.statusCode);
+        return sendError(res, error.message, null, error.statusCode);
       }
       logger.error('Error updating team:', error);
       next(error);
@@ -100,10 +100,10 @@ export const teamController = {
     try {
       const { teamId } = req.params;
       await teamService.deleteTeam(req.user, teamId);
-      return sendSuccess(res, { message: 'Team deleted successfully' }, 200);
+      return sendSuccess(res, 'Team deleted successfully', { message: 'Team deleted successfully' }, 200);
     } catch (error) {
       if (error.statusCode) {
-        return sendError(res, error.message, error.statusCode);
+        return sendError(res, error.message, null, error.statusCode);
       }
       logger.error('Error deleting team:', error);
       next(error);
@@ -119,14 +119,14 @@ export const teamController = {
       const { teamId } = req.params;
       const validation = validateTeamMember(req.body);
       if (!validation.isValid) {
-        return sendError(res, validation.errors.join(', '), 400);
+        return sendError(res, validation.errors.join(', '), null, 400);
       }
 
       const added = await teamService.addTeamMember(req.user, teamId, req.body);
-      return sendSuccess(res, added, 201);
+      return sendSuccess(res, 'Team member added successfully', added, 201);
     } catch (error) {
       if (error.statusCode) {
-        return sendError(res, error.message, error.statusCode);
+        return sendError(res, error.message, null, error.statusCode);
       }
       logger.error('Error adding team member:', error);
       next(error);
@@ -142,14 +142,14 @@ export const teamController = {
       const { teamId, memberId } = req.params;
       const validation = validateTeamMember(req.body);
       if (!validation.isValid) {
-        return sendError(res, validation.errors.join(', '), 400);
+        return sendError(res, validation.errors.join(', '), null, 400);
       }
 
       const updated = await teamService.updateTeamMember(req.user, teamId, memberId, req.body);
-      return sendSuccess(res, updated, 200);
+      return sendSuccess(res, 'Team member updated successfully', updated, 200);
     } catch (error) {
       if (error.statusCode) {
-        return sendError(res, error.message, error.statusCode);
+        return sendError(res, error.message, null, error.statusCode);
       }
       logger.error('Error updating team member:', error);
       next(error);
@@ -164,10 +164,10 @@ export const teamController = {
     try {
       const { teamId, memberId } = req.params;
       await teamService.removeTeamMember(req.user, teamId, memberId);
-      return sendSuccess(res, { message: 'Team member removed successfully' }, 200);
+      return sendSuccess(res, 'Team member removed successfully', { message: 'Team member removed successfully' }, 200);
     } catch (error) {
       if (error.statusCode) {
-        return sendError(res, error.message, error.statusCode);
+        return sendError(res, error.message, null, error.statusCode);
       }
       logger.error('Error removing team member:', error);
       next(error);
