@@ -1031,7 +1031,7 @@ export const EVENTS: EventItem[] = [
   // ----------------------------------------------------------------------------
   {
     id: "unscripted-nations",
-    name: "MODEL UNITED NATIONS",
+    name: "UNSCRIPTED NATIONS",
     aliases: ["model-united-nations", "mun"],
     fullTitle: "XAVITECH 2026 — Model United Nations (MUN)",
     badge: "Track D",
