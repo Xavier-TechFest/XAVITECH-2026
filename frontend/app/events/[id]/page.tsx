@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { EVENTS } from "@/lib/eventsData";
+import { EVENTS, getEventByIdOrSlug } from "@/lib/eventsData";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import EventDetailView from "@/components/sections/EventDetailView";
@@ -13,13 +13,18 @@ interface EventDetailPageProps {
 }
 
 export function generateStaticParams() {
-  return EVENTS.map((event) => ({
-    id: event.id,
-  }));
+  const params: { id: string }[] = [];
+  EVENTS.forEach((event) => {
+    params.push({ id: event.id });
+    event.aliases?.forEach((alias) => {
+      params.push({ id: alias });
+    });
+  });
+  return params;
 }
 
 export function generateMetadata({ params }: EventDetailPageProps) {
-  const event = EVENTS.find((e) => e.id === params.id);
+  const event = getEventByIdOrSlug(params.id);
   if (!event) return { title: "Event Details — XAVITECH '26" };
 
   return {
@@ -29,7 +34,7 @@ export function generateMetadata({ params }: EventDetailPageProps) {
 }
 
 export default function EventDetailPage({ params }: EventDetailPageProps) {
-  const event = EVENTS.find((e) => e.id === params.id);
+  const event = getEventByIdOrSlug(params.id);
 
   if (!event) {
     notFound();

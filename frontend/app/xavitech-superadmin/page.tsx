@@ -1,17 +1,26 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { adminLogin, ApiError } from "@/lib/api";
+import { useAdmin } from "@/context/AdminContext";
 import { AuthShell, AuthCard, AuthField, AuthButton, AuthAlert } from "@/components/auth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { admin, isLoadingAdmin, login } = useAdmin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (!isLoadingAdmin && admin) {
+      router.replace("/xavitech-superadmin/dashboard");
+    }
+  }, [admin, isLoadingAdmin, router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,11 +38,15 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      await adminLogin({
+      const data = await adminLogin({
         email: cleanEmail,
         password: cleanPassword,
         secretKey: cleanSecret,
       });
+
+      if (data?.admin) {
+        login(data.admin);
+      }
 
       // Redirect to protected admin dashboard upon successful login
       router.push("/xavitech-superadmin/dashboard");

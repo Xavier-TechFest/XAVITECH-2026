@@ -901,6 +901,8 @@ export const adminRegistrationService = {
     search = '',
     eventId = '',
     status = '',
+    teamStatus = '',
+    registrationStatus = '',
   }) => {
     const client = getSupabaseClient();
     if (!client) throw new Error('Database client is not available');
@@ -936,7 +938,13 @@ export const adminRegistrationService = {
         event:events(id, name, slug, fee, min_team_size, max_team_size, track_id, track:tracks(id, name, slug)),
         leader:users(id, name, email, phone, college_name),
         members:team_members(id, name, member_order),
-        registration:registrations(id, registration_id, status)
+        registration:registrations(
+          id,
+          registration_id,
+          status,
+          created_at,
+          payment_transactions(id, status, amount, created_at)
+        )
       `,
         { count: 'exact' }
       );
@@ -953,8 +961,42 @@ export const adminRegistrationService = {
       query = query.eq('event_id', eventId);
     }
 
-    if (status) {
-      query = query.eq('status', status.toUpperCase());
+    // Filter by team status ('DRAFT', 'SUBMITTED', 'CANCELLED')
+    const effectiveTeamStatus = (
+      teamStatus ||
+      (status && ['DRAFT', 'SUBMITTED', 'CANCELLED'].includes(status.toUpperCase()) ? status : '')
+    ).toUpperCase();
+
+    if (effectiveTeamStatus) {
+      query = query.eq('status', effectiveTeamStatus);
+    }
+
+    // Filter by registration status ('PAYMENT_PENDING', 'CONFIRMED', 'PAYMENT_SUCCESS', 'CANCELLED', etc.)
+    const effectiveRegStatus = (
+      registrationStatus ||
+      (status && !['DRAFT', 'SUBMITTED', 'CANCELLED'].includes(status.toUpperCase()) ? status : '')
+    ).toUpperCase();
+
+    if (effectiveRegStatus) {
+      const { data: matchedRegs } = await client
+        .from('registrations')
+        .select('team_id')
+        .eq('status', effectiveRegStatus)
+        .not('team_id', 'is', null);
+
+      const matchingTeamIds = Array.from(new Set((matchedRegs || []).map((r) => r.team_id).filter(Boolean)));
+      if (matchingTeamIds.length === 0) {
+        return {
+          teams: [],
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            totalRecords: 0,
+            totalPages: 1,
+          },
+        };
+      }
+      query = query.in('id', matchingTeamIds);
     }
 
     query = query
@@ -970,12 +1012,32 @@ export const adminRegistrationService = {
 
     const formattedTeams = (rows || []).map((t) => {
       const members = t.members || [];
-      const reg = Array.isArray(t.registration) && t.registration.length > 0 ? t.registration[0] : null;
+      const regList = Array.isArray(t.registration) ? [...t.registration] : [];
+      regList.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      const activeReg = regList.find((r) => r.status !== 'CANCELLED') || regList[0] || null;
+
+      let resolvedPaymentStatus = null;
+      if (activeReg) {
+        const txs = Array.isArray(activeReg.payment_transactions) ? [...activeReg.payment_transactions] : [];
+        txs.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+        const latestTx = txs[0] || null;
+        const isPaid = activeReg.status === 'CONFIRMED' || activeReg.status === 'PAYMENT_SUCCESS';
+        resolvedPaymentStatus = latestTx
+          ? latestTx.status
+          : isPaid
+          ? 'SUCCESS'
+          : activeReg.status === 'PAYMENT_PENDING'
+          ? 'PENDING'
+          : 'INITIATED';
+      }
 
       return {
         id: t.id,
         teamName: t.team_name,
         status: t.status,
+        teamStatus: t.status,
+        registrationStatus: activeReg ? activeReg.status : null,
+        paymentStatus: resolvedPaymentStatus,
         createdAt: t.created_at,
         updatedAt: t.updated_at,
         event: t.event
@@ -1007,11 +1069,13 @@ export const adminRegistrationService = {
           : null,
         memberCount: members.length,
         totalTeamSize: 1 + members.length,
-        registration: reg
+        registration: activeReg
           ? {
-              id: reg.id,
-              registrationId: reg.registration_id,
-              status: reg.status,
+              id: activeReg.id,
+              registrationId: activeReg.registration_id,
+              status: activeReg.status,
+              paymentStatus: resolvedPaymentStatus,
+              createdAt: activeReg.created_at,
             }
           : null,
       };
@@ -1060,6 +1124,7 @@ export const adminRegistrationService = {
           status,
           registration_type,
           created_at,
+          payment_transactions(id, status, amount, created_at),
           participants:registration_participants(*)
         )
       `
@@ -1083,7 +1148,24 @@ export const adminRegistrationService = {
       );
     }
 
-    const reg = Array.isArray(team.registration) && team.registration.length > 0 ? team.registration[0] : null;
+    const regList = Array.isArray(team.registration) ? [...team.registration] : [];
+    regList.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    const reg = regList.find((r) => r.status !== 'CANCELLED') || regList[0] || null;
+
+    let resolvedPaymentStatus = null;
+    if (reg) {
+      const txs = Array.isArray(reg.payment_transactions) ? [...reg.payment_transactions] : [];
+      txs.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      const latestTx = txs[0] || null;
+      const isPaid = reg.status === 'CONFIRMED' || reg.status === 'PAYMENT_SUCCESS';
+      resolvedPaymentStatus = latestTx
+        ? latestTx.status
+        : isPaid
+        ? 'SUCCESS'
+        : reg.status === 'PAYMENT_PENDING'
+        ? 'PENDING'
+        : 'INITIATED';
+    }
 
     let participants = [];
     if (reg && Array.isArray(reg.participants)) {
@@ -1096,6 +1178,9 @@ export const adminRegistrationService = {
       id: team.id,
       teamName: team.team_name,
       status: team.status,
+      teamStatus: team.status,
+      registrationStatus: reg ? reg.status : null,
+      paymentStatus: resolvedPaymentStatus,
       createdAt: team.created_at,
       updatedAt: team.updated_at,
       totalTeamSize: 1 + members.length,
@@ -1148,6 +1233,7 @@ export const adminRegistrationService = {
             registrationId: reg.registration_id,
             status: reg.status,
             registrationType: reg.registration_type,
+            paymentStatus: resolvedPaymentStatus,
             createdAt: reg.created_at,
           }
         : null,

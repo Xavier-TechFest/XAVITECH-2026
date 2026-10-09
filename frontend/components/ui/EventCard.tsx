@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { EventItem, TRACKS } from "@/lib/eventsData";
 import Link from "next/link";
 import { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
+import { useEventRegistrationStatus } from "@/lib/hooks/useEventRegistrationStatus";
 
 interface EventCardProps {
   event: EventItem;
@@ -16,6 +17,20 @@ export default function EventCard({ event, variant }: EventCardProps) {
   const isFlagship = event.isFlagship || variant === "flagship";
   const track = TRACKS.find((item) => item.id === event.trackId);
   const imageCrop = useImageCrop(event, "card");
+  const { status } = useEventRegistrationStatus(event.id);
+  const effectiveStatus = status || (event.registrationConfig ? "OPEN" : "TBA");
+
+  const isAvailable = effectiveStatus === "OPEN";
+  let buttonText = "Registration →";
+  if (effectiveStatus === "COMING_SOON") {
+    buttonText = "Opens Soon";
+  } else if (effectiveStatus === "CLOSED") {
+    buttonText = "Closed";
+  } else if (effectiveStatus === "FULL") {
+    buttonText = "Full";
+  } else if (effectiveStatus === "DISABLED") {
+    buttonText = "Unavailable";
+  }
   const isHackathon = event.id === "innocraft";
   const isWebDev = event.id === "webweave";
   const accent = isHackathon ? "#ff6848" : isWebDev ? "#f0a15b" : event.accentColor || "#35e0c9";
@@ -55,7 +70,7 @@ export default function EventCard({ event, variant }: EventCardProps) {
             {track?.name || event.trackName}
           </span>
             <span className="flex shrink-0 items-center gap-1.5 border px-2 py-1 font-oxanium text-[9px] font-bold uppercase tracking-widest text-[var(--event-accent)]" style={{ borderColor: `${accent}99`, backgroundColor: `${accent}18` }}>
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--event-accent)] shadow-[0_0_8px_var(--event-accent)]" /> {event.registrationConfig ? "DETAILS" : "TBA"}
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--event-accent)] shadow-[0_0_8px_var(--event-accent)]" /> {status || (event.registrationConfig ? "DETAILS" : "TBA")}
           </span>
         </div>
 
@@ -95,9 +110,15 @@ export default function EventCard({ event, variant }: EventCardProps) {
           <Link href={`/events/${event.id}`} className="col-span-2 flex h-11 items-center justify-center border border-white/35 bg-black/55 font-oxanium text-[10px] font-extrabold uppercase tracking-wider text-white transition hover:border-[var(--event-accent)] hover:text-[var(--event-accent)]">
             Explore
           </Link>
-          <Link href={`/events/${event.id}/register`} className="col-span-3 flex h-11 items-center justify-center font-oxanium text-xs font-black uppercase tracking-widest text-[#07090b] transition hover:brightness-110" style={{ backgroundColor: accent, boxShadow: `0 0 20px ${accent}55` }}>
-            Registration <span className="ml-2" aria-hidden="true">→</span>
-          </Link>
+          {isAvailable ? (
+            <Link href={`/events/${event.id}/register`} className="col-span-3 flex h-11 items-center justify-center font-oxanium text-xs font-black uppercase tracking-widest text-[#07090b] transition hover:brightness-110" style={{ backgroundColor: accent, boxShadow: `0 0 20px ${accent}55` }}>
+              Registration <span className="ml-2" aria-hidden="true">→</span>
+            </Link>
+          ) : (
+            <button disabled className="col-span-3 flex h-11 items-center justify-center font-oxanium text-xs font-black uppercase tracking-widest opacity-60 cursor-not-allowed bg-neutral-900 text-neutral-400 border border-neutral-700">
+              {buttonText}
+            </button>
+          )}
         </div>
       </div>
     </motion.article>

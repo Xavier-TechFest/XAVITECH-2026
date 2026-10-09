@@ -85,195 +85,340 @@ function TeamDetailContent() {
     );
   }
 
+  // Resolve leader participant and member participant snapshots if linked
+  const participants = team.participants || [];
+  const leaderParticipant = participants.find(
+    (p) => p.participantRole === "LEADER" || p.participantOrder === 1
+  );
+  const memberParticipants = participants.filter(
+    (p) => p.participantRole === "MEMBER" && p.participantOrder > 1
+  );
+
+  // Leader fields resolution
+  const leaderName = team.leader?.name || leaderParticipant?.fullName || "—";
+  const leaderEmail = team.leader?.email || leaderParticipant?.email || "—";
+  const leaderPhone = team.leader?.phone || leaderParticipant?.mobileNumber || "—";
+  const leaderInstitution = team.leader?.institution || leaderParticipant?.institutionName || "—";
+  const leaderClass = leaderParticipant?.standardClass || "—";
+
+  // Build resolved roster list
+  type RosterRow = {
+    key: string;
+    role: "LEADER" | "MEMBER";
+    orderLabel: string;
+    name: string;
+    email: string;
+    phone: string;
+    institution: string;
+    classLevel: string;
+  };
+
+  const rosterRows: RosterRow[] = [];
+
+  // 1. Leader row
+  rosterRows.push({
+    key: "leader",
+    role: "LEADER",
+    orderLabel: "Team Leader",
+    name: leaderName,
+    email: leaderEmail,
+    phone: leaderPhone,
+    institution: leaderInstitution,
+    classLevel: leaderClass,
+  });
+
+  // 2. Member rows
+  if (team.members && team.members.length > 0) {
+    team.members.forEach((m, idx) => {
+      // Find matching participant details if available
+      const matchedPart =
+        memberParticipants.find(
+          (p) => p.fullName?.toLowerCase().trim() === m.name?.toLowerCase().trim()
+        ) ||
+        memberParticipants.find(
+          (p) => p.participantOrder === (m.memberOrder ? m.memberOrder + 1 : idx + 2)
+        ) ||
+        memberParticipants[idx];
+
+      rosterRows.push({
+        key: `member-${m.id || idx}`,
+        role: "MEMBER",
+        orderLabel: `Member #${m.memberOrder || idx + 1}`,
+        name: m.name,
+        email: matchedPart?.email || "—",
+        phone: matchedPart?.mobileNumber || "—",
+        institution: matchedPart?.institutionName || "—",
+        classLevel: matchedPart?.standardClass || "—",
+      });
+    });
+  } else if (memberParticipants.length > 0) {
+    // If team_members had 0 rows but registration_participants has member records
+    memberParticipants.forEach((p, idx) => {
+      rosterRows.push({
+        key: `participant-${p.id || idx}`,
+        role: "MEMBER",
+        orderLabel: `Member #${idx + 1}`,
+        name: p.fullName,
+        email: p.email || "—",
+        phone: p.mobileNumber || "—",
+        institution: p.institutionName || "—",
+        classLevel: p.standardClass || "—",
+      });
+    });
+  }
+
+  const squadCount = rosterRows.length;
+
   return (
-    <div className="p-4 sm:p-8 max-w-5xl w-full mx-auto space-y-6">
-        {/* Navigation Breadcrumb */}
-        <div className="mb-6 flex items-center justify-between">
-          <Link
-            href="/xavitech-superadmin/teams"
-            className="inline-flex items-center gap-1.5 text-xs font-mono text-neutral-400 hover:text-[#35e0c9] transition"
-          >
-            <span>←</span>
-            <span>Back to Teams</span>
-          </Link>
+    <div className="p-4 sm:p-8 max-w-6xl w-full mx-auto space-y-6">
+      {/* Navigation Breadcrumb */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/xavitech-superadmin/teams"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-neutral-400 hover:text-[#35e0c9] transition"
+        >
+          <span>←</span>
+          <span>Back to Teams</span>
+        </Link>
 
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${
-              team.status === "SUBMITTED"
-                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                : team.status === "CANCELLED"
-                ? "bg-red-500/10 text-red-400 border-red-500/30"
-                : "bg-blue-500/10 text-blue-400 border-blue-500/30"
-            }`}
-          >
-            {team.status}
-          </span>
-        </div>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${
+            team.status === "SUBMITTED"
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+              : team.status === "CANCELLED"
+              ? "bg-red-500/10 text-red-400 border-red-500/30"
+              : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+          }`}
+        >
+          {team.status}
+        </span>
+      </div>
 
-        {/* Title Bar */}
-        <div className="mb-8">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 block mb-1">
-            Team Squad Profile
-          </span>
-          <h1 className="text-3xl font-extrabold font-mono text-white tracking-tight">
-            {team.teamName}
-          </h1>
-          <p className="text-xs text-neutral-400 mt-1 font-mono">
-            Team UUID: {team.id} • Created on{" "}
-            {team.createdAt ? new Date(team.createdAt).toLocaleString() : "—"}
-          </p>
-        </div>
+      {/* Title Bar */}
+      <div>
+        <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 block mb-1">
+          Team Squad Profile
+        </span>
+        <h1 className="text-3xl font-extrabold font-mono text-white tracking-tight">
+          {team.teamName}
+        </h1>
+        <p className="text-xs text-neutral-400 mt-1 font-mono">
+          Team UUID: {team.id} • Created on{" "}
+          {team.createdAt ? new Date(team.createdAt).toLocaleString() : "—"}
+          {team.updatedAt && team.updatedAt !== team.createdAt ? (
+            <> • Updated on {new Date(team.updatedAt).toLocaleString()}</>
+          ) : null}
+        </p>
+      </div>
 
-        {/* Event & Associated Registration Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Event Card */}
-          <div className="bg-[#0e131f]/90 border border-neutral-800 rounded-2xl p-6 backdrop-blur-xl">
-            <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-5 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#35e0c9]" />
-              Event Specification
-            </h2>
+      {/* Information Cards: Event, Leader, Registration */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Event Specification Card */}
+        <div className="bg-[#0e131f]/90 border border-neutral-800 rounded-2xl p-6 backdrop-blur-xl">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#35e0c9]" />
+            Event Specification
+          </h2>
 
-            <div className="space-y-3.5 text-xs">
-              <div>
-                <span className="text-[11px] font-mono uppercase text-neutral-500 block">Event</span>
-                <p className="text-base font-bold text-white mt-0.5">{team.event?.name || "—"}</p>
-              </div>
-
-              <div>
-                <span className="text-[11px] font-mono uppercase text-neutral-500 block">Category</span>
-                <p className="text-neutral-300 font-mono mt-0.5">{team.event?.category || "—"}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-[11px] font-mono uppercase text-neutral-500 block">Team Size Bounds</span>
-                  <p className="font-mono text-white mt-0.5">
-                    {team.event?.minTeamSize} – {team.event?.maxTeamSize} members
-                  </p>
-                </div>
-                <div>
-                  <span className="text-[11px] font-mono uppercase text-neutral-500 block">Registration Fee</span>
-                  <p className="font-mono text-emerald-400 mt-0.5 font-bold">
-                    ₹{team.event?.fee ?? 0}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Registration Link Card */}
-          <div className="bg-[#0e131f]/90 border border-neutral-800 rounded-2xl p-6 backdrop-blur-xl">
-            <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-5 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              Registration Association
-            </h2>
-
-            {team.registration ? (
-              <div className="space-y-3.5 text-xs">
-                <div>
-                  <span className="text-[11px] font-mono uppercase text-neutral-500 block">Registration Code</span>
-                  <Link
-                    href={`/xavitech-superadmin/registrations/view?registrationId=${team.registration.registrationId}`}
-                    className="text-base font-mono font-bold text-[#35e0c9] hover:underline block mt-0.5"
-                  >
-                    {team.registration.registrationId} →
-                  </Link>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-mono uppercase text-neutral-500 block">Registration Status</span>
-                  <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#35e0c9]/10 text-[#35e0c9] border border-[#35e0c9]/30 mt-1">
-                    {team.registration.status}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-mono uppercase text-neutral-500 block">Registered At</span>
-                  <p className="text-neutral-400 font-mono mt-0.5">
-                    {team.registration.createdAt ? new Date(team.registration.createdAt).toLocaleString() : "—"}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="py-6 text-center text-neutral-500 font-mono text-xs">
-                <p>This team is currently a DRAFT squad without a confirmed registration record.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Team Leader & Roster Card */}
-        <div className="bg-[#0e131f]/90 border border-neutral-800 rounded-2xl p-6 backdrop-blur-xl mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-neutral-800 gap-2">
+          <div className="space-y-3 text-xs">
             <div>
-              <h2 className="text-sm font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-purple-400" />
-                Team Roster ({team.totalTeamSize} Participants)
-              </h2>
-              <p className="text-[11px] font-mono text-neutral-400 mt-0.5">
-                Calculated strictly as 1 Team Leader + {team.memberCount} Team Members (Leader never double-counted)
+              <span className="text-[11px] font-mono uppercase text-neutral-500 block">Event</span>
+              <p className="text-sm font-bold text-white mt-0.5">{team.event?.name || "—"}</p>
+            </div>
+
+            <div>
+              <span className="text-[11px] font-mono uppercase text-neutral-500 block">Track</span>
+              <p className="text-neutral-300 font-mono mt-0.5">
+                {team.event?.track?.name || team.event?.category || "—"}
               </p>
             </div>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="text-[11px] font-mono uppercase text-neutral-400 border-b border-neutral-800 bg-[#131929]/50">
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Participant Name</th>
-                  <th className="py-3 px-4">Email</th>
-                  <th className="py-3 px-4">Institution</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-800/60 font-mono">
-                {/* Team Leader */}
-                <tr className="bg-[#131929]/30">
-                  <td className="py-3.5 px-4">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                      TEAM LEADER
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 font-bold text-white">
-                    {team.leader?.name || "Leader"}
-                  </td>
-                  <td className="py-3.5 px-4 text-[#35e0c9]">
-                    {team.leader?.email || "—"}
-                  </td>
-                  <td className="py-3.5 px-4 text-neutral-300">
-                    {team.leader?.institution || "—"}
-                  </td>
-                </tr>
-
-                {/* Team Members */}
-                {team.members.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-6 text-center text-neutral-500 italic">
-                      No additional team members added yet.
-                    </td>
-                  </tr>
-                ) : (
-                  team.members.map((member, idx) => (
-                    <tr key={member.id} className="hover:bg-[#131929]/20">
-                      <td className="py-3.5 px-4 text-neutral-500 text-[11px]">
-                        Member #{member.memberOrder || idx + 1}
-                      </td>
-                      <td className="py-3.5 px-4 text-white font-medium">
-                        {member.name}
-                      </td>
-                      <td className="py-3.5 px-4 text-neutral-500 italic text-[11px]">
-                        Stored on Leader account
-                      </td>
-                      <td className="py-3.5 px-4 text-neutral-500 italic text-[11px]">
-                        Stored on Leader account
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-800/60">
+              <div>
+                <span className="text-[11px] font-mono uppercase text-neutral-500 block">Bounds</span>
+                <p className="font-mono text-white mt-0.5">
+                  {team.event?.minTeamSize ?? 1} – {team.event?.maxTeamSize ?? 1} members
+                </p>
+              </div>
+              <div>
+                <span className="text-[11px] font-mono uppercase text-neutral-500 block">Fee</span>
+                <p className="font-mono text-emerald-400 mt-0.5 font-bold">
+                  ₹{team.event?.fee ?? 0}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Team Leader Card */}
+        <div className="bg-[#0e131f]/90 border border-neutral-800 rounded-2xl p-6 backdrop-blur-xl">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            Team Leader
+          </h2>
+
+          <div className="space-y-3 text-xs">
+            <div>
+              <span className="text-[11px] font-mono uppercase text-neutral-500 block">Name</span>
+              <p className="text-sm font-bold text-white mt-0.5">{leaderName}</p>
+            </div>
+
+            <div>
+              <span className="text-[11px] font-mono uppercase text-neutral-500 block">Email</span>
+              <p className="text-[#35e0c9] font-mono mt-0.5 break-all">{leaderEmail}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-800/60">
+              <div>
+                <span className="text-[11px] font-mono uppercase text-neutral-500 block">Phone</span>
+                <p className="font-mono text-neutral-300 mt-0.5">{leaderPhone}</p>
+              </div>
+              <div>
+                <span className="text-[11px] font-mono uppercase text-neutral-500 block">Class / Year</span>
+                <p className="font-mono text-neutral-300 mt-0.5">{leaderClass}</p>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[11px] font-mono uppercase text-neutral-500 block">Institution</span>
+              <p className="text-neutral-300 font-mono mt-0.5 text-[11px]">{leaderInstitution}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Registration Association Card */}
+        <div className="bg-[#0e131f]/90 border border-neutral-800 rounded-2xl p-6 backdrop-blur-xl">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            Registration Association
+          </h2>
+
+          {team.registration?.registrationId ? (
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="text-[11px] font-mono uppercase text-neutral-500 block">Registration Code</span>
+                <Link
+                  href={`/xavitech-superadmin/registrations/view?registrationId=${team.registration.registrationId}`}
+                  className="text-sm font-mono font-bold text-[#35e0c9] hover:underline block mt-0.5"
+                >
+                  {team.registration.registrationId} →
+                </Link>
+              </div>
+
+              <div>
+                <span className="text-[11px] font-mono uppercase text-neutral-500 block">Registration Status</span>
+                <span
+                  className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border mt-1 ${
+                    team.registration.status === "CONFIRMED" || team.registration.status === "PAYMENT_SUCCESS"
+                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                      : team.registration.status === "CANCELLED" || team.registration.status === "PAYMENT_FAILED"
+                      ? "bg-red-500/10 text-red-400 border-red-500/30"
+                      : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                  }`}
+                >
+                  {team.registration.status}
+                </span>
+              </div>
+
+              {team.registration.paymentStatus && (
+                <div>
+                  <span className="text-[11px] font-mono uppercase text-neutral-500 block">Payment Status</span>
+                  <span
+                    className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border mt-1 ${
+                      team.registration.paymentStatus === "SUCCESS"
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                        : team.registration.paymentStatus === "FAILED"
+                        ? "bg-red-500/10 text-red-400 border-red-500/30"
+                        : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                    }`}
+                  >
+                    {team.registration.paymentStatus}
+                  </span>
+                </div>
+              )}
+
+              <div>
+                <span className="text-[11px] font-mono uppercase text-neutral-500 block">Registered At</span>
+                <p className="text-neutral-400 font-mono mt-0.5 text-[11px]">
+                  {team.registration.createdAt ? new Date(team.registration.createdAt).toLocaleString() : "—"}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-neutral-500 font-mono text-xs">
+              <p>No registration linked to this team.</p>
+              <p className="text-[10px] text-neutral-600 mt-1">This squad exists as a draft team without a linked registration.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Team Roster / Members Table */}
+      <div className="bg-[#0e131f]/90 border border-neutral-800 rounded-2xl p-6 backdrop-blur-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-neutral-800 gap-2">
+          <div>
+            <h2 className="text-sm font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-400" />
+              Team Roster ({squadCount} Participant{squadCount === 1 ? "" : "s"})
+            </h2>
+            <p className="text-[11px] font-mono text-neutral-400 mt-0.5">
+              1 Team Leader + {squadCount - 1} Team Member{squadCount - 1 === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="text-[11px] font-mono uppercase text-neutral-400 border-b border-neutral-800 bg-[#131929]/50">
+                <th className="py-3 px-4">Role</th>
+                <th className="py-3 px-4">Participant Name</th>
+                <th className="py-3 px-4">Email</th>
+                <th className="py-3 px-4">Phone</th>
+                <th className="py-3 px-4">Institution</th>
+                <th className="py-3 px-4">Class / Year</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-800/60 font-mono">
+              {rosterRows.map((row) => (
+                <tr
+                  key={row.key}
+                  className={`hover:bg-[#131929]/40 ${
+                    row.role === "LEADER" ? "bg-[#131929]/30 font-medium" : ""
+                  }`}
+                >
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    {row.role === "LEADER" ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                        TEAM LEADER
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/30">
+                        {row.orderLabel}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3.5 px-4 font-bold text-white whitespace-nowrap">
+                    {row.name}
+                  </td>
+                  <td className="py-3.5 px-4 text-[#35e0c9] whitespace-nowrap">
+                    {row.email}
+                  </td>
+                  <td className="py-3.5 px-4 text-neutral-300 whitespace-nowrap">
+                    {row.phone}
+                  </td>
+                  <td className="py-3.5 px-4 text-neutral-300">
+                    {row.institution}
+                  </td>
+                  <td className="py-3.5 px-4 text-neutral-400 whitespace-nowrap">
+                    {row.classLevel}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

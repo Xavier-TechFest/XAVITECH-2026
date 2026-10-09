@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import {
   User as FirebaseUser,
@@ -19,6 +20,8 @@ import {
   UserProfile,
   UpdateProfilePayload,
   ApiError,
+  RegistrationIndexItem,
+  UUID_TO_EVENT_SLUG,
 } from "../lib/api";
 
 interface AuthContextType {
@@ -31,6 +34,11 @@ interface AuthContextType {
   refreshProfile: () => Promise<UserProfile | null>;
   updateProfile: (payload: UpdateProfilePayload) => Promise<UserProfile>;
   getIdToken: () => Promise<string | null>;
+  // Centralized Registration Index Cache
+  registrations: RegistrationIndexItem[];
+  registrationsLoading: boolean;
+  refreshRegistrations: () => Promise<RegistrationIndexItem[]>;
+  getRegistrationForEvent: (eventSlugOrId: string) => RegistrationIndexItem | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,6 +47,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Centralized Registration Index State
+  const [registrations, setRegistrations] = useState<RegistrationIndexItem[]>([]);
+  const [registrationsLoading, setRegistrationsLoading] = useState(false);
+  const lastFetchedUidRef = useRef<string | null>(null);
 
   // Helper to retrieve current ID token
   const getIdToken = useCallback(async (): Promise<string | null> => {
@@ -57,6 +70,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  // Fetch lightweight registration index for the authenticated user
+  const fetchRegistrationsIndex = useCallback(
+    async (fbUser: FirebaseUser): Promise<RegistrationIndexItem[]> => {
+      setRegistrationsLoading(true);
+      try {
+        const token = await fbUser.getIdToken();
+        const index = await api.fetchMyRegistrationIndex(token);
+        const safeIndex = Array.isArray(index) ? index : [];
+        setRegistrations(safeIndex);
+        return safeIndex;
+      } catch (error) {
+        console.error("Failed to load user registration index:", error);
+        setRegistrations([]);
+        return [];
+      } finally {
+        setRegistrationsLoading(false);
+      }
+    },
+    []
+  );
+
   // Re-fetch profile manually
   const refreshProfile = useCallback(async (): Promise<UserProfile | null> => {
     if (!auth?.currentUser) {
@@ -65,6 +99,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     return await syncBackendUser(auth.currentUser);
   }, [syncBackendUser]);
+
+  // Re-fetch registration index manually (e.g. after registration creation or payment)
+  const refreshRegistrations = useCallback(async (): Promise<RegistrationIndexItem[]> => {
+    if (!auth?.currentUser) {
+      setRegistrations([]);
+      return [];
+    }
+    return await fetchRegistrationsIndex(auth.currentUser);
+  }, [fetchRegistrationsIndex]);
+
+  // Lookup existing registration for an event from the centralized in-memory index
+  const getRegistrationForEvent = useCallback(
+    (eventSlugOrId: string): RegistrationIndexItem | null => {
+      if (!eventSlugOrId || !registrations.length) return null;
+      const target = eventSlugOrId.trim().toLowerCase();
+
+      const matches = registrations.filter((r) => {
+        const slug = (r.eventSlug || "").trim().toLowerCase();
+        const id = (r.eventId || "").trim().toLowerCase();
+        if (slug === target || id === target) return true;
+        if (UUID_TO_EVENT_SLUG[target] && UUID_TO_EVENT_SLUG[target] === slug) return true;
+        if (UUID_TO_EVENT_SLUG[id] && UUID_TO_EVENT_SLUG[id] === target) return true;
+        return false;
+      });
+
+      if (matches.length === 0) return null;
+      // Prefer active (non-cancelled) registrations
+      const active = matches.find((r) => r.status !== "CANCELLED");
+      return active || matches[0];
+    },
+    [registrations]
+  );
 
   // Listen to Firebase Auth state changes
   useEffect(() => {
@@ -84,15 +150,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // If backend token sync fails, reset user state
           setUser(null);
         }
+
+        // Fetch centralized registration index ONCE per authenticated UID
+        if (lastFetchedUidRef.current !== fbUser.uid) {
+          lastFetchedUidRef.current = fbUser.uid;
+          fetchRegistrationsIndex(fbUser).catch(() => {});
+        }
       } else {
+        lastFetchedUidRef.current = null;
         setUser(null);
+        setRegistrations([]);
+        setRegistrationsLoading(false);
       }
 
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [syncBackendUser]);
+  }, [syncBackendUser, fetchRegistrationsIndex]);
 
   // Google Sign-In Flow
   const loginWithGoogle = async (): Promise<UserProfile> => {
@@ -107,6 +182,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await signInWithPopup(auth, googleProvider);
       const profile = await syncBackendUser(result.user);
       setFirebaseUser(result.user);
+      if (lastFetchedUidRef.current !== result.user.uid) {
+        lastFetchedUidRef.current = result.user.uid;
+        fetchRegistrationsIndex(result.user).catch(() => {});
+      }
       return profile;
     } catch (error) {
       setLoading(false);
@@ -121,8 +200,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       if (auth) await firebaseSignOut(auth);
+      lastFetchedUidRef.current = null;
       setFirebaseUser(null);
       setUser(null);
+      setRegistrations([]);
+      setRegistrationsLoading(false);
     } finally {
       setLoading(false);
     }
@@ -153,6 +235,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshProfile,
         updateProfile,
         getIdToken,
+        registrations,
+        registrationsLoading,
+        refreshRegistrations,
+        getRegistrationForEvent,
       }}
     >
       {children}

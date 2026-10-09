@@ -270,8 +270,84 @@ export interface ParticipantRegistration {
   }>;
 }
 
-export async function fetchMyRegistrations(token: string): Promise<ParticipantRegistration[]> {
-  const response = await fetch(`${API_BASE_URL}/registrations/my`, {
+/**
+ * Lightweight registration index item stored in centralized frontend cache.
+ * Contains only essential identification and status fields without heavy participant snapshots or documents.
+ */
+export interface RegistrationIndexItem {
+  id: string;
+  registrationId: string;
+  userId?: string;
+  eventId: string;
+  eventSlug: string | null;
+  eventName?: string | null;
+  teamId?: string | null;
+  teamName?: string | null;
+  registrationType: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Canonical database UUID to official event slug mapping for all 13 official festival events.
+ */
+export const UUID_TO_EVENT_SLUG: Record<string, string> = {
+  "213a4266-b523-4317-b80e-c0120965cbe4": "innocraft",
+  "abeecd1f-e07d-43e5-8970-691e6ed010b2": "webweave",
+  "b631bfc9-ac25-4958-9bb0-c908ae8967b8": "runtime-rush",
+  "c83ca21b-9787-4c8d-9bb4-0a1ac7c5b793": "vlookup",
+  "15328fe9-412b-4f0a-93fc-96ff567f6f93": "debug-derby",
+  "770970ed-6e63-4bd7-b9e9-ff4874acd060": "unscripted-nations",
+  "b5c3b61d-2b26-45d2-9ff4-92cce891b727": "circuit-of-minds",
+  "218f1371-b8e6-4d59-8e90-e0a5d0f000f6": "battle-of-bots",
+  "ae0bcfc2-517a-4b86-be13-88abe1ce5ea0": "thoughtlab",
+  "620c5d8b-9e67-4a6c-82e3-0366c071d153": "loot-goblins",
+  "74693e7b-9409-4934-a154-dc351f9ceb73": "cipher-chase",
+  "2dfb0b0d-ffba-4cbc-993f-72aa907da3b7": "velocityx",
+  "f3c690be-8655-4d7f-a7e9-75d3e84a5e54": "hack-the-skill",
+};
+
+/**
+ * Fetch lightweight registration index for the authenticated user.
+ * Returns only essential routing/status fields without heavy participant snapshots or documents.
+ * Called ONCE when Firebase auth resolves to populate the centralized registration cache.
+ */
+export async function fetchMyRegistrationIndex(
+  token: string
+): Promise<RegistrationIndexItem[]> {
+  const url = `${API_BASE_URL}/registrations/my?format=index`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      json.message || "Failed to fetch registrations index",
+      response.status,
+      json
+    );
+  }
+  return json.data || json || [];
+}
+
+export async function fetchMyRegistrations(
+  token: string,
+  options?: { eventSlug?: string; eventId?: string }
+): Promise<ParticipantRegistration[]> {
+  const query = new URLSearchParams();
+  if (options?.eventSlug) query.append("eventSlug", options.eventSlug);
+  if (options?.eventId) query.append("eventId", options.eventId);
+  const qs = query.toString();
+  const url = `${API_BASE_URL}/registrations/my${qs ? `?${qs}` : ""}`;
+
+  const response = await fetch(url, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -288,6 +364,24 @@ export async function fetchMyRegistrations(token: string): Promise<ParticipantRe
     );
   }
   return json.data || json || [];
+}
+
+/**
+ * Fetch the active or latest registration for a specific event for the authenticated user.
+ * Returns null if no registration exists for the event.
+ */
+export async function fetchMyRegistrationForEvent(
+  token: string,
+  eventIdOrSlug: string
+): Promise<ParticipantRegistration | null> {
+  const list = await fetchMyRegistrations(token, {
+    eventSlug: eventIdOrSlug,
+    eventId: eventIdOrSlug,
+  });
+  if (!Array.isArray(list) || list.length === 0) return null;
+  // If multiple exist (e.g. earlier cancelled one), prioritize active/non-cancelled
+  const active = list.find((r) => r.status !== "CANCELLED");
+  return active || list[0] || null;
 }
 
 export interface RegistrationParticipantInput {
@@ -877,6 +971,9 @@ export interface AdminTeamListItem {
   id: string;
   teamName: string;
   status: string;
+  teamStatus?: string;
+  registrationStatus?: string | null;
+  paymentStatus?: string | null;
   createdAt: string;
   updatedAt: string;
   memberCount: number;
@@ -888,6 +985,12 @@ export interface AdminTeamListItem {
     fee: number;
     minTeamSize: number | null;
     maxTeamSize: number | null;
+    trackId?: string | null;
+    track?: {
+      id: string;
+      name: string;
+      slug: string;
+    } | null;
   } | null;
   leader: {
     id: string;
@@ -900,6 +1003,8 @@ export interface AdminTeamListItem {
     id: string;
     registrationId: string;
     status: string;
+    paymentStatus?: string | null;
+    createdAt?: string;
   } | null;
 }
 
@@ -907,6 +1012,9 @@ export interface AdminTeamDetail {
   id: string;
   teamName: string;
   status: string;
+  teamStatus?: string;
+  registrationStatus?: string | null;
+  paymentStatus?: string | null;
   createdAt: string;
   updatedAt: string;
   totalTeamSize: number;
@@ -923,6 +1031,12 @@ export interface AdminTeamDetail {
     fee: number;
     isActive: boolean;
     registrationOpen: boolean;
+    trackId?: string | null;
+    track?: {
+      id: string;
+      name: string;
+      slug: string;
+    } | null;
   } | null;
   leader: {
     id: string;
@@ -946,8 +1060,22 @@ export interface AdminTeamDetail {
     registrationId: string;
     status: string;
     registrationType: string;
+    paymentStatus?: string | null;
     createdAt: string;
   } | null;
+  participants?: Array<{
+    id: string;
+    participantOrder: number;
+    participantRole: string;
+    fullName: string;
+    email: string;
+    mobileNumber?: string;
+    institutionName?: string;
+    city?: string;
+    studentId?: string;
+    standardClass?: string;
+    customFields?: Record<string, any>;
+  }>;
 }
 
 /**
@@ -1031,6 +1159,8 @@ export async function adminGetTeams(params?: {
   search?: string;
   eventId?: string;
   status?: string;
+  teamStatus?: string;
+  registrationStatus?: string;
 }): Promise<{ teams: AdminTeamListItem[]; pagination: PaginationMeta }> {
   const url = new URL(`${API_BASE_URL}/admin/teams`);
   if (params?.page) url.searchParams.set("page", String(params.page));
@@ -1038,6 +1168,8 @@ export async function adminGetTeams(params?: {
   if (params?.search) url.searchParams.set("search", params.search);
   if (params?.eventId) url.searchParams.set("eventId", params.eventId);
   if (params?.status) url.searchParams.set("status", params.status);
+  if (params?.teamStatus) url.searchParams.set("teamStatus", params.teamStatus);
+  if (params?.registrationStatus) url.searchParams.set("registrationStatus", params.registrationStatus);
 
   const response = await fetch(url.toString(), {
     method: "GET",
@@ -1093,6 +1225,173 @@ export async function adminGetEvents(): Promise<
     return [];
   }
   return json.data || [];
+}
+
+export type EventRegistrationStatus = "DISABLED" | "CLOSED" | "COMING_SOON" | "FULL" | "OPEN";
+
+export interface AdminEventItem {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  category?: string | null;
+  track?: { id: string; name: string; slug: string } | null;
+  trackId?: string | null;
+  eventType?: string | null;
+  registrationType: "INDIVIDUAL" | "TEAM";
+  minTeamSize?: number;
+  maxTeamSize?: number;
+  fee: number;
+  currency: string;
+  isActive: boolean;
+  registrationOpen: boolean;
+  registrationStartAt?: string | null;
+  registrationEndAt?: string | null;
+  capacity?: number | null;
+  registeredCount: number;
+  remainingCapacity?: number | null;
+  isFull: boolean;
+  registrationStatus: EventRegistrationStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AdminEventRegistrationSettings {
+  eventId: string;
+  id: string;
+  name: string;
+  slug: string;
+  track?: { id: string; name: string; slug: string } | null;
+  trackId?: string | null;
+  isActive: boolean;
+  registrationOpen: boolean;
+  registrationStartAt?: string | null;
+  registrationEndAt?: string | null;
+  capacity?: number | null;
+  registeredCount: number;
+  remainingCapacity?: number | null;
+  isFull: boolean;
+  registrationStatus: EventRegistrationStatus;
+  updatedAt?: string;
+}
+
+export interface UpdateEventRegistrationSettingsPayload {
+  registrationOpen?: boolean;
+  isActive?: boolean;
+  registrationStartAt?: string | null;
+  registrationEndAt?: string | null;
+  capacity?: number | null;
+}
+
+/**
+ * Fetch all events with live counts, capacity, and registration status for Superadmin.
+ */
+export async function adminGetEventsList(): Promise<AdminEventItem[]> {
+  const response = await fetch(`${API_BASE_URL}/admin/events`, {
+    method: "GET",
+    headers: getAdminHeaders(),
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(json.message || "Failed to fetch admin events list");
+  }
+  return json.data || [];
+}
+
+/**
+ * Fetch registration settings for a specific event.
+ */
+export async function adminGetEventRegistrationSettings(
+  eventId: string
+): Promise<AdminEventRegistrationSettings> {
+  const response = await fetch(`${API_BASE_URL}/admin/events/${encodeURIComponent(eventId)}/registration-settings`, {
+    method: "GET",
+    headers: getAdminHeaders(),
+    credentials: "include",
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(json.message || "Failed to fetch event registration settings");
+  }
+  return json.data;
+}
+
+/**
+ * Update registration settings for a specific event.
+ */
+export async function adminUpdateEventRegistrationSettings(
+  eventId: string,
+  payload: UpdateEventRegistrationSettingsPayload
+): Promise<AdminEventRegistrationSettings> {
+  const response = await fetch(`${API_BASE_URL}/admin/events/${encodeURIComponent(eventId)}/registration-settings`, {
+    method: "PATCH",
+    headers: getAdminHeaders(),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(json.message || "Failed to update event registration settings");
+  }
+  return json.data;
+}
+
+export interface PublicEventItem {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  category: string | null;
+  track: { id: string; name: string; slug: string } | null;
+  trackId: string | null;
+  eventType: string | null;
+  registrationType: "INDIVIDUAL" | "TEAM";
+  minTeamSize: number;
+  maxTeamSize: number;
+  fee: number;
+  currency: string;
+  isActive: boolean;
+  registrationOpen: boolean;
+  registrationStartAt: string | null;
+  registrationEndAt: string | null;
+  capacity: number | null;
+  registeredCount: number;
+  remainingCapacity: number | null;
+  isFull: boolean;
+  registrationStatus: EventRegistrationStatus;
+}
+
+export async function getPublicEvents(): Promise<PublicEventItem[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/events`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    const json = await response.json().catch(() => ({}));
+    return json.data || [];
+  } catch (error) {
+    console.error("Failed to fetch public events:", error);
+    return [];
+  }
+}
+
+export async function getPublicEventBySlug(slug: string): Promise<PublicEventItem | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/events/slug/${encodeURIComponent(slug)}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok || !json.data) return null;
+    return json.data;
+  } catch (error) {
+    console.error(`Failed to fetch public event by slug "${slug}":`, error);
+    return null;
+  }
 }
 
 /**
@@ -1859,7 +2158,9 @@ export async function fetchPaymentStatus(
 export const api = {
   fetchUserProfile,
   updateUserProfile,
+  fetchMyRegistrationIndex,
   fetchMyRegistrations,
+  fetchMyRegistrationForEvent,
   createRegistration,
   submitRegistration,
   initiatePayment,
@@ -1880,6 +2181,11 @@ export const api = {
   adminGetTeams,
   adminGetTeamDetails,
   adminGetEvents,
+  adminGetEventsList,
+  adminGetEventRegistrationSettings,
+  adminUpdateEventRegistrationSettings,
+  getPublicEvents,
+  getPublicEventBySlug,
   adminGetTracks,
   adminGetTrackLeaders,
   adminGetTrackLeader,

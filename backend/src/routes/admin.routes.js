@@ -11,6 +11,9 @@ import {
   verifyAndCheckIn,
   exportRegistrations,
   exportRegistrationsPreview,
+  listEvents,
+  getEventRegistrationSettings,
+  updateEventRegistrationSettings,
 } from '../controllers/admin.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import { validateCheckIn } from '../validators/admin.validator.js';
@@ -60,6 +63,19 @@ router.get('/teams/:teamId', requireAdmin, getTeamDetails);
 
 // POST /api/admin/check-in -> Day-of-event QR code scan verification placeholder
 router.post('/check-in', requireAdmin, validate(validateCheckIn), verifyAndCheckIn);
+
+// =============================================================================
+// Phase 9: Event Registration & Lifecycle Management (Protected by requireAdmin)
+// =============================================================================
+
+// GET /api/admin/events -> List all events with live registration count, capacity, and status
+router.get('/events', requireAdmin, listEvents);
+
+// GET /api/admin/events/:eventId/registration-settings -> Registration configuration & counts
+router.get('/events/:eventId/registration-settings', requireAdmin, getEventRegistrationSettings);
+
+// PATCH /api/admin/events/:eventId/registration-settings -> Update registration status, window, capacity
+router.patch('/events/:eventId/registration-settings', requireAdmin, updateEventRegistrationSettings);
 
 // =============================================================================
 // Phase 8: Track Leader Management Operations (Protected by requireAdmin)
