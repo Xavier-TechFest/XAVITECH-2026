@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Calendar, Download, MapPin, Users, ChevronLeft } from "lucide-react";
-import { EventItem, TRACKS } from "@/lib/eventsData";
+import { EventExploreSection, EventItem, TRACKS } from "@/lib/eventsData";
 import { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
 import EventExploreSections from "@/components/sections/EventExploreSections";
 import { useEventRegistrationStatus } from "@/lib/hooks/useEventRegistrationStatus";
@@ -36,6 +36,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
       ? [{ label: "Capacity", value: `${eventData.registeredCount} / ${eventData.capacity} (${eventData.remainingCapacity} remaining)` }]
       : []),
   ];
+  const exploreSections = buildEventExploreSections(event, effectiveStatus === "CLOSED");
   const downloadBrochure = () => {
     const guideContent = event.exploreSections?.length
       ? event.exploreSections.flatMap((section) => [section.title, ...section.items.map((item) => `• ${item}`)])
@@ -52,34 +53,9 @@ export default function EventDetailView({ event }: { event: EventItem }) {
         <h1 className="font-space text-4xl font-black uppercase leading-tight tracking-tight text-white sm:text-6xl">{event.name}</h1>
         <p className="mt-2 font-oxanium text-base font-bold uppercase tracking-wider text-cyan-200">{event.shortDesc}</p>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-300">{event.fullDesc}</p>
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">{facts.map((fact) => <Fact key={fact.label} label={fact.label} value={fact.value} />)}</div>
-        {(config?.details || event.highlights.length > 0) && <section className="mt-10 space-y-4">
-          <h2 className="font-space text-xl font-bold text-white">{event.exploreSections?.length ? "About the challenge" : "Event Information"}</h2>
-          {config?.details?.committee && <InfoBlock title="Committee" value={config.details.committee} />}
-          {config?.details?.agenda && <InfoBlock title="Agenda" value={config.details.agenda} />}
-          {config?.details?.duration && <InfoBlock title="Expected duration" value={config.details.duration} />}
-          {config?.details?.game && <InfoBlock title="Game" value={config.details.game} />}
-          {config?.details?.maps && <InfoBlock title="Maps" value={config.details.maps.join(", ")} />}
-          {event.highlights.map((item) => <p key={item} className="border-l border-cyan-400/60 pl-4 text-sm leading-relaxed text-slate-300">{item}</p>)}
-        </section>}
-        {!event.exploreSections?.length && <InfoList title="Eligibility" items={event.eligibility ?? []} />}
-        {!event.exploreSections?.length && <InfoList title="Registration" items={event.registrationInfo ?? []} />}
-        {!event.exploreSections?.length && <InfoList title="Requirements" items={event.requirements ?? []} />}
-        {!event.exploreSections?.length && <InfoList title="Rules & Regulations" items={event.rules} />}
-        {!event.exploreSections?.length && event.disqualificationCriteria?.length ? <InfoList title="Elimination & Disqualification Criteria" items={event.disqualificationCriteria} /> : null}
-        {!event.exploreSections?.length && event.id === "innocraft" && effectiveStatus === "CLOSED" && config?.details?.schedule?.length ? (
-          <section className="mt-10">
-            <h2 className="mb-4 font-space text-xl font-bold text-white">Detailed Day Schedule</h2>
-            <p className="mb-4 text-sm text-slate-400">The schedule is available now that registration is closed.</p>
-            <div className="overflow-x-auto border border-white/10">
-              <table className="w-full min-w-[520px] text-left text-sm">
-                <thead className="bg-white/[.04] font-oxanium uppercase tracking-wider text-cyan-200"><tr><th className="px-4 py-3">Time slot</th><th className="px-4 py-3">Phase / Activity</th></tr></thead>
-                <tbody>{config.details.schedule.map((item) => <tr key={item.time} className="border-t border-white/10 text-slate-300"><td className="whitespace-nowrap px-4 py-3">{item.time}</td><td className="px-4 py-3">{item.activity}</td></tr>)}</tbody>
-              </table>
-            </div>
-          </section>
-        ) : null}
-        {event.exploreSections?.length ? <EventExploreSections sections={event.exploreSections} /> : null}
+        <div className="mt-8">
+          <EventExploreSections sections={exploreSections} />
+        </div>
         {config?.coordinator && <section className="mt-10 rounded border border-white/10 bg-white/[.03] p-5">
           <h2 className="font-space font-bold text-white">Event Contact</h2>
           <Contact name={config.coordinator.name} role="Event Coordinator" email={config.coordinator.email} phone={config.coordinator.phone} />
@@ -163,8 +139,45 @@ export default function EventDetailView({ event }: { event: EventItem }) {
   </main>;
 }
 
-function Fact({ label, value }: { label: string; value: string }) { return <div className="min-h-20 rounded border border-white/10 bg-white/[.03] p-3"><p className="font-oxanium text-[10px] uppercase tracking-widest text-slate-500">{label}</p><p className="mt-2 text-sm font-medium text-white">{value}</p></div>; }
-function InfoBlock({ title, value }: { title: string; value: string }) { return <div className="rounded border border-white/10 bg-white/[.03] p-4"><p className="font-oxanium text-xs uppercase tracking-widest text-cyan-300">{title}</p><p className="mt-2 text-sm leading-relaxed text-slate-200">{value}</p></div>; }
-function InfoList({ title, items }: { title: string; items: string[] }) { if (!items.length) return null; return <section className="mt-10"><h2 className="mb-4 font-space text-xl font-bold text-white">{title}</h2><ul className="space-y-3">{items.map((item) => <li key={item} className="border-l border-cyan-400/60 pl-4 text-sm leading-relaxed text-slate-300">{item}</li>)}</ul></section>; }
+
+function buildEventExploreSections(event: EventItem, registrationClosed: boolean): EventExploreSection[] {
+  const sections = [...(event.exploreSections ?? [])];
+  const alreadyCovered = (pattern: RegExp) => sections.some((section) => pattern.test(section.title));
+  const addSection = (title: string, items: Array<string | undefined>) => {
+    const cleanedItems = items.map((item) => item?.trim()).filter((item): item is string => Boolean(item));
+    if (cleanedItems.length) sections.push({ title, items: cleanedItems });
+  };
+  const details = event.registrationConfig?.details;
+  const feeItems = [
+    event.price ? `Registration fee: ${event.price}.` : undefined,
+    ...(event.registrationConfig?.policy?.poolOptions ?? []).map((pool) => `${pool.label}: ${pool.feeDisplay}.`),
+    ...(event.registrationInfo ?? []),
+    event.registrationConfig?.deadline ? `Registration deadline: ${event.registrationConfig.deadline}.` : undefined,
+  ];
+  const eventDetails = [
+    details?.committee ? `Committee: ${details.committee}` : undefined,
+    details?.agenda ? `Agenda: ${details.agenda}` : undefined,
+    details?.duration ? `Expected duration: ${details.duration}` : undefined,
+    details?.format ? `Format: ${details.format}` : undefined,
+    details?.game ? `Game: ${details.game}` : undefined,
+    details?.maps?.length ? `Maps: ${details.maps.join(", ")}` : undefined,
+    details?.note,
+  ];
+
+  if (!alreadyCovered(/eligib|who can participate/i)) addSection("Eligibility", event.eligibility ?? []);
+  addSection("Event highlights", event.highlights ?? []);
+  if (!alreadyCovered(/registration|register|fee|payment/i) || !sections.some((section) => /registration|register|fee|payment/i.test(section.title) && section.items.some((item) => item.includes("₹")))) {
+    addSection("Registration & fees", feeItems);
+  }
+  if (!alreadyCovered(/requirements|documents|what.*bring/i)) addSection("Requirements", event.requirements ?? []);
+  if (!alreadyCovered(/rules|regulations|guidelines/i)) addSection("Rules & regulations", event.rules ?? []);
+  if (!alreadyCovered(/disqualif|elimination|penalt/i)) addSection("Elimination & disqualification", event.disqualificationCriteria ?? []);
+  addSection("Event details", eventDetails);
+  if (registrationClosed && event.id === "innocraft" && details?.schedule?.length) {
+    addSection("Detailed day schedule", details.schedule.map((item) => `${item.time} — ${item.activity}`));
+  }
+  return sections;
+}
+
 function Contact({ name, role, email, phone }: { name: string; role: string; email?: string; phone?: string }) { return <div className="mt-4 border-t border-white/10 pt-4 first:border-0 first:pt-2"><p className="font-semibold text-white">{name}</p><p className="mt-0.5 text-sm text-slate-400">{role}</p><div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-sm text-cyan-300">{email && <a href={`mailto:${email}`}>Email: {email}</a>}{phone?.split("/").map((number) => { const cleanNumber = number.trim(); return <a key={cleanNumber} href={`tel:${cleanNumber}`}>Phone: {cleanNumber}</a>; })}</div></div>; }
 function CardFact({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) { return <div className="min-w-0"><span className="flex items-center gap-2 font-oxanium text-[10px] font-bold uppercase tracking-widest text-white/60" style={{ color: `${accent}cc` }}>{icon}{label}</span><span className="mt-1 block break-words font-mono text-xs leading-relaxed text-white sm:text-sm">{value}</span></div>; }
