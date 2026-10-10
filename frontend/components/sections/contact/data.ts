@@ -119,7 +119,7 @@ const m = (name: string, email?: string, linkedin?: string, image?: string): Per
 // Patron & Convenor show their designation on the card (no email / LinkedIn).
 // Replace the designation text below with their exact titles.
 export const patron: Person = { name: "Fr. Dr. Martin Poras SJ", designation: "Vice-Chancellor" };
-export const convenor: Person = { name: "Dr. Piyush Verma", designation: "Assistant Professor, Department of Computer Science" };
+export const convenor: Person = { name: "Dr. Piyush Verma", designation: "Assistant Professor, Department of Computer Science", image: "/committee/dr-piyush-verma.png" };
 
 export const overallCoordinators: Person[] = [
   { name: "Vaishnavi Ambastha", email: "rajvaishnavi0415@gmail.com", linkedin:"https://www.linkedin.com/in/vaishnavi-raj15?utm_source=share_via&utm_content=profile&utm_medium=member_android" },
