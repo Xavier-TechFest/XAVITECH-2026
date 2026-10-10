@@ -566,7 +566,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
       );
       if (institutions.some((inst) => !inst || inst !== institutions[0])) {
         errors["0-college"] = "All team participants must belong to the same school.";
-        summary.push("Institution: All participants must enter the same school name.");
+        summary.push("Institution: All participants must enter the same Institution Name.");
       }
     }
 
@@ -643,7 +643,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
             const label =
               field.id === "college"
                 ? participantPool === "School"
-                  ? "School Name"
+                  ? "Institution Name"
                   : "Institution Name"
                 : field.label;
             entries.push({ label, value: val });
@@ -1905,7 +1905,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                         const customLabel =
                           field.id === "college"
                             ? participantPool === "School"
-                              ? "School Name"
+                              ? "Institution Name"
                               : "Institution Name"
                             : isOptionalSub
                             ? `${field.label} (Optional)`

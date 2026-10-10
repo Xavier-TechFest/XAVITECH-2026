@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { EVENTS } from "@/lib/eventsData";
 import Link from "next/link";
@@ -10,6 +11,7 @@ import EventsList from "./EventsList";
 import ImageCropEditor, { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
 
 export default function EventsShowcase() {
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
@@ -73,9 +75,13 @@ export default function EventsShowcase() {
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
               exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 w-full h-full rounded-none overflow-hidden border border-white/10 group bg-black/50 cyber-chassis-clip"
+              className="absolute inset-0 w-full h-full rounded-none overflow-hidden border border-white/10 group bg-black/50 cyber-chassis-clip cursor-pointer"
               onMouseEnter={() => setIsAutoPlaying(false)}
               onMouseLeave={() => setIsAutoPlaying(true)}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a, button")) return;
+                router.push(`/events/${currentEvent.id}`);
+              }}
             >
               {/* IMAGE BACKDROP */}
               <div className="absolute inset-0 w-full h-full">
@@ -96,8 +102,16 @@ export default function EventsShowcase() {
               {/* SCANLINE */}
               <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#35e0c9] animate-scanline opacity-50 group-hover:opacity-100" />
 
+              {/* ACCESSIBLE OVERLAY LINK */}
+              <Link 
+                href={`/events/${currentEvent.id}`}
+                className="absolute inset-0 z-0"
+                aria-label={`View ${currentEvent.name} details`}
+                tabIndex={-1}
+              />
+
               {/* CONTENT OVERLAY */}
-              <div className="absolute inset-0 w-full h-full p-6 md:p-12 flex flex-col justify-end md:justify-center md:w-[60%]">
+              <div className="absolute inset-0 w-full h-full p-6 md:p-12 flex flex-col justify-end md:justify-center md:w-[60%] pointer-events-none z-10">
                 <motion.div 
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -161,14 +175,15 @@ export default function EventsShowcase() {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.6, duration: 0.5 }}
-                  className="flex items-center gap-4"
+                  className="flex items-center gap-4 pointer-events-auto"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <Link 
-                    href={`/events/${currentEvent.id}/register`}
+                    href={`/events/${currentEvent.id}`}
                     className="cyber-btn-clip px-8 py-3.5 font-oxanium text-sm font-black text-black uppercase tracking-widest hover:brightness-110 transition-all"
                     style={{ backgroundColor: currentAccent, boxShadow: `0 0 20px ${currentAccent}66` }}
                   >
-                    Registration →
+                    Explore Arena →
                   </Link>
                   <Link 
                     href={`/events/${currentEvent.id}`}
@@ -189,16 +204,24 @@ export default function EventsShowcase() {
           </AnimatePresence>
 
           {/* NEXT / PREV PARTIALS FOR DEPTH (Desktop Only) */}
-          <div className="absolute -right-32 top-1/2 -translate-y-1/2 w-64 h-[60%] rounded-2xl overflow-hidden hidden xl:block opacity-30 blur-[2px] transition-all duration-500 hover:opacity-50 hover:blur-none cursor-pointer border border-white/10" onClick={handleNext}>
+          <Link
+            href={`/events/${nextEvent.id}`}
+            className="absolute -right-32 top-1/2 -translate-y-1/2 w-64 h-[60%] rounded-2xl overflow-hidden hidden xl:block opacity-30 blur-[2px] transition-all duration-500 hover:opacity-50 hover:blur-none cursor-pointer border border-white/10"
+            aria-label={`View ${nextEvent.name} details`}
+          >
             <img src={nextEvent.image} alt="Next" className="w-full h-full object-cover" style={cropStyle(nextCrop)} />
             <div className="absolute inset-0 bg-black/50" />
             <div className="absolute bottom-4 left-4 font-space text-white uppercase font-bold">{nextEvent.name}</div>
-          </div>
-          <div className="absolute -left-32 top-1/2 -translate-y-1/2 w-64 h-[60%] rounded-2xl overflow-hidden hidden xl:block opacity-30 blur-[2px] transition-all duration-500 hover:opacity-50 hover:blur-none cursor-pointer border border-white/10" onClick={handlePrev}>
+          </Link>
+          <Link
+            href={`/events/${prevEvent.id}`}
+            className="absolute -left-32 top-1/2 -translate-y-1/2 w-64 h-[60%] rounded-2xl overflow-hidden hidden xl:block opacity-30 blur-[2px] transition-all duration-500 hover:opacity-50 hover:blur-none cursor-pointer border border-white/10"
+            aria-label={`View ${prevEvent.name} details`}
+          >
             <img src={prevEvent.image} alt="Prev" className="w-full h-full object-cover" style={cropStyle(prevCrop)} />
             <div className="absolute inset-0 bg-black/50" />
             <div className="absolute bottom-4 left-4 font-space text-white uppercase font-bold">{prevEvent.name}</div>
-          </div>
+          </Link>
 
         </div>
 
