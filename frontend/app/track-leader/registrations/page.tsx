@@ -650,6 +650,15 @@ export default function TrackLeaderRegistrationsPage() {
                       >
                         {reg.user?.email || "—"}
                       </div>
+                      {(reg.phone || reg.user?.phone) && (reg.phone || reg.user?.phone) !== "—" && (
+                        <div
+                          className={`text-[10px] font-mono truncate max-w-[160px] ${
+                            isLight ? "text-slate-500" : "text-neutral-500"
+                          }`}
+                        >
+                          {reg.phone || reg.user?.phone}
+                        </div>
+                      )}
                     </td>
 
                     {/* Institution */}
@@ -657,8 +666,9 @@ export default function TrackLeaderRegistrationsPage() {
                       className={`py-4 px-4 max-w-[140px] truncate ${
                         isLight ? "text-slate-600" : "text-neutral-300"
                       }`}
+                      title={reg.institution || reg.user?.institution || "—"}
                     >
-                      {reg.user?.institution || "—"}
+                      {reg.institution || reg.user?.institution || "—"}
                     </td>
 
                     {/* Team */}

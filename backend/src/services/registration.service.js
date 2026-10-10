@@ -314,20 +314,21 @@ export const registrationService = {
         for (let index = 0; index < rawParticipants.length; index++) {
           const p = rawParticipants[index];
           const fullName = (p.full_name || p.fullName || p.name || (index === 0 ? user.name : '') || `Participant ${index + 1}`).trim();
-          const institutionName = (p.institution_name || p.institution || p.college || user.college_name || '').trim();
-          const mobileNumber = (p.mobile_number || p.mobile || p.phone || (index === 0 ? user.phone : '') || '').trim();
+          const institutionName = (p.institution_name || p.institutionName || p.institution || p.college || '').trim();
+          const mobileNumber = (p.mobile_number || p.mobileNumber || p.mobile || p.phone || '').trim();
           const email = (p.email || (index === 0 ? user.email : '') || '').trim();
           const city = (p.city || '').trim();
           const studentId = (p.student_id || p.studentId || '').trim();
-          const standardClass = (p.standard_class || p.standard || p.year || p.course || '').trim();
+          const standardClass = (p.standard_class || p.standardClass || p.standard || p.year || p.course || '').trim();
           const idCardUrl = p.id_card_url || p.idCardUrl || null;
           const profilePhotoUrl = p.profile_photo_url || p.profilePhotoUrl || null;
 
           const {
             full_name, fullName: _fn, name: _n,
-            institution_name: _in, institution: _i, college: _c,
-            mobile_number: _mn, mobile: _m, phone: _p,
+            institution_name: _in, institutionName: _inName, institution: _i, college: _c,
+            mobile_number: _mn, mobileNumber: _mnNum, mobile: _m, phone: _p,
             email: _e, city: _ct, student_id: _si, studentId: _sid,
+            standard_class: _sc, standardClass: _scl, standard: _std, year: _yr, course: _crs,
             id_card_url: _icu, idCardUrl: _icurl,
             profile_photo_url: _ppu, profilePhotoUrl: _ppurl,
             ...customFields
@@ -384,8 +385,8 @@ export const registrationService = {
           participant_order: 1,
           participant_role: 'LEADER',
           full_name: (user.name || 'Team Leader').trim(),
-          institution_name: (user.college_name || '').trim(),
-          mobile_number: (user.phone || '').trim(),
+          institution_name: '',
+          mobile_number: '',
           email: (user.email || '').trim(),
           city: '',
           student_id: '',
@@ -403,7 +404,7 @@ export const registrationService = {
             participant_order: idx + 2,
             participant_role: 'MEMBER',
             full_name: m.name,
-            institution_name: (user.college_name || '').trim(),
+            institution_name: '',
             mobile_number: '',
             email: '',
             city: '',

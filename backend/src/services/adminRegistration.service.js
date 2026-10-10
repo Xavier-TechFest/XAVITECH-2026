@@ -335,7 +335,7 @@ export const adminRegistrationService = {
         client
           .from('registration_participants')
           .select('registration_id')
-          .or(`full_name.ilike.%${cleanSearch}%,email.ilike.%${cleanSearch}%`)
+          .or(`full_name.ilike.%${cleanSearch}%,email.ilike.%${cleanSearch}%,institution_name.ilike.%${cleanSearch}%,mobile_number.ilike.%${cleanSearch}%`)
           .limit(200),
       ]);
 
@@ -616,15 +616,23 @@ export const adminRegistrationService = {
                 : null,
             }
           : null,
+        phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || '—',
+        institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || '—',
         user: reg.user
           ? {
               id: reg.user.id,
-              name: leaderPart?.full_name || reg.user.name || '—',
-              email: leaderPart?.email || reg.user.email || '—',
-              phone: leaderPart?.mobile_number || reg.user.phone || '—',
-              institution: leaderPart?.institution_name || reg.user.college_name || '—',
+              name: (leaderPart?.full_name && leaderPart.full_name.trim()) || reg.user.name || '—',
+              email: (leaderPart?.email && leaderPart.email.trim()) || reg.user.email || '—',
+              phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || '—',
+              institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || '—',
             }
-          : null,
+          : {
+              id: null,
+              name: (leaderPart?.full_name && leaderPart.full_name.trim()) || '—',
+              email: (leaderPart?.email && leaderPart.email.trim()) || '—',
+              phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || '—',
+              institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || '—',
+            },
         team: teamObj
           ? {
               id: teamObj.id,
@@ -956,11 +964,11 @@ export const adminRegistrationService = {
         participantOrder: 1,
         participantRole: 'LEADER',
         isLeader: true,
-        fullName: leaderParticipant.full_name || reg.user?.name || '—',
-        email: leaderParticipant.email || reg.user?.email || '—',
-        mobileNumber: leaderParticipant.mobile_number || reg.user?.phone || '—',
-        institutionName: leaderParticipant.institution_name || reg.user?.college_name || '—',
-        institution: leaderParticipant.institution_name || reg.user?.college_name || '—',
+        fullName: (leaderParticipant.full_name && leaderParticipant.full_name.trim()) || reg.user?.name || '—',
+        email: (leaderParticipant.email && leaderParticipant.email.trim()) || reg.user?.email || '—',
+        mobileNumber: (leaderParticipant.mobile_number && leaderParticipant.mobile_number.trim()) || '—',
+        institutionName: (leaderParticipant.institution_name && leaderParticipant.institution_name.trim()) || '—',
+        institution: (leaderParticipant.institution_name && leaderParticipant.institution_name.trim()) || '—',
         city: leaderParticipant.city || '—',
         studentId: leaderParticipant.student_id || '—',
         standardClass: leaderParticipant.standard_class || '—',
@@ -996,9 +1004,9 @@ export const adminRegistrationService = {
         isLeader: true,
         fullName: reg.user.name || '—',
         email: reg.user.email || '—',
-        mobileNumber: reg.user.phone || '—',
-        institutionName: reg.user.college_name || '—',
-        institution: reg.user.college_name || '—',
+        mobileNumber: '—',
+        institutionName: '—',
+        institution: '—',
         city: '—',
         studentId: '—',
         standardClass: '—',
@@ -1035,17 +1043,34 @@ export const adminRegistrationService = {
       });
     });
 
+    const submittedLeaderPhone = (leaderParticipant?.mobile_number && leaderParticipant.mobile_number.trim()) || '—';
+    const submittedLeaderInstitution = (leaderParticipant?.institution_name && leaderParticipant.institution_name.trim()) || '—';
+    const submittedLeaderName = (leaderParticipant?.full_name && leaderParticipant.full_name.trim()) || reg.user?.name || '—';
+    const submittedLeaderEmail = (leaderParticipant?.email && leaderParticipant.email.trim()) || reg.user?.email || '—';
+
     const leaderObj = reg.user
       ? {
           id: reg.user.id,
-          name: leaderParticipant?.full_name || reg.user.name || '—',
-          email: leaderParticipant?.email || reg.user.email || '—',
-          phone: leaderParticipant?.mobile_number || reg.user.phone || '—',
-          institution: leaderParticipant?.institution_name || reg.user.college_name || '—',
+          name: submittedLeaderName,
+          email: submittedLeaderEmail,
+          phone: submittedLeaderPhone,
+          institution: submittedLeaderInstitution,
           profileImage: reg.user.profile_image,
           role: reg.user.role,
           isActive: reg.user.is_active,
           createdAt: reg.user.created_at,
+        }
+      : leaderParticipant
+      ? {
+          id: null,
+          name: submittedLeaderName,
+          email: submittedLeaderEmail,
+          phone: submittedLeaderPhone,
+          institution: submittedLeaderInstitution,
+          profileImage: null,
+          role: 'PARTICIPANT',
+          isActive: true,
+          createdAt: leaderParticipant.created_at || reg.created_at,
         }
       : null;
 
@@ -1060,10 +1085,10 @@ export const adminRegistrationService = {
         leader: resolvedTeam.leader
           ? {
               id: resolvedTeam.leader.id,
-              name: leaderParticipant?.full_name || resolvedTeam.leader.name || '—',
-              email: leaderParticipant?.email || resolvedTeam.leader.email || '—',
-              phone: leaderParticipant?.mobile_number || resolvedTeam.leader.phone || '—',
-              institution: leaderParticipant?.institution_name || resolvedTeam.leader.college_name || '—',
+              name: submittedLeaderName,
+              email: submittedLeaderEmail,
+              phone: submittedLeaderPhone,
+              institution: submittedLeaderInstitution,
             }
           : leaderObj,
         members: additionalMembers.map((m, idx) => ({
@@ -1117,6 +1142,8 @@ export const adminRegistrationService = {
       createdAt: reg.created_at,
       updatedAt: reg.updated_at,
       totalParticipants,
+      phone: submittedLeaderPhone,
+      institution: submittedLeaderInstitution,
       event: reg.event
         ? {
             id: reg.event.id,

@@ -812,6 +812,8 @@ export interface AdminRegistrationListItem {
   createdAt: string;
   updatedAt: string;
   participantCount: number;
+  phone?: string | null;
+  institution?: string | null;
   event: {
     id: string;
     name: string;
@@ -872,6 +874,8 @@ export interface AdminRegistrationDetail {
   createdAt: string;
   updatedAt: string;
   totalParticipants: number;
+  phone?: string | null;
+  institution?: string | null;
   event: {
     id: string;
     name: string;
