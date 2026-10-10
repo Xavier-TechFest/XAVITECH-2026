@@ -9,6 +9,7 @@ export const EVENT_SLUG_ALIASES = {
   'model-united-nations': 'unscripted-nations',
   'mun': 'unscripted-nations',
   'ideathon': 'thoughtlab',
+  'battleground-blitz': 'loot-goblins',
   'battlefield-blitz': 'loot-goblins',
   'bgmi': 'loot-goblins',
   'death-race': 'velocityx',

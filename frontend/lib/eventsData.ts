@@ -69,7 +69,7 @@ export interface RegistrationPolicy {
   maxInitialFormParticipants?: number;
 
   /**
-   * Whether substitute players can be entered (e.g. P5 for Battlefield Blitz)
+   * Whether substitute players can be entered (e.g. P5 for Battleground Blitz)
    */
   hasSubstitute?: boolean;
   substituteOptional?: boolean;
@@ -1473,19 +1473,19 @@ export const EVENTS: EventItem[] = [
   },
 
   // ----------------------------------------------------------------------------
-  // 10. BATTLEFIELD BLITZ (Loot Goblins - BGMI Esports) — Track C
+  // 10. BATTLEGROUND BLITZ (Loot Goblins - BGMI Esports) — Track C
   // ----------------------------------------------------------------------------
   {
     id: "loot-goblins",
-    name: "BATTLEFIELD BLITZ",
-    aliases: ["battlefield-blitz", "bgmi", "battleground-blitz"],
-    fullTitle: "BATTLEFIELD BLITZ — BGMI",
+    name: "BATTLEGROUND BLITZ",
+    aliases: ["battleground-blitz", "battlefield-blitz", "bgmi"],
+    fullTitle: "BATTLEGROUND BLITZ — BGMI",
     badge: "Track C",
     badgeLevel: "Crucible",
     trackId: "track-c",
     trackName: "TRACK C",
     shortDesc: "BGMI",
-    fullDesc: "Battlefield Blitz is XAVITECH 2026's squad-based Battlegrounds Mobile India tournament. Up to 25 squads play one Best-of-3 series across Erangel, Miramar, and Rondo. The winner is decided by cumulative placement and kill points, with live coverage for spectators at De Nobili Hall.",
+    fullDesc: "Battleground Blitz is XAVITECH 2026's squad-based Battlegrounds Mobile India tournament. Up to 25 squads play one Best-of-3 series across Erangel, Miramar, and Rondo. The winner is decided by cumulative placement and kill points, with live coverage for spectators at De Nobili Hall.",
     date: "31st Oct",
     time: "8:00 AM–1:00 PM",
     prize: "Exciting Gifts & Prizes",
