@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { TRACKS, EVENTS } from "@/lib/eventsData";
 import Link from "next/link";
@@ -8,13 +9,14 @@ import { ChevronRight } from "lucide-react";
 
 const FILTERS = [
   { id: "all", label: "ALL", tracks: ["all"] },
-  { id: "build", label: "BUILD", tracks: ["technical", "learning"] },
-  { id: "think", label: "THINK", tracks: ["ideation", "mun"] },
-  { id: "play", label: "PLAY", tracks: ["gaming", "adventure"] },
-  { id: "create", label: "CREATE", tracks: ["technical"] } // UI/UX is under technical
+  { id: "build", label: "BUILD", tracks: ["track-a", "track-b", "technical", "learning"] },
+  { id: "think", label: "THINK", tracks: ["track-d", "ideation", "mun"] },
+  { id: "play", label: "PLAY", tracks: ["track-c", "gaming", "adventure"] },
+  { id: "create", label: "CREATE", tracks: ["track-a", "track-e", "technical"] } // UI/UX is under technical
 ];
 
 export default function EventsMap() {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState("all");
   const [hoveredTrack, setHoveredTrack] = useState<string | null>(null);
 
@@ -89,7 +91,16 @@ export default function EventsMap() {
                   <div className="absolute -left-4 top-8 w-4 h-px bg-white/20 group-hover:bg-cyan-400 transition-colors hidden md:block" />
                   
                   {/* TRACK NODE CARD */}
-                  <div className="border border-white/10 bg-[#040810] p-6 rounded-lg transition-all duration-300 group-hover:border-cyan-500/50 group-hover:shadow-[0_0_30px_rgba(53,224,201,0.1)] relative overflow-hidden h-full flex flex-col">
+                  <div 
+                    className={`border border-white/10 bg-[#040810] p-6 rounded-lg transition-all duration-300 group-hover:border-cyan-500/50 group-hover:shadow-[0_0_30px_rgba(53,224,201,0.1)] relative overflow-hidden h-full flex flex-col ${
+                      trackEvents.length === 1 ? "cursor-pointer" : ""
+                    }`}
+                    onClick={(e) => {
+                      if (trackEvents.length === 1 && !(e.target as HTMLElement).closest("a, button")) {
+                        router.push(`/events/${trackEvents[0].id}`);
+                      }
+                    }}
+                  >
                     
                     {/* Ambient track color */}
                     <div 

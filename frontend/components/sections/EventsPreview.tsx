@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { getFanTransform } from "@/lib/fan";
 import { EventsBackdrop } from "./Backdrops";
@@ -87,6 +88,7 @@ function CardText({ event, number, active, large = false }: { event: FestEvent; 
 }
 
 export default function EventsPreview() {
+  const router = useRouter();
   const [paused, setPaused] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -187,7 +189,8 @@ export default function EventsPreview() {
               initial={{ opacity: 0, scale: 0.94, y: 22 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="relative flex h-64 w-full max-w-sm flex-col justify-between overflow-hidden rounded-2xl border border-circuit/70 bg-surface-raised p-6 text-left shadow-[0_0_40px_rgba(53,224,201,0.18)] sm:h-72 sm:max-w-md sm:p-8"
+              onClick={() => router.push(`/events/${filtered[0].slug}`)}
+              className="relative flex h-64 w-full max-w-sm flex-col justify-between overflow-hidden rounded-2xl border border-circuit/70 bg-surface-raised p-6 text-left shadow-[0_0_40px_rgba(53,224,201,0.18)] sm:h-72 sm:max-w-md sm:p-8 cursor-pointer"
             >
               <CardArt event={filtered[0]} active />
               <CardText event={filtered[0]} number={1} active large />
@@ -204,10 +207,7 @@ export default function EventsPreview() {
                 <button
                   key={event.name}
                   type="button"
-                  onClick={() => {
-                    setSelectedIndex((v) => (v === index ? null : index));
-                    firePulse(index);
-                  }}
+                  onClick={() => router.push(`/events/${event.slug}`)}
                   aria-pressed={on}
                   className={`relative flex h-56 w-[16.5rem] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left transition-colors duration-300 sm:h-60 sm:w-[18rem] sm:p-6 ${
                     on
@@ -261,8 +261,7 @@ export default function EventsPreview() {
                       setHoveredIndex((h) => (h === index ? null : h));
                     }}
                     onClick={() => {
-                      setSelectedIndex((s) => (s === index ? null : index));
-                      firePulse(index);
+                      router.push(`/events/${event.slug}`);
                     }}
                     aria-pressed={isSelected}
                     className={`group relative flex h-56 w-[16.5rem] shrink-0 flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left sm:h-60 sm:w-[18rem] sm:p-6 transition-colors duration-300 ${

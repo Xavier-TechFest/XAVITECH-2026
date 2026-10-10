@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { EventItem, TRACKS } from "@/lib/eventsData";
 import Link from "next/link";
 import { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
@@ -14,6 +15,7 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event, variant }: EventCardProps) {
+  const router = useRouter();
   const isFlagship = event.isFlagship || variant === "flagship";
   const track = TRACKS.find((item) => item.id === event.trackId);
   const imageCrop = useImageCrop(event, "card");
@@ -48,7 +50,11 @@ export default function EventCard({ event, variant }: EventCardProps) {
       viewport={{ once: true, margin: "-30px" }}
       whileHover={{ y: -6 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative mx-auto aspect-[2/3] w-full max-w-[408px] select-none overflow-hidden bg-[#04090d]"
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("a, button")) return;
+        router.push(`/events/${event.id}`);
+      }}
+      className="group relative mx-auto aspect-[2/3] w-full max-w-[408px] select-none overflow-hidden bg-[#04090d] cursor-pointer"
       style={{ "--event-accent": accent } as React.CSSProperties}
     >
       <img
