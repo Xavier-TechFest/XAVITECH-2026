@@ -65,7 +65,20 @@ export default function EventDetailView({ event }: { event: EventItem }) {
         {!event.exploreSections?.length && <InfoList title="Eligibility" items={event.eligibility ?? []} />}
         {!event.exploreSections?.length && <InfoList title="Registration" items={event.registrationInfo ?? []} />}
         {!event.exploreSections?.length && <InfoList title="Requirements" items={event.requirements ?? []} />}
-        {!event.exploreSections?.length && <InfoList title="Rules" items={event.rules} />}
+        {!event.exploreSections?.length && <InfoList title="Rules & Regulations" items={event.rules} />}
+        {!event.exploreSections?.length && event.disqualificationCriteria?.length ? <InfoList title="Elimination & Disqualification Criteria" items={event.disqualificationCriteria} /> : null}
+        {!event.exploreSections?.length && event.id === "innocraft" && effectiveStatus === "CLOSED" && config?.details?.schedule?.length ? (
+          <section className="mt-10">
+            <h2 className="mb-4 font-space text-xl font-bold text-white">Detailed Day Schedule</h2>
+            <p className="mb-4 text-sm text-slate-400">The schedule is available now that registration is closed.</p>
+            <div className="overflow-x-auto border border-white/10">
+              <table className="w-full min-w-[520px] text-left text-sm">
+                <thead className="bg-white/[.04] font-oxanium uppercase tracking-wider text-cyan-200"><tr><th className="px-4 py-3">Time slot</th><th className="px-4 py-3">Phase / Activity</th></tr></thead>
+                <tbody>{config.details.schedule.map((item) => <tr key={item.time} className="border-t border-white/10 text-slate-300"><td className="whitespace-nowrap px-4 py-3">{item.time}</td><td className="px-4 py-3">{item.activity}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </section>
+        ) : null}
         {event.exploreSections?.length ? <EventExploreSections sections={event.exploreSections} /> : null}
         {config?.coordinator && <section className="mt-10 rounded border border-white/10 bg-white/[.03] p-5">
           <h2 className="font-space font-bold text-white">Event Contact</h2>

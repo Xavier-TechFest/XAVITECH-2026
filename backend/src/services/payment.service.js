@@ -56,7 +56,7 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     }
   }
 
-  // 2. InnoCraft (Hackathon): Pool-based fee (School: 800, College: 1000)
+  // 2. InnoCraft (Hackathon): Pool-based fee (School: 600, College: 800)
   if (event.slug === 'innocraft') {
     const participantList = Array.isArray(participants) && participants.length > 0
       ? participants
@@ -64,9 +64,9 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     const leader = participantList.find((p) => p.participant_order === 1 || p.participantOrder === 1) || participantList[0];
     const pool = leader?.custom_fields?.pool || (leader?.custom_fields && leader.custom_fields['Participant pool']) || leader?.pool;
     if (pool && String(pool).toLowerCase().includes('college')) {
-      return 1000.0;
+      return 800.0;
     }
-    return 800.0;
+    return 600.0;
   }
 
   // 3. Loot Goblins (BGMI Esports / Battlefield Blitz): ₹200 per player (4 core + optional substitute)

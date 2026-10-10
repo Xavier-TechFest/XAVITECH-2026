@@ -1455,6 +1455,24 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               </section>
             ) : null}
 
+            {event.rules.length > 0 ? (
+              <section className="rounded border border-white/10 bg-white/[.02] p-5">
+                <Heading title="Rules & Regulations" note="Please review these event rules before registering." />
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate-300">
+                  {event.rules.map((item, idx) => <li key={idx}>{item}</li>)}
+                </ul>
+              </section>
+            ) : null}
+
+            {event.disqualificationCriteria?.length ? (
+              <section className="rounded border border-rose-400/20 bg-rose-400/[.03] p-5">
+                <Heading title="Elimination & Disqualification Criteria" note="Violations may affect eligibility or result in disqualification." />
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate-300">
+                  {event.disqualificationCriteria.map((item, idx) => <li key={idx}>{item}</li>)}
+                </ul>
+              </section>
+            ) : null}
+
             {isRegistrationBlocked && (
               <div
                 role="status"
@@ -1592,6 +1610,24 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               </section>
             ) : null}
 
+            {event.rules.length > 0 ? (
+              <section className="rounded border border-white/10 bg-white/[.02] p-5">
+                <Heading title="Rules & Regulations" note="Please review these event rules before registering." />
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate-300">
+                  {event.rules.map((item, idx) => <li key={idx}>{item}</li>)}
+                </ul>
+              </section>
+            ) : null}
+
+            {event.disqualificationCriteria?.length ? (
+              <section className="rounded border border-rose-400/20 bg-rose-400/[.03] p-5">
+                <Heading title="Elimination & Disqualification Criteria" note="Violations may affect eligibility or result in disqualification." />
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate-300">
+                  {event.disqualificationCriteria.map((item, idx) => <li key={idx}>{item}</li>)}
+                </ul>
+              </section>
+            ) : null}
+
             {isRegistrationBlocked && (
               <div
                 role="status"
@@ -1636,8 +1672,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                 value={
                   event.id === "innocraft"
                     ? participantPool === "School"
-                      ? "₹800 per school team"
-                      : "₹1,000 per college team"
+                      ? "₹600 per school team"
+                      : "₹800 per college team"
                     : event.id === "loot-goblins"
                     ? `₹${(config.feeAmount ?? 200) * teamSize} (${teamSize} players × ₹${
                         config.feeAmount ?? 200
@@ -2039,8 +2075,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               feeLabel={
                 event.id === "innocraft"
                   ? participantPool === "School"
-                    ? "₹800 per school team"
-                    : "₹1,000 per college team"
+                    ? "₹600 per school team"
+                    : "₹800 per college team"
                   : config.feeDisplay
               }
             />
@@ -2556,7 +2592,7 @@ function getRegistrationTotal(
   participantPool: string,
   teamSize: number
 ): number | null {
-  if (event.id === "innocraft") return participantPool === "School" ? 800 : 1000;
+  if (event.id === "innocraft") return participantPool === "School" ? 600 : 800;
   if (config.feeAmount === undefined) return null;
   if (config.feeBasis === "per_team") return config.feeAmount;
   if (config.feeBasis === "per_player" || config.feeBasis === "per_participant") {

@@ -131,6 +131,7 @@ export interface RegistrationConfig {
     maps?: string[];
     format?: string;
     note?: string;
+    schedule?: Array<{ time: string; activity: string }>;
   };
   declarations?: string[];
   customDeclaration?: string;
@@ -167,6 +168,7 @@ export interface EventItem {
   imageScale?: number;
   highlights: string[];
   rules: string[];
+  disqualificationCriteria?: string[];
   registrationConfig?: RegistrationConfig;
   coordinatorRequirements?: string[];
   eligibility?: string[];
@@ -454,31 +456,51 @@ export const EVENTS: EventItem[] = [
     trackId: "track-a",
     trackName: "TRACK A",
     shortDesc: "Hackathon",
-    fullDesc: "InnoCraft is a team hackathon for school and college participants. Teams register together through one team leader.",
-    date: "31st Oct",
-    time: "TBA",
+    fullDesc: "InnoCraft is a team hackathon for school and college participants. Teams of exactly four register together through one team leader, select a school or college pool, and build a prototype during the event.",
+    date: "31 October 2026",
+    time: "09:00 AM – 06:00 PM",
     prize: "Exciting Gifts & Prizes",
-    price: "₹800 per school team / ₹1,000 per college team",
+    price: "₹600 per school team / ₹800 per college team",
     team: "4 participants",
-    venue: "TBA",
+    venue: "Library (subject to capacity-based relocation)",
     accentColor: "#ff6848",
     glowColor: "rgba(255,104,72,.25)",
     borderColor: "rgba(255,104,72,.5)",
     image: "/images/events/event-01.jpeg",
-    highlights: [],
-    rules: [],
+    highlights: [
+      "Four registered participants per team, with separate school and college problem sets.",
+      "Power outlets, Wi-Fi, drinking water, and lunch are provided by the organisers.",
+    ],
+    rules: [
+      "Up to six broad domains may be offered, including Agriculture, Networking, Software, Hospitality, and E-Commerce. Separate problem sets with calibrated complexity are released for the School and College Pools.",
+      "Problem statements remain confidential until their release at the event. Teams must select and lock one problem statement within the designated ideation window; switching after it is locked is not allowed.",
+      "Teams must use the standard six-slide presentation template based on the Smart India Hackathon (SIH) format.",
+      "Each team gives a 4–5 minute live prototype demonstration followed by jury questions and answers.",
+      "Submit the complete source code and project assets as a ZIP file before the 04:00 PM submission deadline for verification and tie-breaking. No changes to submitted slides or code are permitted after the deadline.",
+      "Teams may bring one official mentor. Mentors must remain in the assigned lounge during coding and may interact only at scheduled feedback checkpoints. Mentors must not code, develop solutions, or present to the jury.",
+      "The detailed day schedule will be published after registration closes.",
+    ],
+    disqualificationCriteria: [
+      "Pre-built solutions or code written before the event are prohibited. All development must take place during official event hours.",
+      "AI tools such as ChatGPT, Gemini, and Copilot may be used as productivity aids, but teams must disclose their use and demonstrate full technical understanding. Fully AI-generated work without demonstrable understanding may be heavily penalised or disqualified.",
+      "Registered team members cannot be replaced or substituted after registration.",
+      "Failure to select and lock a problem statement within the designated ideation window may lead to disqualification.",
+      "If a registered team member is absent, 25% of the team’s total score awarded by the judges will be deducted.",
+    ],
     eligibility: [
-      "School Teams: Open to Classes 9–12. All members must belong to the same school.",
-      "College Teams: Open to undergraduate and postgraduate students; external participants are allowed.",
-      "All courses and academic years/semesters are eligible. There is no age restriction.",
+      "School Pool: Open to students in Grades 9–12. All four team members must belong to the same school.",
+      "College Pool: Open to students enrolled in any undergraduate (UG) or postgraduate (PG) programme. Cross-college and inter-university teams are permitted.",
+      "School–college mixed teams are not permitted. Teams must contain exactly four registered participants.",
     ],
     registrationInfo: [
       "The team leader submits one registration for all four participants. Separate member registrations are not allowed.",
+      "Registration is ₹600 per school team or ₹800 per college team. Select the correct pool during registration.",
       "Team name is required. A participant cannot join multiple teams.",
     ],
     requirements: [
-      "Every participant must provide full name, institution, course/department, year/semester, mobile number, email, student ID/roll number, and city.",
-      "Every participant must verify email/mobile and upload a valid school/college ID card.",
+      "Every participant must provide their full name, institution, department/course or class, contact details, and student ID/roll number.",
+      "Every participant must upload a valid school or college ID card.",
+      "Participants should bring a laptop, charger, extension cord, hardware components, sensors, and any required software or licences. The organisers provide power outlets, Wi-Fi, drinking water, and lunch.",
     ],
     prizeBreakdown: {
       total: "Exciting Gifts & Prizes",
@@ -498,7 +520,7 @@ export const EVENTS: EventItem[] = [
       eventFormat: "team",
       minTeamSize: 4,
       maxTeamSize: 4,
-      feeDisplay: "₹800 per school team / ₹1,000 per college team",
+      feeDisplay: "₹600 per school team / ₹800 per college team",
       deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
@@ -515,6 +537,20 @@ export const EVENTS: EventItem[] = [
         phone: "8252210728",
         email: "utkarshgupta1821@gmail.com",
         coCoordinator: "Rajnish Kumar",
+      },
+      details: {
+        schedule: [
+          { time: "09:00 AM–09:15 AM", activity: "Opening, rules briefing, and problem statement release" },
+          { time: "09:15 AM–09:45 AM", activity: "Problem analysis, team discussion, and ideation (mentors available)" },
+          { time: "09:45 AM–10:00 AM", activity: "Mentor interaction round (scope control)" },
+          { time: "10:00 AM–12:30 PM", activity: "Development Phase I" },
+          { time: "12:30 PM–01:15 PM", activity: "Lunch break (strictly no coding)" },
+          { time: "01:15 PM–03:45 PM", activity: "Development Phase II" },
+          { time: "03:45 PM–04:00 PM", activity: "Final submission deadline" },
+          { time: "04:00 PM–04:30 PM", activity: "Prototype presentations and jury evaluation (4–5 minute demo + Q&A)" },
+          { time: "04:30 PM–04:45 PM", activity: "Jury deliberation" },
+          { time: "05:00 PM–06:00 PM", activity: "Valedictory and winner announcement" },
+        ],
       },
       declarations: baseDeclarations,
       documents: [
@@ -534,15 +570,15 @@ export const EVENTS: EventItem[] = [
           {
             id: "School",
             label: "School Teams (Classes 9–12)",
-            fee: 800,
-            feeDisplay: "₹800 per school team",
+            fee: 600,
+            feeDisplay: "₹600 per school team",
             classOptions: ["Class 9", "Class 10", "Class 11", "Class 12"],
           },
           {
             id: "College",
             label: "College Teams (UG & PG)",
-            fee: 1000,
-            feeDisplay: "₹1,000 per college team",
+            fee: 800,
+            feeDisplay: "₹800 per college team",
           },
         ],
       },
@@ -1466,7 +1502,7 @@ export const EVENTS: EventItem[] = [
       "One three-map series · all registered squads play all three maps.",
       "4 main players + 1 optional substitute · ₹200 per registered player · 25-squad cap.",
       "Cumulative placement and kill points decide the standings.",
-      "Prize pool: ₹12,000 · 1st ₹6,000 · 2nd ₹4,000 · MVP ₹2,000.",
+      "Exciting Gifts & Prizes: ₹12,000 total · 1st ₹6,000 · 2nd ₹4,000 · MVP ₹2,000.",
     ],
     rules: [
       "Advanced Custom Room restrictions apply. Emulators, unauthorized peripherals, macros, hacks, cheats, exploits, and unauthorized software/hardware are prohibited.",
