@@ -75,8 +75,8 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return 600.0;
   }
 
-  // 3. Loot Goblins (BGMI Esports / Battlefield Blitz): ₹200 per player (4 core + optional substitute)
-  if (event.slug === 'loot-goblins' || event.slug === 'battlefield-blitz') {
+  // 3. Loot Goblins (BGMI Esports / Battleground Blitz): ₹200 per player (4 core + optional substitute)
+  if (event.slug === 'loot-goblins' || event.slug === 'battleground-blitz' || event.slug === 'battlefield-blitz') {
     const count = resolvedCount > 0 ? resolvedCount : (event.min_team_size || 4);
     const unitFee = baseFee > 0 ? baseFee : 200.0;
     return Number((unitFee * count).toFixed(2));

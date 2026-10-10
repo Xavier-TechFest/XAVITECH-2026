@@ -211,6 +211,7 @@ export const registrationService = {
     let newlyCreatedTeamId = null;
     const requestedTeamId = (payload.team_id || payload.teamId || '').trim();
     const rawParticipants = payload.participants || payload.participantDetails;
+    const rawParticipantsCount = Array.isArray(rawParticipants) ? rawParticipants.length : 0;
     if (registrationType === 'TEAM') {
       if (validation.event?.slug === 'unscripted-nations' && rawParticipantsCount > 0 && rawParticipantsCount !== 2) {
         const error = new Error('MUN team registration requires exactly 2 delegates.');
