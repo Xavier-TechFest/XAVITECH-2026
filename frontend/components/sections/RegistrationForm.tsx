@@ -420,8 +420,29 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const participantCount = getFormParticipantCount(event, teamSize);
   const participantFieldsFor = (index: number) => {
     const fields = config?.participantFields ?? [];
+    if (index === 0) return fields;
+
+    // 1. InnoCraft: Keep only Full Name, Student ID, and Valid School/College ID Card
+    // (Standard / Class is rendered via the dedicated selector component)
+    if (event.id === "innocraft") {
+      const innocraftMemberFieldIds = new Set(["fullName", "studentId", "collegeId"]);
+      return fields.filter((field) => innocraftMemberFieldIds.has(field.id));
+    }
+
+    // 2. Battleground Blitz: Remove institution, course, year, mobile, email, city from team members
+    if (event.id === "loot-goblins" || event.id === "battleground-blitz" || event.id === "battlefield-blitz") {
+      const removedFieldIds = new Set(["college", "course", "year", "mobile", "email", "city"]);
+      return fields.filter((field) => !removedFieldIds.has(field.id));
+    }
+
+    // 3. Cipher Chase: Remove institution, course, leader mobile, leader email, city, profile photo from team members
+    if (event.id === "cipher-chase") {
+      const removedFieldIds = new Set(["college", "course", "mobile", "email", "city", "profilePhoto"]);
+      return fields.filter((field) => !removedFieldIds.has(field.id));
+    }
+
     const leaderOnlyTeam = config?.eventFormat === "team" && teamSize <= 3 && participantCount > 1;
-    if (!leaderOnlyTeam || index === 0) return fields;
+    if (!leaderOnlyTeam) return fields;
     const memberFieldIds = new Set(["fullName", "college", "course", "collegeId"]);
     return fields.filter((field) => memberFieldIds.has(field.id));
   };
@@ -561,10 +582,13 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
 
     // 3. Same Institution Policy Check (e.g. Innocraft School Pool)
     if (config.policy?.sameInstitutionRequired && participantPool === "School") {
-      const institutions = Array.from({ length: participantCount }, (_, i) =>
+      const participantsWithCollege = Array.from({ length: participantCount }, (_, i) => i).filter((i) =>
+        participantFieldsFor(i).some((f) => f.id === "college")
+      );
+      const institutions = participantsWithCollege.map((i) =>
         (formDataState[`${i}-college`] || "").trim().toLowerCase()
       );
-      if (institutions.some((inst) => !inst || inst !== institutions[0])) {
+      if (institutions.length > 0 && institutions.some((inst) => !inst || inst !== institutions[0])) {
         errors["0-college"] = "All team participants must belong to the same school.";
         summary.push("Institution: All participants must enter the same Institution Name.");
       }
