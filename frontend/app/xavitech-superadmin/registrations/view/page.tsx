@@ -213,12 +213,24 @@ function RegistrationDetailContent() {
 
             <div>
               <span className="text-[11px] font-mono uppercase text-neutral-500 block">Phone Number</span>
-              <p className="font-mono text-neutral-300 mt-0.5">{registration.leader?.phone || "Not provided"}</p>
+              <p className="font-mono text-neutral-300 mt-0.5">
+                {registration.leader?.phone && registration.leader.phone !== "—"
+                  ? registration.leader.phone
+                  : registration.phone && registration.phone !== "—"
+                  ? registration.phone
+                  : "Not provided"}
+              </p>
             </div>
 
             <div>
               <span className="text-[11px] font-mono uppercase text-neutral-500 block">Institution</span>
-              <p className="text-neutral-300 mt-0.5">{registration.leader?.institution || "Not specified"}</p>
+              <p className="text-neutral-300 mt-0.5">
+                {registration.leader?.institution && registration.leader.institution !== "—"
+                  ? registration.leader.institution
+                  : registration.institution && registration.institution !== "—"
+                  ? registration.institution
+                  : "Not specified"}
+              </p>
             </div>
           </div>
         </div>

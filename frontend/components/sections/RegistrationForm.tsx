@@ -878,9 +878,19 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
         const fullName =
           (formDataState[`${index}-fullName`] || (isLeader ? user?.name : "") || `Participant ${index + 1}`).trim();
         const institutionName =
-          (formDataState[`${index}-college`] || (isLeader ? user?.collegeName : "") || "").trim();
+          (formDataState[`${index}-college`] !== undefined
+            ? formDataState[`${index}-college`]
+            : isLeader
+            ? user?.collegeName || ""
+            : ""
+          ).trim();
         const mobileNumber =
-          (formDataState[`${index}-mobile`] || (isLeader ? user?.phone : "") || "").trim();
+          (formDataState[`${index}-mobile`] !== undefined
+            ? formDataState[`${index}-mobile`]
+            : isLeader
+            ? user?.phone || ""
+            : ""
+          ).trim();
         const email =
           (isLeader && user?.email ? user.email : formDataState[`${index}-email`] || (isLeader ? user?.email : "") || "").trim();
         const city = (formDataState[`${index}-city`] || "").trim();
@@ -906,12 +916,17 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
 
         return {
           fullName,
+          full_name: fullName,
           institutionName,
+          institution_name: institutionName,
           mobileNumber,
+          mobile_number: mobileNumber,
           email,
           city,
           studentId,
+          student_id: studentId,
           standardClass,
+          standard_class: standardClass,
           ...extraFields,
         };
       });

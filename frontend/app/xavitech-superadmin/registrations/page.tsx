@@ -427,9 +427,14 @@ function RegistrationsListContent() {
                       <div className="text-[11px] text-neutral-400 font-mono truncate max-w-[160px]">
                         {reg.user?.email || "—"}
                       </div>
+                      {(reg.phone || reg.user?.phone) && (reg.phone || reg.user?.phone) !== "—" && (
+                        <div className="text-[10px] text-neutral-500 font-mono truncate max-w-[160px]">
+                          {reg.phone || reg.user?.phone}
+                        </div>
+                      )}
                     </td>
-                    <td className="py-4 px-4 text-neutral-300 max-w-[140px] truncate">
-                      {reg.user?.institution || "—"}
+                    <td className="py-4 px-4 text-neutral-300 max-w-[140px] truncate" title={reg.institution || reg.user?.institution || "—"}>
+                      {reg.institution || reg.user?.institution || "—"}
                     </td>
                     <td className="py-4 px-4">
                       {reg.team ? (

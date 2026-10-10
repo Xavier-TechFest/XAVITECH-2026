@@ -93,11 +93,11 @@ export const resolveCanonicalExportRoster = (reg) => {
   const teamSize = reg.registration_type === 'TEAM' ? 1 + additionalMembers.length : 1;
 
   const leader = {
-    name: leaderPart?.full_name || reg.user?.name || reg.team?.leader?.name || '—',
-    email: leaderPart?.email || reg.user?.email || reg.team?.leader?.email || '—',
-    phone: leaderPart?.mobile_number || reg.user?.phone || reg.team?.leader?.phone || '—',
-    institution: leaderPart?.institution_name || reg.user?.college_name || reg.team?.leader?.college_name || '—',
-    standardClass: leaderPart?.standard_class || '—',
+    name: (leaderPart?.full_name && leaderPart.full_name.trim()) || reg.user?.name || reg.team?.leader?.name || '—',
+    email: (leaderPart?.email && leaderPart.email.trim()) || reg.user?.email || reg.team?.leader?.email || '—',
+    phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || '—',
+    institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || '—',
+    standardClass: (leaderPart?.standard_class && leaderPart.standard_class.trim()) || '—',
   };
 
   const actualTeamName = reg.team?.team_name || '—';
@@ -355,12 +355,13 @@ export const exportService = {
 
     const cleanSearch = sanitizeSearchTerm(search);
 
-    // 1. Search resolution for users and teams
+    // 1. Search resolution for users, teams, and participants
     let matchingUserIds = [];
     let matchingTeamIds = [];
+    let matchingParticipantRegIds = [];
 
     if (cleanSearch) {
-      const [usersRes, teamsRes] = await Promise.all([
+      const [usersRes, teamsRes, participantsRes] = await Promise.all([
         client
           .from('users')
           .select('id')
@@ -371,10 +372,16 @@ export const exportService = {
           .select('id')
           .ilike('team_name', `%${cleanSearch}%`)
           .limit(150),
+        client
+          .from('registration_participants')
+          .select('registration_id')
+          .or(`full_name.ilike.%${cleanSearch}%,email.ilike.%${cleanSearch}%,institution_name.ilike.%${cleanSearch}%,mobile_number.ilike.%${cleanSearch}%`)
+          .limit(200),
       ]);
 
       if (usersRes.data) matchingUserIds = usersRes.data.map((u) => u.id);
       if (teamsRes.data) matchingTeamIds = teamsRes.data.map((t) => t.id);
+      if (participantsRes.data) matchingParticipantRegIds = participantsRes.data.map((p) => p.registration_id);
     }
 
     // 2. Build base query with full relational hierarchy
@@ -406,6 +413,9 @@ export const exportService = {
       }
       if (matchingTeamIds.length > 0) {
         orClauses.push(`team_id.in.(${matchingTeamIds.join(',')})`);
+      }
+      if (matchingParticipantRegIds.length > 0) {
+        orClauses.push(`id.in.(${matchingParticipantRegIds.join(',')})`);
       }
       query = query.or(orClauses.join(','));
     }
