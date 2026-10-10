@@ -114,7 +114,7 @@ export interface Person {
 
 // Committee member helper. Add email / linkedin when you have them:
 // m("Utkarsh Gupta", "utkarsh@gmail.com", "https://www.linkedin.com/in/utkarsh")
-const m = (name: string, email?: string, linkedin?: string): Person => ({ name, email, linkedin });
+const m = (name: string, email?: string, linkedin?: string, image?: string): Person => ({ name, email, linkedin, image });
 
 // Patron & Convenor show their designation on the card (no email / LinkedIn).
 // Replace the designation text below with their exact titles.
@@ -195,8 +195,9 @@ export const webTeam: Person[] = [
     "https://www.linkedin.com/in/utkarsh-gupta-017a53375?utm_source=share_via&utm_content=profile&utm_medium=member_android"
   ),
   m(
-    "Aadarsh Sinha",
+    "Adarsh Sinha",
     "adarshsinha.dev@gmail.com",
-    "www.linkedin.com/in/adarsh-sinha-6b05a3421"
+    "https://www.linkedin.com/in/adarsh-sinha-6b05a3421",
+    "/committee/adarsh-sinha.png"
   ),
 ];
