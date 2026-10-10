@@ -61,8 +61,8 @@ export const resolveCanonicalExportRoster = (reg) => {
       id: p.id,
       name: p.full_name || '—',
       email: p.email || '—',
-      phone: p.mobile_number || '—',
-      institution: p.institution_name || '—',
+      phone: (p.mobile_number && p.mobile_number.trim()) || (p.custom_fields?.mobileNumber && p.custom_fields.mobileNumber.trim()) || '—',
+      institution: (p.institution_name && p.institution_name.trim()) || (p.custom_fields?.institutionName && p.custom_fields.institutionName.trim()) || '—',
       standardClass: p.standard_class || '—',
     });
   }
@@ -95,8 +95,14 @@ export const resolveCanonicalExportRoster = (reg) => {
   const leader = {
     name: (leaderPart?.full_name && leaderPart.full_name.trim()) || reg.user?.name || reg.team?.leader?.name || '—',
     email: (leaderPart?.email && leaderPart.email.trim()) || reg.user?.email || reg.team?.leader?.email || '—',
-    phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || '—',
-    institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || '—',
+    phone:
+      (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) ||
+      (leaderPart?.custom_fields?.mobileNumber && leaderPart.custom_fields.mobileNumber.trim()) ||
+      '—',
+    institution:
+      (leaderPart?.institution_name && leaderPart.institution_name.trim()) ||
+      (leaderPart?.custom_fields?.institutionName && leaderPart.custom_fields.institutionName.trim()) ||
+      '—',
     standardClass: (leaderPart?.standard_class && leaderPart.standard_class.trim()) || '—',
   };
 
@@ -158,6 +164,12 @@ export const EXPORT_FIELDS_MAP = {
     category: 'EVENT DETAILS',
     default: true,
     extract: (reg) => reg.event?.name || '—',
+  },
+  competitionName: {
+    label: 'Competition / Subtitle',
+    category: 'EVENT DETAILS',
+    default: false,
+    extract: (reg) => reg.event?.event_type || '—',
   },
   eventSlug: {
     label: 'Event Slug',
@@ -396,7 +408,7 @@ export const exportService = {
       status,
       created_at,
       updated_at,
-      event:events(id, name, slug, category, registration_type, fee, track_id, track:tracks(id, name, slug)),
+      event:events(id, name, slug, category, event_type, registration_type, fee, track_id, track:tracks(id, name, slug)),
       user:users(id, name, email, phone, college_name, profile_image, firebase_uid),
       team:teams(id, team_name, status, leader:users(id, name, email, phone, college_name), members:team_members(id, name, member_order)),
       participants:registration_participants(*),
