@@ -462,7 +462,7 @@ export const EVENTS: EventItem[] = [
     prize: "Exciting Gifts & Prizes",
     price: "₹600 per school team / ₹800 per college team",
     team: "4 participants",
-    venue: "Library (subject to capacity-based relocation)",
+    venue: "Library",
     accentColor: "#ff6848",
     glowColor: "rgba(255,104,72,.25)",
     borderColor: "rgba(255,104,72,.5)",
@@ -539,6 +539,7 @@ export const EVENTS: EventItem[] = [
         coCoordinator: "Rajnish Kumar",
       },
       details: {
+        note: "Venue: Library (subject to capacity-based relocation).",
         schedule: [
           { time: "09:00 AM–09:15 AM", activity: "Opening, rules briefing, and problem statement release" },
           { time: "09:15 AM–09:45 AM", activity: "Problem analysis, team discussion, and ideation (mentors available)" },
