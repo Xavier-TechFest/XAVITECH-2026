@@ -25,7 +25,6 @@ export default function Home() {
       <div className="relative z-10">
         <main>
           <Hero />
-          <Ticker />
           <Introduction />
           <Tracks />
           <EventsPreview />

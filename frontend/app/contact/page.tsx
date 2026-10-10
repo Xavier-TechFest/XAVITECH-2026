@@ -4,11 +4,11 @@ import Footer from "@/components/layout/Footer";
 import StaticSky from "@/components/effects/StaticSky";
 import Eyebrow from "@/components/ui/Eyebrow";
 import PersonCard from "@/components/sections/contact/PersonCard";
-import { patron, convenor, overallCoordinators, tracks, webTeam } from "@/components/sections/contact/data";
+import { patron, coPatron, convenor, overallCoordinators, tracks, webTeam } from "@/components/sections/contact/data";
 
 const eventCount = tracks.reduce((n, t) => n + t.events.length + (t.eventName ? 1 : 0), 0);
 const peopleCount =
-  2 + overallCoordinators.length + tracks.reduce((n, t) => n + t.leads.length + t.events.reduce((m, e) => m + e.leads.length, 0), 0);
+  3 + overallCoordinators.length + tracks.reduce((n, t) => n + t.leads.length + t.events.reduce((m, e) => m + e.leads.length, 0), 0);
 const STATS: [string, string][] = [
   [String(peopleCount), "Organisers"],
   [String(tracks.length), "Tracks"],
@@ -64,8 +64,13 @@ export default function ContactPage() {
           {/* ---------------------------------------------------------- */}
           <section className="mt-16 sm:mt-24">
             <Eyebrow n="01" className="justify-center">Leadership</Eyebrow>
-            <div className="mt-6 flex flex-wrap justify-center gap-5 sm:mt-8 sm:gap-8">
-              <PersonCard person={patron} role="Patron" accent="marigold" />
+            <div className="mt-6 flex flex-col items-center gap-5 sm:mt-8 sm:gap-8">
+              {/* top row: Patron and Co-Patron side by side */}
+              <div className="grid w-full max-w-[38rem] grid-cols-1 justify-items-center gap-5 sm:grid-cols-2 sm:gap-8">
+                <PersonCard person={patron} role="Patron" accent="marigold" />
+                <PersonCard person={coPatron} role="Co-Patron" accent="marigold" />
+              </div>
+              {/* Convenor below, centred between the two */}
               <PersonCard person={convenor} role="Convenor" accent="marigold" />
             </div>
           </section>
