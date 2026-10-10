@@ -920,7 +920,7 @@ export const EVENTS: EventItem[] = [
     date: "31st Oct",
     time: "09:30 AM – 11:30 AM",
     prize: "Exciting Gifts & Prizes",
-    price: "₹200 per participant",
+    price: "₹150 per participant",
     team: "1 participant",
     venue: "TBA",
     accentColor: "#35e0c9",
@@ -930,7 +930,7 @@ export const EVENTS: EventItem[] = [
     highlights: [
       "Two rounds · 31 October 2026 · 09:30 AM–11:30 AM.",
       "Round 1 qualifiers advance to HackerRank-based Round 2.",
-      "Prizes: 1st ₹3,000, 2nd ₹2,000, and 3rd ₹1,000.",
+      "A verified HackerRank account is required for the coding/debugging round.",
     ],
     rules: [
       "Individual participation only. Use your own valid HackerRank account and work independently.",
@@ -942,8 +942,8 @@ export const EVENTS: EventItem[] = [
       "Participants should know at least one programming language supported by the HackerRank contest and be familiar with basic submissions.",
     ],
     registrationInfo: [
-      "Register as an individual for ₹200.",
-      "Bring a valid HackerRank account for Round 2 and know your login credentials.",
+      "Register individually for ₹150 per participant.",
+      "A verified HackerRank account is required for the coding/debugging round. Please create and verify your account in advance and make sure you can log in before the event.",
     ],
     requirements: [
       "Required: full name, current school/college/university, class/course, mobile number, email, valid school/college ID, HackerRank username/account email, and a programming language enabled for the contest.",
@@ -976,12 +976,12 @@ export const EVENTS: EventItem[] = [
         "Round 1 is evaluated from the MCQ answers on the provided sheet. Round 2 is evaluated using HackerRank test cases and automated scoring.",
         "Marking distribution: TBA.",
         "For a tie, completely solved questions are considered first, followed by successful submission time. Additional tie-breaker: TBA.",
-        "Prizes: 1st ₹3,000, 2nd ₹2,000, and 3rd ₹1,000.",
+        "Prizes: Exciting Gifts & Prizes.",
       ] },
       { title: "How do I register?", items: [
-        "Register individually. The registration fee is ₹200 per participant.",
+        "Register individually. The registration fee is ₹150 per participant.",
+        "A verified HackerRank account is required for the coding/debugging round. Please create and verify your account in advance and make sure you can log in before the event.",
         "Provide your name, institution, class/course, contact details, HackerRank username or account email, and a valid school/college ID.",
-        "Have a valid HackerRank account ready for Round 2. Know your login details, test your account before the event, and practise the basic submission process.",
       ] },
       { title: "When and where is the event?", items: [
         "Date: 31 October 2026. Competition hours: 09:30 AM–11:30 AM.",
@@ -998,11 +998,8 @@ export const EVENTS: EventItem[] = [
       ] },
     ],
     prizeBreakdown: {
-      total: "₹6,000 combined across 3 places",
-      first: "₹3,000",
-      second: "₹2,000",
-      third: "₹1,000",
-      note: "1st ₹3,000, 2nd ₹2,000, and 3rd ₹1,000",
+      total: "Exciting Gifts & Prizes",
+      note: "Exciting Gifts & Prizes",
     },
     documents: [
       {
@@ -1024,9 +1021,9 @@ export const EVENTS: EventItem[] = [
       eventFormat: "individual",
       minTeamSize: 1,
       maxTeamSize: 1,
-      feeAmount: 200,
+      feeAmount: 150,
       feeBasis: "per_participant",
-      feeDisplay: "₹200 per participant",
+      feeDisplay: "₹150 per participant",
       deadline: "TBA",
       participantFields: debugDerbyFields,
       coordinator: {
@@ -2099,12 +2096,12 @@ export const EVENTS: EventItem[] = [
     trackId: "track-e",
     trackName: "TRACK E",
     shortDesc: "Workshop",
-    fullDesc: "Hack the Skills is a technical workshop open to students from Class 8 through postgraduate level. Register individually or as a team of two to four. Schedule and venue: TBA.",
+    fullDesc: "Hack the Skills is a technical workshop open to students from Class 8 through postgraduate level. Register individually. Schedule and venue: TBA.",
     date: "31st Oct",
     time: "TBA",
     prize: "Exciting Gifts & Prizes",
-    price: "₹300 registration fee",
-    team: "1–4 participants",
+    price: "₹300 per participant",
+    team: "Individual",
     venue: "TBA",
     accentColor: "#f472b6",
     glowColor: "rgba(244,114,182,.2)",
@@ -2120,16 +2117,16 @@ export const EVENTS: EventItem[] = [
       "External participants are welcome. No age restriction is specified.",
     ],
     registrationInfo: [
-      "Choose individual registration or a team of 2–4. Team members are entered during registration; invite/link joining is also supported.",
-      "A team name and team leader are required for team registrations. Separate individual registration is allowed, but a participant cannot join multiple teams.",
-      "Registration fee: ₹300. The form does not specify whether the fee is per participant or team.",
+      "Register individually for ₹300 per participant.",
+      "Open to school students (Classes 8–12) and college/university students (UG & PG).",
+      "Each participant must provide valid identification and profile photo.",
     ],
     requirements: [
       "Each participant must provide full name, institution, department/course/class, mobile number, email address, city, a valid school/college ID card, and a recent profile photo.",
-      "Year/semester, section, and student ID/roll number are optional. Year/semester is requested from the team leader.",
+      "Year/semester, section, and student ID/roll number are optional.",
     ],
     coordinatorRequirements: [
-      "Coordinator access should include participant and team lists, contact details, uploaded ID cards, registration/payment/check-in status, and CSV/Excel export.",
+      "Coordinator access should include participant lists, contact details, uploaded ID cards, registration/payment/check-in status, and CSV/Excel export.",
     ],
     prizeBreakdown: {
       note: "Technical workshop with certificate of participation; no cash prize.",
@@ -2151,16 +2148,13 @@ export const EVENTS: EventItem[] = [
       },
     ],
     registrationConfig: {
-      eventFormat: "team",
+      eventFormat: "individual",
       minTeamSize: 1,
-      maxTeamSize: 4,
+      maxTeamSize: 1,
       feeAmount: 300,
-      feeDisplay: "₹300 registration fee",
+      feeBasis: "per_participant",
+      feeDisplay: "₹300 per participant",
       deadline: "TBA",
-      teamNameRequired: true,
-      teamFields: [
-        { id: "teamName", label: "Team name", type: "text", required: true },
-      ],
       participantFields: hackTheSkillFields,
       coordinator: {
         name: "Unnati Singh",
@@ -2187,7 +2181,7 @@ export const EVENTS: EventItem[] = [
         },
       ],
       policy: {
-        teamNamePolicy: "if_team",
+        teamNamePolicy: "never",
       },
     },
   },
