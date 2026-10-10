@@ -95,7 +95,7 @@ export const EVENTS: FestEvent[] = [
   { slug: "unscripted-nations", name: "Unscripted Nations", realName: "MUN", track: "stage", status: "Registration open", format: "1–2 participants", image: "/events/MUN.jpg" },
   { slug: "circuit-of-minds", name: "Circuit of Minds", realName: "Tech Quiz", track: "stage", status: "Registration open", format: "2 participants", image: card("circuit-of-minds") },
   { slug: "thoughtlab", name: "ThoughtLab", realName: "Ideathon", track: "stage", status: "Registration open", format: "2–4 participants", image: card("thoughtlab") },
-  { slug: "hack-the-skill", name: "Hack the Skill", realName: "Workshop", track: "workshops", status: "Registration open", format: "1–4 participants" },
+  { slug: "hack-the-skill", name: "Hack the Skill", realName: "Workshop", track: "workshops", status: "Registration open", format: "1–4 participants", image: card("hack-the-skill") },
 ];
 
 export const trackById = (id: TrackId) => TRACKS.find((t) => t.id === id)!;
