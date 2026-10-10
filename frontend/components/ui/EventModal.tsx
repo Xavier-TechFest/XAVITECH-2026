@@ -82,8 +82,10 @@ export default function EventModal({ event, onClose }: EventModalProps) {
 
           {/* Event Title */}
           <h2 className="mt-3.5 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl md:text-4xl">
-            {event.fullTitle || event.name}
+            {event.name}
           </h2>
+
+          <p className="mt-1 font-oxanium text-sm font-semibold uppercase tracking-wider text-circuit">{event.shortDesc}</p>
 
           <p className="mt-3 font-space text-sm text-muted leading-relaxed sm:text-base">
             {event.fullDesc}
@@ -92,16 +94,15 @@ export default function EventModal({ event, onClose }: EventModalProps) {
           {/* Key Metadata Grid */}
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 rounded-2xl border border-line bg-surface-raised p-4 font-oxanium text-xs">
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider">Date & Time</span>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">Date</span>
               <span className="mt-1 block font-semibold text-ink">{event.date}</span>
-              <span className="text-[11px] text-circuit">{event.time}</span>
             </div>
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider">Prize Pool</span>
-              <span className="mt-1 block font-extrabold text-marigold text-sm">{event.prize === "TBA" ? "Exciting Gifts & Prizes" : event.prize}</span>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">Exciting Gifts &amp; Prizes</span>
+              <span className="mt-1 block font-extrabold text-marigold text-sm">Exciting Gifts &amp; Prizes</span>
             </div>
             {event.team !== "TBA" && <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider">{event.team === "Individual" ? "Participation Type" : "Team Size"}</span>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">Participants</span>
               <span className="mt-1 block font-semibold text-ink">{event.team}</span>
             </div>}
             <div>

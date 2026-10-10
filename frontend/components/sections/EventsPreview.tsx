@@ -18,6 +18,7 @@ const FILTERS: { label: string; id: Filter }[] = [
 
 /** Card artwork: the event's poster, dimmed under a scrim — or a generated blueprint pattern when there's no poster. */
 function CardArt({ event, active }: { event: FestEvent; active: boolean }) {
+  const isRuntimeRush = event.name === "RUNTIME RUSH";
   return (
     <>
       {event.image ? (
@@ -31,7 +32,9 @@ function CardArt({ event, active }: { event: FestEvent; active: boolean }) {
           decoding="async"
           draggable={false}
           className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-all duration-500 ${
-            active ? "scale-110 opacity-80" : "scale-100 opacity-50"
+            isRuntimeRush
+              ? active ? "scale-110 opacity-40" : "scale-100 opacity-30"
+              : active ? "scale-110 opacity-65" : "scale-100 opacity-40"
           }`}
         />
       ) : (
@@ -70,7 +73,7 @@ function CardText({ event, number, active, large = false }: { event: FestEvent; 
           {event.name}
         </h3>
         {/* what the event really is */}
-        <p className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-circuit/50 bg-bg/70 px-2.5 py-1 font-mono text-[10px] uppercase leading-none tracking-[0.12em] text-circuit backdrop-blur-sm">
+        <p className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-circuit/50 bg-bg/70 px-3 py-1.5 font-oxanium text-xs font-semibold uppercase leading-tight tracking-wider text-circuit backdrop-blur-sm">
           <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-circuit" />
           <span className="truncate">{event.realName}</span>
         </p>
