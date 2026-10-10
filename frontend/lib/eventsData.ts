@@ -1500,7 +1500,7 @@ export const EVENTS: EventItem[] = [
       "One three-map series · all registered squads play all three maps.",
       "4 main players + 1 optional substitute · ₹200 per registered player · 25-squad cap.",
       "Cumulative placement and kill points decide the standings.",
-      "Exciting Gifts & Prizes: ₹12,000 total · 1st ₹6,000 · 2nd ₹4,000 · MVP ₹2,000.",
+      "Exciting Gifts & Prizes.",
     ],
     rules: [
       "Advanced Custom Room restrictions apply. Emulators, unauthorized peripherals, macros, hacks, cheats, exploits, and unauthorized software/hardware are prohibited.",
