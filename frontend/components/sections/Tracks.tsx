@@ -374,7 +374,7 @@ export default function Tracks() {
               className="mt-4 rounded-2xl border border-marigold/70 bg-surface-raised p-5"
             >
               <span className="text-xs tracking-[0.2em] text-muted">
-                0{mobileTrack + 1}
+                TRACK {String.fromCharCode(65 + mobileTrack)}
               </span>
               <h3 className="mt-1.5 font-display text-xl font-semibold leading-tight text-ink [overflow-wrap:anywhere]">
                 {tracks[mobileTrack].name}
@@ -443,7 +443,7 @@ export default function Tracks() {
 
                   <div className="relative z-10">
                     <span className="text-xs tracking-[0.2em] text-muted">
-                      0{index + 1}
+                      TRACK {String.fromCharCode(65 + index)}
                     </span>
 
                     <h3

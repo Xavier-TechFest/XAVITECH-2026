@@ -29,12 +29,12 @@ export default function EventsList() {
         
         {/* HEADER ROW */}
         <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 font-oxanium text-xs font-bold text-slate-500 uppercase tracking-widest border-b border-white/5">
-          <div className="col-span-4 lg:col-span-4">Event</div>
-          <div className="col-span-3 lg:col-span-3">Track</div>
-          <div className="col-span-2 lg:col-span-2">Date</div>
-          <div className="col-span-1 lg:col-span-1">Participation</div>
-          <div className="col-span-1 lg:col-span-1">Prize Pool</div>
-          <div className="col-span-1 lg:col-span-1 text-right">Action</div>
+          <div className="col-span-3">Event</div>
+          <div className="col-span-2">Track</div>
+          <div className="col-span-1">Date</div>
+          <div className="col-span-2">Participants</div>
+          <div className="col-span-2">Exciting Gifts &amp; Prizes</div>
+          <div className="col-span-2 text-right">Action</div>
         </div>
 
         {/* ROWS */}
@@ -59,7 +59,7 @@ export default function EventsList() {
                   <div className="flex flex-col md:grid md:grid-cols-12 gap-4 px-4 md:px-6 py-5 items-start md:items-center">
                     
                     {/* EVENT NAME & IMAGE REVEAL */}
-                    <div className="col-span-4 lg:col-span-4 flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
+                    <div className="col-span-3 flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
                       {/* Mobile Image (always visible) / Desktop Image (hover reveal) */}
                       <div 
                         className={`overflow-hidden rounded-md transition-all duration-500 ease-out flex-shrink-0
@@ -81,6 +81,7 @@ export default function EventsList() {
                         >
                           {event.name}
                         </h3>
+                        <p className="mt-1 font-oxanium text-xs font-semibold uppercase tracking-wider text-slate-300">{event.shortDesc}</p>
                         {event.isFlagship && (
                           <span className="mt-1 inline-block font-oxanium text-[10px] font-bold uppercase tracking-widest text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded-sm border border-amber-500/30">
                             ★ Flagship
@@ -90,7 +91,7 @@ export default function EventsList() {
                     </div>
 
                     {/* TRACK */}
-                    <div className="col-span-3 lg:col-span-3 flex items-center gap-2 font-oxanium text-xs font-bold text-slate-300 uppercase tracking-widest w-full justify-between md:justify-start">
+                    <div className="col-span-2 flex items-center gap-2 font-oxanium text-xs font-bold text-slate-300 uppercase tracking-widest w-full justify-between md:justify-start">
                       <span className="md:hidden text-slate-500">Track:</span>
                       <span 
                         className="px-2.5 py-1 rounded-sm border bg-white/5 whitespace-nowrap text-xs font-bold"
@@ -101,25 +102,25 @@ export default function EventsList() {
                     </div>
 
                     {/* DATE */}
-                    <div className="col-span-2 font-space text-sm text-slate-400 flex justify-between md:block w-full">
+                    <div className="col-span-1 font-space text-sm text-slate-400 flex justify-between md:block w-full">
                       <span className="md:hidden font-oxanium text-xs text-slate-500 uppercase">Date:</span>
                       {event.date}
                     </div>
 
                     {/* PARTICIPATION */}
-                    <div className="col-span-1 font-space text-sm text-slate-400 flex justify-between md:block w-full">
-                      <span className="md:hidden font-oxanium text-xs text-slate-500 uppercase">Participation:</span>
+                    <div className="col-span-2 font-space text-sm text-slate-400 flex justify-between md:block w-full">
+                      <span className="md:hidden font-oxanium text-xs text-slate-500 uppercase">Participants:</span>
                       {event.team === "TBA" ? "TBA" : event.team}
                     </div>
 
                     {/* PRIZE */}
-                    <div className="col-span-1 font-oxanium text-base font-bold text-marigold flex justify-between md:block w-full">
-                      <span className="md:hidden text-xs text-slate-500 uppercase">Prize Pool:</span>
-                      {event.prize === "TBA" ? "Exciting Gifts & Prizes" : event.prize}
+                    <div className="col-span-2 font-oxanium text-sm font-bold text-marigold flex justify-between md:block w-full">
+                      <span className="md:hidden text-xs text-slate-500 uppercase">Exciting Gifts &amp; Prizes:</span>
+                      Exciting Gifts &amp; Prizes
                     </div>
 
                     {/* ACTION (Desktop) */}
-                    <div className="col-span-1 text-right hidden md:block">
+                    <div className="col-span-2 text-right hidden md:block">
                       <div className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-white/20 text-white/50 group-hover:border-cyan-400 group-hover:text-cyan-400 group-hover:bg-cyan-950/30 transition-all">
                         <ChevronRight className="w-4 h-4" />
                       </div>
