@@ -106,7 +106,7 @@ export interface RegistrationPolicy {
  * Configuration for event registration workflows.
  */
 export interface RegistrationConfig {
-  eventFormat: "individual" | "team";
+  eventFormat: "individual" | "team" | "both";
   minTeamSize?: number;
   maxTeamSize?: number;
   feeAmount?: number;
@@ -920,7 +920,7 @@ export const EVENTS: EventItem[] = [
     date: "31st Oct",
     time: "09:30 AM – 11:30 AM",
     prize: "Exciting Gifts & Prizes",
-    price: "₹150 per participant",
+    price: "₹200 per participant",
     team: "1 participant",
     venue: "TBA",
     accentColor: "#35e0c9",
@@ -942,7 +942,7 @@ export const EVENTS: EventItem[] = [
       "Participants should know at least one programming language supported by the HackerRank contest and be familiar with basic submissions.",
     ],
     registrationInfo: [
-      "Register as an individual for ₹150.",
+      "Register as an individual for ₹200.",
       "Bring a valid HackerRank account for Round 2 and know your login credentials.",
     ],
     requirements: [
@@ -979,7 +979,7 @@ export const EVENTS: EventItem[] = [
         "Prizes: 1st ₹3,000, 2nd ₹2,000, and 3rd ₹1,000.",
       ] },
       { title: "How do I register?", items: [
-        "Register individually. The registration fee is ₹150 per participant.",
+        "Register individually. The registration fee is ₹200 per participant.",
         "Provide your name, institution, class/course, contact details, HackerRank username or account email, and a valid school/college ID.",
         "Have a valid HackerRank account ready for Round 2. Know your login details, test your account before the event, and practise the basic submission process.",
       ] },
@@ -1024,9 +1024,9 @@ export const EVENTS: EventItem[] = [
       eventFormat: "individual",
       minTeamSize: 1,
       maxTeamSize: 1,
-      feeAmount: 150,
+      feeAmount: 200,
       feeBasis: "per_participant",
-      feeDisplay: "₹150 per participant",
+      feeDisplay: "₹200 per participant",
       deadline: "TBA",
       participantFields: debugDerbyFields,
       coordinator: {
@@ -1076,19 +1076,19 @@ export const EVENTS: EventItem[] = [
     trackId: "track-d",
     trackName: "TRACK D",
     shortDesc: "MUN",
-    fullDesc: "XAVITECH 2026 Model United Nations (MUN) is a team-based delegate event under the United Nations Commission on Science and Technology for Development (CSTD). Two delegates register together as one team and represent a country assigned by the organising team.",
+    fullDesc: "XAVITECH 2026 Model United Nations (MUN) is a premier delegate simulation under the United Nations Commission on Science and Technology for Development (CSTD). Delegates can register individually (₹500) or as a two-delegate team (₹1,000 / ₹500 per delegate) representing a country assigned by the organising team.",
     date: "TBA",
     time: "TBA",
     prize: "Exciting Gifts & Prizes",
-    price: "₹1,000 per team of 2 delegates",
-    team: "2 delegates",
+    price: "₹500 per delegate / ₹1,000 per team of 2",
+    team: "Individual or Team of 2",
     venue: "TBA",
     accentColor: "#34d399",
     glowColor: "rgba(52,211,153,.2)",
     borderColor: "rgba(52,211,153,.4)",
     image: "/events/MUN.jpg",
     highlights: [
-      "Two delegates register together as one team.",
+      "Open to individual delegates or two-delegate teams.",
       "Countries are allotted by the organising team; country preferences are not collected.",
     ],
     rules: [],
@@ -1096,8 +1096,8 @@ export const EVENTS: EventItem[] = [
       "Open to college/university students. Course, academic-year, external-participant, and age restrictions: TBA.",
     ],
     registrationInfo: [
-      "Register both delegates together through one team registration.",
-      "The registration fee is ₹500 per delegate (₹1,000 per team of two).",
+      "Register individually (₹500) or register both delegates together as a team of two (₹1,000).",
+      "The registration fee is ₹500 per delegate.",
       "Country assignments are made by the organising team. The form does not collect country preferences.",
     ],
     requirements: [
@@ -1125,12 +1125,12 @@ export const EVENTS: EventItem[] = [
       },
     ],
     registrationConfig: {
-      eventFormat: "team",
-      minTeamSize: 2,
+      eventFormat: "both",
+      minTeamSize: 1,
       maxTeamSize: 2,
-      feeAmount: 1000,
-      feeBasis: "per_team",
-      feeDisplay: "₹1,000 per team of 2 delegates",
+      feeAmount: 500,
+      feeBasis: "per_participant",
+      feeDisplay: "₹500 per delegate / ₹1,000 per team of 2",
       deadline: "TBA",
       teamNameRequired: false,
       participantFields: [

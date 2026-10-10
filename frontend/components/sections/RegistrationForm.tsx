@@ -621,12 +621,18 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
     for (let index = 0; index < participantCount; index++) {
       const isLeader = index === 0;
       const title =
-        config.eventFormat === "team"
-          ? isLeader
+        config.eventFormat === "team" || teamSize > 1
+          ? event.id === "unscripted-nations"
+            ? isLeader
+              ? "Delegate 1 (Team Leader)"
+              : "Delegate 2"
+            : isLeader
             ? "Team Leader"
             : config.maxTeamSize === 5 && index === 4
             ? "Optional Substitute (P5)"
             : `Team Member ${index + 1}`
+          : event.id === "unscripted-nations"
+          ? "Delegate Details"
           : "Your Details";
 
       const entries: ReviewEntry[] = [];
@@ -721,16 +727,14 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
         setSubmitResult(submitted);
       }
 
-      // Check if event is velocityx (Death Race) where fee is pending coordinator confirmation
-      if (event.id === "velocityx") {
-        return;
-      }
-
-      // If registration is already confirmed or free
+      // If registration fee is unconfirmed (TBA), free, or already confirmed
       if (
+        currentResult.payableAmount === null ||
+        currentResult.payableAmount === 0 ||
+        feeTotal === null ||
+        feeTotal === 0 ||
         currentResult.status === "CONFIRMED" ||
-        currentResult.status === "PAYMENT_SUCCESS" ||
-        currentResult.payableAmount === 0
+        currentResult.status === "PAYMENT_SUCCESS"
       ) {
         return;
       }
@@ -786,9 +790,13 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
     try {
       let createdTeamId: string | undefined = undefined;
 
-      // 1. If Team Event and Team Name entered, create team record first
-      const isTeam = config.eventFormat === "team" || teamSize > 1;
-      const teamName = (formDataState["teamName"] || "").trim();
+      // 1. If Team Event, create team record first
+      const isTeam = config.eventFormat === "team" ? (config.minTeamSize === 1 ? teamSize > 1 : true) : teamSize > 1;
+      const requestedTeamName = (formDataState["teamName"] || "").trim();
+      const fallbackTeamName = event.id === "unscripted-nations"
+        ? `${user?.name || "MUN"}'s Delegation`
+        : `${user?.name || "Participant"}'s Team`;
+      const teamName = requestedTeamName || (isTeam ? fallbackTeamName : "");
 
       if (isTeam && teamName) {
         try {
@@ -960,7 +968,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
       // 6. Automatic Payment Initiation for New Registration in PAYMENT_PENDING
       if (
         activeResult?.status === "PAYMENT_PENDING" &&
-        event.id !== "velocityx" &&
+        feeTotal !== null &&
+        feeTotal > 0 &&
         activeResult?.payableAmount !== 0
       ) {
         setUploadStatusMessage("Registration submitted! Opening secure payment gateway...");
@@ -1191,7 +1200,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                     ? `₹${Number(paymentInfo.amount).toFixed(2)}`
                     : submitResult?.payableAmount != null
                     ? `₹${Number(submitResult.payableAmount).toFixed(2)}`
-                    : event.id === "velocityx" || submitResult?.payableAmount === null
+                    : feeTotal === null
                     ? "Amount TBA"
                     : config.feeDisplay || `₹${config.feeAmount ?? 0}`}
                 </p>
@@ -1209,11 +1218,11 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               </div>
             ) : submitResult.status !== "CONFIRMED" && submitResult.status !== "PAYMENT_SUCCESS" ? (
               <div className="pt-2 flex flex-col items-center justify-center gap-3">
-                {event.id === "velocityx" ? (
+                {feeTotal === null ? (
                   <div className="rounded border border-amber-400/30 bg-amber-950/20 p-4 text-center text-xs text-amber-200 max-w-md">
                     <p className="font-semibold text-white">Fee Pending Coordinator Confirmation</p>
                     <p className="mt-1 text-slate-300 leading-relaxed">
-                      Online payment for Death Race will open once event coordinators finalize the entry fee. Your team registration is safely reserved in{" "}
+                      Online payment will open once event coordinators finalize the entry fee. Your team registration is safely reserved in{" "}
                       <span className="text-amber-300 font-semibold">PAYMENT_PENDING</span> status.
                     </p>
                   </div>
@@ -1327,7 +1336,9 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               {event.name}
             </h1>
             <p className="mt-3 text-sm text-slate-300">
-              {config.eventFormat === "team"
+              {config.eventFormat === "both"
+                ? "Individual or Team registration (1–2 delegates)"
+                : config.eventFormat === "team"
                 ? `Team registration · ${config.minTeamSize}${
                     config.maxTeamSize !== config.minTeamSize ? `–${config.maxTeamSize}` : ""
                   } participants`
@@ -1678,6 +1689,10 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                     ? `₹${(config.feeAmount ?? 200) * teamSize} (${teamSize} players × ₹${
                         config.feeAmount ?? 200
                       })`
+                    : event.id === "unscripted-nations"
+                    ? teamSize === 2
+                      ? "₹1,000 (Team of 2 delegates)"
+                      : "₹500 (Individual delegate)"
                     : config.feeDisplay
                 }
               />
@@ -1686,12 +1701,14 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
             </div>
 
             {/* Team Configuration Section */}
-            {(config.eventFormat === "team" || (config.minTeamSize ?? 1) > 1) && (
+            {(config.eventFormat === "team" || config.eventFormat === "both" || (config.minTeamSize ?? 1) > 1) && (
               <section className="space-y-5 rounded border border-white/10 bg-white/[.02] p-5">
                 <Heading
-                  title="Team Details"
+                  title={config.eventFormat === "both" ? "Participation Format" : "Team Details"}
                   note={
-                    config.policy?.joinByInviteAfterCreation
+                    config.eventFormat === "both"
+                      ? "Choose whether you are registering as an individual delegate or as a two-delegate team."
+                      : config.policy?.joinByInviteAfterCreation
                       ? "The team leader completes this initial form. Additional members join via team link."
                       : "The team leader registers the team and enters all participant details."
                   }
@@ -1704,7 +1721,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                       htmlFor="team-size"
                       className="mb-2 block text-sm font-medium text-slate-200"
                     >
-                      Team Size <span className="text-rose-300">*</span>
+                      {config.eventFormat === "both" ? "Registration Format" : "Team Size"} <span className="text-rose-300">*</span>
                     </label>
                     {config.minTeamSize === config.maxTeamSize ? (
                       <p
@@ -1730,7 +1747,11 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                           (_, i) => (config.minTeamSize ?? 1) + i
                         ).map((n) => (
                           <option key={n} value={n}>
-                            {n === 1
+                            {event.id === "unscripted-nations"
+                              ? n === 1
+                                ? "Individual Delegate (1 participant — ₹500)"
+                                : "Two-Delegate Team (2 participants — ₹1,000)"
+                              : n === 1
                               ? "Individual (1 participant)"
                               : config.maxTeamSize === 5 && n === 5
                               ? "5 participants (includes substitute)"
@@ -1832,11 +1853,17 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               const isOptionalSub = config.maxTeamSize === 5 && index === 4;
               const title =
                 config.eventFormat === "team" || teamSize > 1
-                  ? isLeader
+                  ? event.id === "unscripted-nations"
+                    ? isLeader
+                      ? "Delegate 1 (Registering Delegate)"
+                      : "Delegate 2"
+                    : isLeader
                     ? "Participant 1 — Team Leader"
                     : isOptionalSub
                     ? "Participant 5 — Optional Substitute"
                     : `Participant ${index + 1} — Team Member`
+                  : event.id === "unscripted-nations"
+                  ? "Delegate Details"
                   : "Your Participant Details";
 
               const note =
@@ -2106,7 +2133,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                     <Loader2 size={16} className="animate-spin" />{" "}
                     {uploadStatusMessage || "Preparing Secure Payment..."}
                   </>
-                ) : event.id === "velocityx" || feeTotal === 0 ? (
+                ) : feeTotal === null || feeTotal === 0 ? (
                   <>
                     <Check size={16} /> Submit Registration
                   </>
@@ -2119,7 +2146,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
             </div>
 
             <p className="text-xs text-slate-400 text-center sm:text-left">
-              {event.id === "velocityx"
+              {feeTotal === null
                 ? "Your registration will be reserved. Fee payment will open once confirmed by event coordinators."
                 : feeTotal === 0
                 ? "Your registration will be submitted immediately."
@@ -2593,6 +2620,7 @@ function getRegistrationTotal(
   teamSize: number
 ): number | null {
   if (event.id === "innocraft") return participantPool === "School" ? 600 : 800;
+  if (event.id === "unscripted-nations") return teamSize === 2 ? 1000 : 500;
   if (config.feeAmount === undefined) return null;
   if (config.feeBasis === "per_team") return config.feeAmount;
   if (config.feeBasis === "per_player" || config.feeBasis === "per_participant") {
