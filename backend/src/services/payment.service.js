@@ -112,9 +112,9 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return Number(fee.toFixed(2));
   }
 
-  // 8. Debug Derby: ₹200 per participant
+  // 8. Debug Derby: ₹150 per participant
   if (event.slug === 'debug-derby') {
-    const fee = baseFee > 0 ? baseFee : 200.0;
+    const fee = baseFee > 0 ? baseFee : 150.0;
     return Number(fee.toFixed(2));
   }
 
