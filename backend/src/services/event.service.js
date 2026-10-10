@@ -470,9 +470,11 @@ export const eventService = {
 
     // 6. Registration Type Check
     const normalizedRequestedType = requestedType.toUpperCase();
+    const isBoth = event.registration_type === 'BOTH' || event.slug === 'unscripted-nations';
     const isFlexibleTeam = event.registration_type === 'TEAM' && event.min_team_size === 1;
     const isAllowed =
       event.registration_type === normalizedRequestedType ||
+      (isBoth && (normalizedRequestedType === 'INDIVIDUAL' || normalizedRequestedType === 'TEAM')) ||
       (isFlexibleTeam && (normalizedRequestedType === 'INDIVIDUAL' || normalizedRequestedType === 'TEAM'));
 
     if (!isAllowed) {

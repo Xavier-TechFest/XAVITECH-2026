@@ -574,14 +574,17 @@ export const teamService = {
     const membersCount = team.members?.length || 0;
     const totalTeamSize = 1 + membersCount;
     const effectiveTeamSize = Math.max(totalTeamSize, Number(suppliedParticipantsCount) || 0);
-    const minSize = team.event?.min_team_size || 1;
-    const maxSize = team.event?.max_team_size || 1;
+    const isMun = team.event?.slug === 'unscripted-nations' || team.event?.slug === 'model-united-nations' || team.event?.slug === 'mun';
+    const minSize = isMun ? 2 : (team.event?.min_team_size || 1);
+    const maxSize = isMun ? 2 : (team.event?.max_team_size || 1);
 
     if (effectiveTeamSize < minSize) {
       return {
         isValid: false,
         statusCode: 400,
-        message: `Team size (${effectiveTeamSize}) is less than the required minimum of ${minSize} participants (including team leader)`,
+        message: isMun
+          ? `MUN team registration requires exactly 2 delegates (found ${effectiveTeamSize})`
+          : `Team size (${effectiveTeamSize}) is less than the required minimum of ${minSize} participants (including team leader)`,
       };
     }
 
@@ -589,7 +592,9 @@ export const teamService = {
       return {
         isValid: false,
         statusCode: 400,
-        message: `Team size (${effectiveTeamSize}) exceeds the maximum allowed ${maxSize} participants (including team leader)`,
+        message: isMun
+          ? `MUN team registration requires exactly 2 delegates (found ${effectiveTeamSize})`
+          : `Team size (${effectiveTeamSize}) exceeds the maximum allowed ${maxSize} participants (including team leader)`,
       };
     }
 

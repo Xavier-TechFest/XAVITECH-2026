@@ -19,8 +19,8 @@ export const validateEventCreate = (data) => {
     errors.push('Event slug is required');
   }
 
-  if (data?.registration_type && !['INDIVIDUAL', 'TEAM'].includes(data.registration_type)) {
-    errors.push('Registration type must be either INDIVIDUAL or TEAM');
+  if (data?.registration_type && !['INDIVIDUAL', 'TEAM', 'BOTH'].includes(data.registration_type)) {
+    errors.push('Registration type must be INDIVIDUAL, TEAM, or BOTH');
   }
 
   if (data?.fee !== undefined && (isNaN(Number(data.fee)) || Number(data.fee) < 0)) {

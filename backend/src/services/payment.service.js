@@ -89,10 +89,15 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return Number((unitFee * count).toFixed(2));
   }
 
-  // 5. Model United Nations (MUN / Unscripted Nations): ₹500 per delegate
+  // 5. Model United Nations (MUN / Unscripted Nations): ₹500 per delegate (Individual: ₹500, Team of 2: ₹1,000)
   if (event.slug === 'unscripted-nations' || event.slug === 'model-united-nations' || event.slug === 'mun') {
-    const fee = baseFee > 0 ? baseFee : 500.0;
-    return Number(fee.toFixed(2));
+    const isTeam =
+      registration?.registration_type === 'TEAM' ||
+      registration?.registrationType === 'TEAM' ||
+      (resolvedCount && resolvedCount > 1);
+    const count = isTeam ? (resolvedCount > 0 ? resolvedCount : 2) : 1;
+    const unitFee = 500.0;
+    return Number((unitFee * count).toFixed(2));
   }
 
   // 6. VelocityX (Death Race): ₹700 per team

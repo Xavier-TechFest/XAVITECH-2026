@@ -261,11 +261,15 @@ export default function ProfilePage() {
         const accent = staticEvent?.accentColor || "#35e0c9";
 
         // Participation type
+        const isIndividual =
+          registration.registrationType === "INDIVIDUAL" ||
+          registration.registration_type === "INDIVIDUAL";
         const isTeam =
-          registration.registrationType === "TEAM" ||
-          registration.registration_type === "TEAM" ||
-          Boolean(registration.team) ||
-          staticEvent?.registrationConfig?.eventFormat === "team";
+          !isIndividual &&
+          (registration.registrationType === "TEAM" ||
+            registration.registration_type === "TEAM" ||
+            Boolean(registration.team) ||
+            staticEvent?.registrationConfig?.eventFormat === "team");
 
         // Team information
         let teamName: string | null = null;

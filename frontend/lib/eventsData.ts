@@ -106,7 +106,7 @@ export interface RegistrationPolicy {
  * Configuration for event registration workflows.
  */
 export interface RegistrationConfig {
-  eventFormat: "individual" | "team";
+  eventFormat: "individual" | "team" | "both";
   minTeamSize?: number;
   maxTeamSize?: number;
   feeAmount?: number;
@@ -1076,19 +1076,19 @@ export const EVENTS: EventItem[] = [
     trackId: "track-d",
     trackName: "TRACK D",
     shortDesc: "MUN",
-    fullDesc: "XAVITECH 2026 Model United Nations (MUN) is a team-based delegate event under the United Nations Commission on Science and Technology for Development (CSTD). Two delegates register together as one team and represent a country assigned by the organising team.",
+    fullDesc: "XAVITECH 2026 Model United Nations (MUN) is a premier delegate simulation under the United Nations Commission on Science and Technology for Development (CSTD). Delegates can register individually (₹500) or as a two-delegate team (₹1,000 / ₹500 per delegate) representing a country assigned by the organising team.",
     date: "TBA",
     time: "TBA",
     prize: "Exciting Gifts & Prizes",
-    price: "₹1,000 per team of 2 delegates",
-    team: "2 delegates",
+    price: "₹500 per delegate / ₹1,000 per team of 2",
+    team: "Individual or Team of 2",
     venue: "TBA",
     accentColor: "#34d399",
     glowColor: "rgba(52,211,153,.2)",
     borderColor: "rgba(52,211,153,.4)",
     image: "/events/MUN.jpg",
     highlights: [
-      "Two delegates register together as one team.",
+      "Open to individual delegates or two-delegate teams.",
       "Countries are allotted by the organising team; country preferences are not collected.",
     ],
     rules: [],
@@ -1096,8 +1096,8 @@ export const EVENTS: EventItem[] = [
       "Open to college/university students. Course, academic-year, external-participant, and age restrictions: TBA.",
     ],
     registrationInfo: [
-      "Register both delegates together through one team registration.",
-      "The registration fee is ₹500 per delegate (₹1,000 per team of two).",
+      "Register individually (₹500) or register both delegates together as a team of two (₹1,000).",
+      "The registration fee is ₹500 per delegate.",
       "Country assignments are made by the organising team. The form does not collect country preferences.",
     ],
     requirements: [
@@ -1125,12 +1125,12 @@ export const EVENTS: EventItem[] = [
       },
     ],
     registrationConfig: {
-      eventFormat: "team",
-      minTeamSize: 2,
+      eventFormat: "both",
+      minTeamSize: 1,
       maxTeamSize: 2,
-      feeAmount: 1000,
-      feeBasis: "per_team",
-      feeDisplay: "₹1,000 per team of 2 delegates",
+      feeAmount: 500,
+      feeBasis: "per_participant",
+      feeDisplay: "₹500 per delegate / ₹1,000 per team of 2",
       deadline: "TBA",
       teamNameRequired: false,
       participantFields: [

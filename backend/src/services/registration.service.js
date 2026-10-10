@@ -211,9 +211,12 @@ export const registrationService = {
     let newlyCreatedTeamId = null;
     const requestedTeamId = (payload.team_id || payload.teamId || '').trim();
     const rawParticipants = payload.participants || payload.participantDetails;
-    const rawParticipantsCount = Array.isArray(rawParticipants) ? rawParticipants.length : 0;
-
     if (registrationType === 'TEAM') {
+      if (validation.event?.slug === 'unscripted-nations' && rawParticipantsCount > 0 && rawParticipantsCount !== 2) {
+        const error = new Error('MUN team registration requires exactly 2 delegates.');
+        error.statusCode = 400;
+        throw error;
+      }
       let teamValidation = null;
       if (requestedTeamId) {
         teamValidation = await teamService.validateTeamForRegistration(
@@ -260,6 +263,12 @@ export const registrationService = {
         });
         teamIdToAssociate = createdTeam.id;
         newlyCreatedTeamId = createdTeam.id;
+      }
+    } else if (registrationType === 'INDIVIDUAL') {
+      if (validation.event?.slug === 'unscripted-nations' && rawParticipantsCount > 1) {
+        const error = new Error('MUN individual registration accepts only 1 delegate. For 2 delegates, please register as a team.');
+        error.statusCode = 400;
+        throw error;
       }
     }
 
