@@ -82,10 +82,10 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return Number((unitFee * count).toFixed(2));
   }
 
-  // 4. Runtime Rush charges ₹150 for each registered participant (1 participant = ₹150, 2 participants = ₹300).
+  // 4. Runtime Rush charges ₹250 for each registered participant (1 participant = ₹250, 2 participants = ₹500).
   if (event.slug === 'runtime-rush') {
     const count = resolvedCount > 0 ? resolvedCount : 1;
-    const unitFee = baseFee > 0 && baseFee <= 150 ? baseFee : 150.0;
+    const unitFee = baseFee > 0 ? baseFee : 250.0;
     return Number((unitFee * count).toFixed(2));
   }
 
