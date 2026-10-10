@@ -1707,8 +1707,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                 value={
                   event.id === "innocraft"
                     ? participantPool === "School"
-                      ? "₹600 per school team"
-                      : "₹800 per college team"
+                      ? "₹800 per school team"
+                      : "₹1,000 per college team"
                     : event.id === "loot-goblins"
                     ? `₹${(config.feeAmount ?? 200) * teamSize} (${teamSize} players × ₹${
                         config.feeAmount ?? 200
@@ -2126,8 +2126,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               feeLabel={
                 event.id === "innocraft"
                   ? participantPool === "School"
-                    ? "₹600 per school team"
-                    : "₹800 per college team"
+                    ? "₹800 per school team"
+                    : "₹1,000 per college team"
                   : config.feeDisplay
               }
             />
@@ -2643,7 +2643,7 @@ function getRegistrationTotal(
   participantPool: string,
   teamSize: number
 ): number | null {
-  if (event.id === "innocraft") return participantPool === "School" ? 600 : 800;
+  if (event.id === "innocraft") return participantPool === "School" ? 800 : 1000;
   if (event.id === "unscripted-nations") return teamSize === 2 ? 1000 : 500;
   if (config.feeAmount === undefined) return null;
   if (config.feeBasis === "per_team") return config.feeAmount;

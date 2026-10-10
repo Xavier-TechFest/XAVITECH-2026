@@ -56,7 +56,7 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     }
   }
 
-  // 2. InnoCraft (Hackathon): Pool-based fee (School: 600, College: 800)
+  // 2. InnoCraft (Hackathon): Pool-based fee (School: 800, College: 1000)
   if (event.slug === 'innocraft') {
     const participantList = Array.isArray(participants) && participants.length > 0
       ? participants
@@ -70,9 +70,9 @@ export const calculatePayableAmount = (event, registration, participants = []) =
       (registration?.custom_fields && registration.custom_fields['Participant pool']) ||
       registration?.team?.custom_fields?.pool;
     if (pool && String(pool).toLowerCase().includes('college')) {
-      return 800.0;
+      return 1000.0;
     }
-    return 600.0;
+    return 800.0;
   }
 
   // 3. Loot Goblins (BGMI Esports / Battleground Blitz): ₹200 per player (4 core + optional substitute)
@@ -82,10 +82,10 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return Number((unitFee * count).toFixed(2));
   }
 
-  // 4. Runtime Rush charges ₹150 for each registered participant (1 participant = ₹150, 2 participants = ₹300).
+  // 4. Runtime Rush charges ₹250 for each registered participant (1 participant = ₹250, 2 participants = ₹500).
   if (event.slug === 'runtime-rush') {
     const count = resolvedCount > 0 ? resolvedCount : 1;
-    const unitFee = baseFee > 0 && baseFee <= 150 ? baseFee : 150.0;
+    const unitFee = baseFee > 0 ? baseFee : 250.0;
     return Number((unitFee * count).toFixed(2));
   }
 
@@ -118,7 +118,14 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return Number(fee.toFixed(2));
   }
 
-  // 9. All other events have standard flat team or individual fee configured in DB
+  // 9. Hack the Skill: ₹200 per participant
+  if (event.slug === 'hack-the-skill' || event.slug === 'hack-the-skills') {
+    const count = resolvedCount > 0 ? resolvedCount : 1;
+    const unitFee = baseFee > 0 ? baseFee : 200.0;
+    return Number((unitFee * count).toFixed(2));
+  }
+
+  // 10. All other events have standard flat team or individual fee configured in DB
   return Number(baseFee.toFixed(2));
 };
 
