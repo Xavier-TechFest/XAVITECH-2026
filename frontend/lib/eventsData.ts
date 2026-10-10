@@ -940,6 +940,7 @@ export const EVENTS: EventItem[] = [
     eligibility: [
       "Eligible participants are Class 11, Class 12, and undergraduate students.",
       "Participants should know at least one programming language supported by the HackerRank contest and be familiar with basic submissions.",
+      "A verified HackerRank account is required for the coding/debugging round. Please create and verify your account in advance and make sure you can log in before the event.",
     ],
     registrationInfo: [
       "Register individually for ₹150 per participant.",
