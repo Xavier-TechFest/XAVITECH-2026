@@ -883,7 +883,7 @@ export const EVENTS: EventItem[] = [
     date: "31st Oct",
     time: "09:30 AM – 11:30 AM",
     prize: "Exciting Gifts & Prizes",
-    price: "₹150 per participant",
+    price: "₹200 per participant",
     team: "1 participant",
     venue: "TBA",
     accentColor: "#35e0c9",
@@ -905,7 +905,7 @@ export const EVENTS: EventItem[] = [
       "Participants should know at least one programming language supported by the HackerRank contest and be familiar with basic submissions.",
     ],
     registrationInfo: [
-      "Register as an individual for ₹150.",
+      "Register as an individual for ₹200.",
       "Bring a valid HackerRank account for Round 2 and know your login credentials.",
     ],
     requirements: [
@@ -942,7 +942,7 @@ export const EVENTS: EventItem[] = [
         "Prizes: 1st ₹3,000, 2nd ₹2,000, and 3rd ₹1,000.",
       ] },
       { title: "How do I register?", items: [
-        "Register individually. The registration fee is ₹150 per participant.",
+        "Register individually. The registration fee is ₹200 per participant.",
         "Provide your name, institution, class/course, contact details, HackerRank username or account email, and a valid school/college ID.",
         "Have a valid HackerRank account ready for Round 2. Know your login details, test your account before the event, and practise the basic submission process.",
       ] },
@@ -987,9 +987,9 @@ export const EVENTS: EventItem[] = [
       eventFormat: "individual",
       minTeamSize: 1,
       maxTeamSize: 1,
-      feeAmount: 150,
+      feeAmount: 200,
       feeBasis: "per_participant",
-      feeDisplay: "₹150 per participant",
+      feeDisplay: "₹200 per participant",
       deadline: "TBA",
       participantFields: debugDerbyFields,
       coordinator: {

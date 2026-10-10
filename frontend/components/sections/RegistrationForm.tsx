@@ -721,16 +721,14 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
         setSubmitResult(submitted);
       }
 
-      // Check if event is velocityx (Death Race) where fee is pending coordinator confirmation
-      if (event.id === "velocityx") {
-        return;
-      }
-
-      // If registration is already confirmed or free
+      // If registration fee is unconfirmed (TBA), free, or already confirmed
       if (
+        currentResult.payableAmount === null ||
+        currentResult.payableAmount === 0 ||
+        feeTotal === null ||
+        feeTotal === 0 ||
         currentResult.status === "CONFIRMED" ||
-        currentResult.status === "PAYMENT_SUCCESS" ||
-        currentResult.payableAmount === 0
+        currentResult.status === "PAYMENT_SUCCESS"
       ) {
         return;
       }
@@ -960,7 +958,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
       // 6. Automatic Payment Initiation for New Registration in PAYMENT_PENDING
       if (
         activeResult?.status === "PAYMENT_PENDING" &&
-        event.id !== "velocityx" &&
+        feeTotal !== null &&
+        feeTotal > 0 &&
         activeResult?.payableAmount !== 0
       ) {
         setUploadStatusMessage("Registration submitted! Opening secure payment gateway...");
@@ -1191,7 +1190,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                     ? `₹${Number(paymentInfo.amount).toFixed(2)}`
                     : submitResult?.payableAmount != null
                     ? `₹${Number(submitResult.payableAmount).toFixed(2)}`
-                    : event.id === "velocityx" || submitResult?.payableAmount === null
+                    : feeTotal === null
                     ? "Amount TBA"
                     : config.feeDisplay || `₹${config.feeAmount ?? 0}`}
                 </p>
@@ -1209,11 +1208,11 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               </div>
             ) : submitResult.status !== "CONFIRMED" && submitResult.status !== "PAYMENT_SUCCESS" ? (
               <div className="pt-2 flex flex-col items-center justify-center gap-3">
-                {event.id === "velocityx" ? (
+                {feeTotal === null ? (
                   <div className="rounded border border-amber-400/30 bg-amber-950/20 p-4 text-center text-xs text-amber-200 max-w-md">
                     <p className="font-semibold text-white">Fee Pending Coordinator Confirmation</p>
                     <p className="mt-1 text-slate-300 leading-relaxed">
-                      Online payment for Death Race will open once event coordinators finalize the entry fee. Your team registration is safely reserved in{" "}
+                      Online payment will open once event coordinators finalize the entry fee. Your team registration is safely reserved in{" "}
                       <span className="text-amber-300 font-semibold">PAYMENT_PENDING</span> status.
                     </p>
                   </div>
@@ -2070,7 +2069,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                     <Loader2 size={16} className="animate-spin" />{" "}
                     {uploadStatusMessage || "Preparing Secure Payment..."}
                   </>
-                ) : event.id === "velocityx" || feeTotal === 0 ? (
+                ) : feeTotal === null || feeTotal === 0 ? (
                   <>
                     <Check size={16} /> Submit Registration
                   </>
@@ -2083,7 +2082,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
             </div>
 
             <p className="text-xs text-slate-400 text-center sm:text-left">
-              {event.id === "velocityx"
+              {feeTotal === null
                 ? "Your registration will be reserved. Fee payment will open once confirmed by event coordinators."
                 : feeTotal === 0
                 ? "Your registration will be submitted immediately."

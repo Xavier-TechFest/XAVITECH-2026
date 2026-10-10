@@ -62,7 +62,13 @@ export const calculatePayableAmount = (event, registration, participants = []) =
       ? participants
       : (Array.isArray(registration?.participants) ? registration.participants : []);
     const leader = participantList.find((p) => p.participant_order === 1 || p.participantOrder === 1) || participantList[0];
-    const pool = leader?.custom_fields?.pool || (leader?.custom_fields && leader.custom_fields['Participant pool']) || leader?.pool;
+    const pool = leader?.custom_fields?.pool ||
+      (leader?.custom_fields && leader.custom_fields['Participant pool']) ||
+      leader?.pool ||
+      registration?.pool ||
+      registration?.custom_fields?.pool ||
+      (registration?.custom_fields && registration.custom_fields['Participant pool']) ||
+      registration?.team?.custom_fields?.pool;
     if (pool && String(pool).toLowerCase().includes('college')) {
       return 1000.0;
     }
@@ -72,16 +78,42 @@ export const calculatePayableAmount = (event, registration, participants = []) =
   // 3. Loot Goblins (BGMI Esports / Battlefield Blitz): ₹200 per player (4 core + optional substitute)
   if (event.slug === 'loot-goblins' || event.slug === 'battlefield-blitz') {
     const count = resolvedCount > 0 ? resolvedCount : (event.min_team_size || 4);
-    return Number((200.0 * count).toFixed(2));
+    const unitFee = baseFee > 0 ? baseFee : 200.0;
+    return Number((unitFee * count).toFixed(2));
   }
 
   // 4. Runtime Rush charges ₹150 for each registered participant (1 participant = ₹150, 2 participants = ₹300).
   if (event.slug === 'runtime-rush') {
     const count = resolvedCount > 0 ? resolvedCount : 1;
-    return Number((150.0 * count).toFixed(2));
+    const unitFee = baseFee > 0 && baseFee <= 150 ? baseFee : 150.0;
+    return Number((unitFee * count).toFixed(2));
   }
 
-  // 5. All other events have standard flat team or individual fee configured in DB
+  // 5. Model United Nations (MUN / Unscripted Nations): ₹500 per delegate
+  if (event.slug === 'unscripted-nations' || event.slug === 'model-united-nations' || event.slug === 'mun') {
+    const fee = baseFee > 0 ? baseFee : 500.0;
+    return Number(fee.toFixed(2));
+  }
+
+  // 6. VelocityX (Death Race): ₹700 per team
+  if (event.slug === 'velocityx' || event.slug === 'death-race') {
+    const fee = baseFee > 0 ? baseFee : 700.0;
+    return Number(fee.toFixed(2));
+  }
+
+  // 7. Cipher Chase: ₹400 per team
+  if (event.slug === 'cipher-chase') {
+    const fee = baseFee > 0 ? baseFee : 400.0;
+    return Number(fee.toFixed(2));
+  }
+
+  // 8. Debug Derby: ₹200 per participant
+  if (event.slug === 'debug-derby') {
+    const fee = baseFee > 0 ? baseFee : 200.0;
+    return Number(fee.toFixed(2));
+  }
+
+  // 9. All other events have standard flat team or individual fee configured in DB
   return Number(baseFee.toFixed(2));
 };
 
@@ -164,6 +196,13 @@ export const paymentService = {
 
     const participants = await RegistrationParticipantModel.getParticipantsByRegistrationId(registration.id);
     const payableAmount = calculatePayableAmount(event, registration, participants);
+
+    // Guard: Zero or unconfirmed (TBA) registration fee cannot initiate payment
+    if (!payableAmount || payableAmount <= 0) {
+      const error = new Error('Cannot initiate payment for an event with zero or unconfirmed (TBA) registration fee.');
+      error.statusCode = 400;
+      throw error;
+    }
 
     // 5. LIVE Payment Feature Flag & Event Restrictions
     const isLive = config.easebuzz.liveEnabled;
