@@ -117,10 +117,10 @@ export default function EventDetailView({ event }: { event: EventItem }) {
               </span>
             </div>
             <div className="mt-auto pt-52 sm:pt-64 lg:pt-0">
-              <div className="mb-5 flex items-end justify-between gap-4 border-b border-white/20 pb-5">
+              {event.id !== "innocraft" && <div className="mb-5 flex items-end justify-between gap-4 border-b border-white/20 pb-5">
                 <div><span className="mb-1 block font-oxanium text-xs font-bold uppercase tracking-[.18em]" style={{ color: event.accentColor }}>EXCITING GIFTS &amp; PRIZES</span><span className="font-space text-4xl font-black text-white sm:text-5xl" style={{ textShadow: `0 0 20px ${event.accentColor}88` }}>Exciting Gifts &amp; Prizes</span><p className="mt-2 max-w-sm text-xs leading-relaxed text-white/70">Prizes may vary depending on the number of registrations for this event.</p></div>
                 <span className="mb-1 font-oxanium text-[10px] font-bold uppercase tracking-widest text-white/70">{event.name}</span>
-              </div>
+              </div>}
               <div className="mb-5 grid grid-cols-2 gap-x-4 gap-y-4 border border-white/15 bg-[#03080d]/85 p-4 backdrop-blur-sm">
                 <CardFact icon={<Calendar size={14} />} label="DATE" value={event.date} accent={event.accentColor} />
                 <CardFact icon={<MapPin size={14} />} label="VENUE" value={event.venue} accent={event.accentColor} />
