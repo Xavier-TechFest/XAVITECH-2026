@@ -59,7 +59,7 @@ export const adminRegistrationService = {
     // 2. Fetch events (filtered by track if constraint provided)
     let eventsQuery = client
       .from('events')
-      .select('id, name, slug, category, registration_type, fee, is_active, track_id');
+      .select('id, name, slug, category, event_type, registration_type, fee, is_active, track_id');
 
     if (resolvedTrackId) {
       eventsQuery = eventsQuery.eq('track_id', resolvedTrackId);
@@ -251,6 +251,8 @@ export const adminRegistrationService = {
       eventId: ev.id,
       name: ev.name,
       slug: ev.slug,
+      eventType: ev.event_type || null,
+      subtitle: ev.event_type || null,
       trackId: ev.track_id,
       count: eventCountsMap[ev.id] || 0,
     }));
@@ -363,7 +365,7 @@ export const adminRegistrationService = {
         status,
         created_at,
         updated_at,
-        event:events(id, name, slug, category, registration_type, fee, track_id, track:tracks(id, name, slug)),
+        event:events(id, name, slug, category, event_type, registration_type, fee, track_id, track:tracks(id, name, slug)),
         user:users(id, name, email, phone, college_name),
         team:teams(id, team_name, status, members:team_members(id, name, member_order)),
         participants:registration_participants(id, full_name, email, mobile_number, institution_name, standard_class, participant_role, participant_order, custom_fields, id_card_url, profile_photo_url),
@@ -605,6 +607,8 @@ export const adminRegistrationService = {
               name: reg.event.name,
               slug: reg.event.slug,
               category: reg.event.category,
+              eventType: reg.event.event_type || null,
+              subtitle: reg.event.event_type || null,
               fee: Number(reg.event.fee || 0),
               trackId: reg.event.track_id,
               track: reg.event.track
@@ -616,22 +620,22 @@ export const adminRegistrationService = {
                 : null,
             }
           : null,
-        phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || '—',
-        institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || '—',
+        phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || (leaderPart?.custom_fields?.mobileNumber && leaderPart.custom_fields.mobileNumber.trim()) || '—',
+        institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || (leaderPart?.custom_fields?.institutionName && leaderPart.custom_fields.institutionName.trim()) || '—',
         user: reg.user
           ? {
               id: reg.user.id,
               name: (leaderPart?.full_name && leaderPart.full_name.trim()) || reg.user.name || '—',
               email: (leaderPart?.email && leaderPart.email.trim()) || reg.user.email || '—',
-              phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || '—',
-              institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || '—',
+              phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || (leaderPart?.custom_fields?.mobileNumber && leaderPart.custom_fields.mobileNumber.trim()) || '—',
+              institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || (leaderPart?.custom_fields?.institutionName && leaderPart.custom_fields.institutionName.trim()) || '—',
             }
           : {
               id: null,
               name: (leaderPart?.full_name && leaderPart.full_name.trim()) || '—',
               email: (leaderPart?.email && leaderPart.email.trim()) || '—',
-              phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || '—',
-              institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || '—',
+              phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || (leaderPart?.custom_fields?.mobileNumber && leaderPart.custom_fields.mobileNumber.trim()) || '—',
+              institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || (leaderPart?.custom_fields?.institutionName && leaderPart.custom_fields.institutionName.trim()) || '—',
             },
         team: teamObj
           ? {
@@ -1043,8 +1047,14 @@ export const adminRegistrationService = {
       });
     });
 
-    const submittedLeaderPhone = (leaderParticipant?.mobile_number && leaderParticipant.mobile_number.trim()) || '—';
-    const submittedLeaderInstitution = (leaderParticipant?.institution_name && leaderParticipant.institution_name.trim()) || '—';
+    const submittedLeaderPhone =
+      (leaderParticipant?.mobile_number && leaderParticipant.mobile_number.trim()) ||
+      (leaderParticipant?.custom_fields?.mobileNumber && leaderParticipant.custom_fields.mobileNumber.trim()) ||
+      '—';
+    const submittedLeaderInstitution =
+      (leaderParticipant?.institution_name && leaderParticipant.institution_name.trim()) ||
+      (leaderParticipant?.custom_fields?.institutionName && leaderParticipant.custom_fields.institutionName.trim()) ||
+      '—';
     const submittedLeaderName = (leaderParticipant?.full_name && leaderParticipant.full_name.trim()) || reg.user?.name || '—';
     const submittedLeaderEmail = (leaderParticipant?.email && leaderParticipant.email.trim()) || reg.user?.email || '—';
 
@@ -1151,6 +1161,8 @@ export const adminRegistrationService = {
             slug: reg.event.slug,
             description: reg.event.description,
             category: reg.event.category,
+            eventType: reg.event.event_type || null,
+            subtitle: reg.event.event_type || null,
             trackId: reg.event.track_id,
             track_id: reg.event.track_id,
             track: reg.event.track

@@ -164,6 +164,11 @@ function RegistrationDetailContent() {
             <div>
               <span className="text-[11px] font-mono uppercase text-neutral-500 block">Event Name</span>
               <p className="text-base font-bold text-white mt-0.5">{registration.event?.name || "—"}</p>
+              {(registration.event?.eventType || registration.event?.subtitle) && (
+                <span className="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 mt-0.5">
+                  {registration.event.eventType || registration.event.subtitle}
+                </span>
+              )}
             </div>
 
             <div>

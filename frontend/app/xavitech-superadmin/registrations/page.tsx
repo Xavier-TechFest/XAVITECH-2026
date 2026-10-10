@@ -408,8 +408,15 @@ function RegistrationsListContent() {
                         {reg.registrationId}
                       </Link>
                     </td>
-                    <td className="py-4 px-4 text-white font-medium max-w-[180px] truncate">
-                      {reg.event?.name || "—"}
+                    <td className="py-4 px-4 max-w-[200px]">
+                      <div className="font-semibold text-white text-xs truncate">
+                        {reg.event?.name || "—"}
+                      </div>
+                      {(reg.event?.eventType || reg.event?.subtitle) && (
+                        <div className="text-[10px] text-neutral-400 font-mono uppercase tracking-wider truncate">
+                          {reg.event.eventType || reg.event.subtitle}
+                        </div>
+                      )}
                     </td>
                     <td className="py-4 px-4">
                       <span

@@ -819,6 +819,8 @@ export interface AdminRegistrationListItem {
     name: string;
     slug: string;
     category?: string;
+    eventType?: string | null;
+    subtitle?: string | null;
     fee: number;
     trackId?: string;
     track?: {
@@ -882,6 +884,8 @@ export interface AdminRegistrationDetail {
     slug: string;
     description: string | null;
     category: string | null;
+    eventType?: string | null;
+    subtitle?: string | null;
     trackId?: string;
     track_id?: string;
     track?: {
@@ -1974,6 +1978,7 @@ export const EXPORT_FIELD_OPTIONS: ExportFieldOption[] = [
 
   // EVENT DETAILS
   { key: "eventName", label: "Event Name", category: "EVENT DETAILS", default: true },
+  { key: "competitionName", label: "Competition / Subtitle", category: "EVENT DETAILS", default: false },
   { key: "eventSlug", label: "Event Slug", category: "EVENT DETAILS", default: false },
   { key: "trackName", label: "Track", category: "EVENT DETAILS", default: true },
   { key: "participationType", label: "Participation Type", category: "EVENT DETAILS", default: true },

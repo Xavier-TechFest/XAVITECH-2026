@@ -46,12 +46,12 @@ export default function TrackLeaderRegistrationsPage() {
   const [isInspectLoading, setIsInspectLoading] = useState(false);
   const [inspectError, setInspectError] = useState<string | null>(null);
 
-  // Initial load: trigger fetch once if not yet loaded in context
+  // Initial mount: always fetch fresh dataset so newly registered events are immediately visible
   useEffect(() => {
-    if (!loading && trackLeader && !registrationsLoaded && !registrationsLoading) {
-      refreshRegistrations(false);
+    if (!loading && trackLeader) {
+      refreshRegistrations(true);
     }
-  }, [loading, trackLeader, registrationsLoaded, registrationsLoading, refreshRegistrations]);
+  }, [loading, trackLeader, refreshRegistrations]);
 
   // Initial loading indicator is ONLY true during initial dataset load
   const isInitialLoading = !registrationsLoaded && registrationsLoading;
@@ -609,12 +609,23 @@ export default function TrackLeaderRegistrationsPage() {
                     </td>
 
                     {/* Event */}
-                    <td
-                      className={`py-4 px-4 font-medium max-w-[180px] truncate ${
-                        isLight ? "text-slate-900" : "text-white"
-                      }`}
-                    >
-                      {reg.event?.name || "—"}
+                    <td className="py-4 px-4 max-w-[200px]">
+                      <div
+                        className={`font-semibold text-xs truncate ${
+                          isLight ? "text-slate-900" : "text-white"
+                        }`}
+                      >
+                        {reg.event?.name || "—"}
+                      </div>
+                      {(reg.event?.eventType || reg.event?.subtitle) && (
+                        <div
+                          className={`text-[10px] font-mono uppercase tracking-wider truncate ${
+                            isLight ? "text-slate-500" : "text-neutral-400"
+                          }`}
+                        >
+                          {reg.event.eventType || reg.event.subtitle}
+                        </div>
+                      )}
                     </td>
 
                     {/* Type Badge */}
@@ -835,6 +846,15 @@ export default function TrackLeaderRegistrationsPage() {
                   >
                     {reg.event?.name || "—"}
                   </div>
+                  {(reg.event?.eventType || reg.event?.subtitle) && (
+                    <div
+                      className={`text-[10px] font-mono uppercase tracking-wider ${
+                        isLight ? "text-slate-500" : "text-neutral-400"
+                      }`}
+                    >
+                      {reg.event.eventType || reg.event.subtitle}
+                    </div>
+                  )}
                   <div
                     className={`text-xs mt-0.5 ${
                       isLight ? "text-slate-600" : "text-neutral-400"
@@ -1060,6 +1080,15 @@ export default function TrackLeaderRegistrationsPage() {
                       >
                         {inspectDetail.event?.name || "—"}
                       </span>
+                      {(inspectDetail.event?.eventType || inspectDetail.event?.subtitle) && (
+                        <span
+                          className={`block text-[11px] font-mono uppercase tracking-wider mt-0.5 ${
+                            isLight ? "text-slate-500" : "text-neutral-400"
+                          }`}
+                        >
+                          {inspectDetail.event.eventType || inspectDetail.event.subtitle}
+                        </span>
+                      )}
                     </div>
                     <div>
                       <span className={isLight ? "text-slate-500 block" : "text-neutral-500 block"}>
