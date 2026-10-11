@@ -59,7 +59,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
         {config?.coordinator && <section className="mt-10 rounded border border-white/10 bg-white/[.03] p-5">
           <h2 className="font-space font-bold text-white">Event Contact</h2>
           <Contact name={config.coordinator.name} role="Event Coordinator" email={config.coordinator.email} phone={config.coordinator.phone} />
-          {config.coordinator.coCoordinator && <Contact name={config.coordinator.coCoordinator} role="Event Coordinator" />}
+          {config.coordinator.coCoordinator && <Contact name={config.coordinator.coCoordinator} role="Event Coordinator" email={config.coordinator.coCoordinatorEmail} phone={config.coordinator.coCoordinatorPhone} />}
         </section>}
       </section>
       <aside className="w-full lg:sticky lg:top-24 lg:self-start">

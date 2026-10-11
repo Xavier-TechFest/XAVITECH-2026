@@ -122,6 +122,8 @@ export interface RegistrationConfig {
     phone?: string;
     email?: string;
     coCoordinator?: string;
+    coCoordinatorEmail?: string;
+    coCoordinatorPhone?: string;
   };
   details?: {
     committee?: string;
@@ -1075,8 +1077,8 @@ export const EVENTS: EventItem[] = [
     trackName: "TRACK D",
     shortDesc: "MUN",
     fullDesc: "XAVITECH 2026 Model United Nations (MUN) is a premier delegate simulation under the United Nations Commission on Science and Technology for Development (CSTD). Delegates can register individually (₹500) or as a two-delegate team (₹1,000 / ₹500 per delegate) representing a country assigned by the organising team.",
-    date: "TBA",
-    time: "TBA",
+    date: "31st Oct",
+    time: "10:00 AM – 02:00 PM (Tentative)",
     prize: "Exciting Gifts & Prizes",
     price: "₹500 per delegate / ₹1,000 per team of 2",
     team: "Individual or Team of 2",
@@ -1087,6 +1089,8 @@ export const EVENTS: EventItem[] = [
     image: "/events/MUN.jpg",
     highlights: [
       "Open to individual delegates or two-delegate teams.",
+      "Tentative schedule: 10:00 AM – 02:00 PM (subject to final confirmation).",
+      "Venue: Xavier University",
       "Countries are allotted by the organising team; country preferences are not collected.",
     ],
     rules: [],
@@ -1147,7 +1151,7 @@ export const EVENTS: EventItem[] = [
       details: {
         committee: "United Nations Commission on Science and Technology for Development (CSTD)",
         agenda: "Addressing the Opportunities and Risks of Artificial Intelligence and Emerging Technologies for Inclusive and Sustainable Development.",
-        duration: "Approximately 6 hours",
+        duration: "Approximately 4 hours · Tentative timing: 10:00 AM – 02:00 PM",
         format: "Two delegates form one team and represent a country assigned by the organising team. Country preferences are not collected.",
       },
       declarations: baseDeclarations,
@@ -1383,7 +1387,7 @@ export const EVENTS: EventItem[] = [
     trackId: "track-d",
     trackName: "TRACK D",
     shortDesc: "Ideathon",
-    fullDesc: "XAVITECH 2026 Ideathon is a team event for groups of two to four. A team leader submits the registration, adds one teammate, and invites any remaining members to join through a link.",
+    fullDesc: "XAVITECH 2026 Ideathon is a team event for groups of two to four focused on proposing innovative technology-based solutions to real-world challenges. A team leader submits the registration, adds one teammate, and invites any remaining members to join through a link.",
     date: "31st Oct",
     time: "TBA",
     prize: "Exciting Gifts & Prizes",
@@ -1394,9 +1398,16 @@ export const EVENTS: EventItem[] = [
     glowColor: "rgba(52,211,153,.2)",
     borderColor: "rgba(52,211,153,.4)",
     image: "/images/events/event-12.jpeg",
-    highlights: [],
+    highlights: [
+      "Teams of 2–4 · ₹500 per team.",
+      "Focus on technology-based solutions and engineering innovation.",
+      "Evaluation emphasizes technical problem definition, solution architecture, feasibility, and technical impact.",
+    ],
     rules: [
-      "Follow the event rules and code of conduct. Additional restrictions: TBA.",
+      "All pitches must focus on technology-based solutions addressing real-world problems.",
+      "Pitches must clearly cover: 1) Technical problem statement, 2) Proposed technological solution, 3) Technology stack / architecture used, 4) Technical implementation approach & feasibility, and 5) Expected technical impact.",
+      "Focus on technical innovation, system architecture, feasibility, and technical impact rather than commercial or business-model metrics.",
+      "Teams must follow event rules, presentation time limits, and the code of conduct.",
     ],
     eligibility: [
       "Eligible participants: college/university students. Course, academic-year, external-participant, and age restrictions: TBA.",
@@ -1409,6 +1420,32 @@ export const EVENTS: EventItem[] = [
       "Every member must provide full name, college/university, department/course, year/semester, 10-digit mobile number, email address, city, a valid college ID card, and a recent passport-style profile photo.",
       "Every member must verify email/mobile and upload their own ID. Section and student ID/roll number are not collected.",
       "A valid student identity proof and completed online registration are required.",
+    ],
+    exploreSections: [
+      {
+        title: "Pitch & Presentation Guidelines",
+        items: [
+          "The pitch must centre on a technology-based solution to a concrete problem.",
+          "Presentations must address: Technical Problem Statement, Proposed Solution, Tech Stack / Architecture, Implementation Feasibility, and Technical Impact.",
+          "Presentations should emphasize engineering design, technical viability, and real-world applicability rather than revenue models or commercial business metrics.",
+        ],
+      },
+      {
+        title: "Team Structure & Registration",
+        items: [
+          "Team size: 2 to 4 members. Registration fee: ₹500 total per team.",
+          "The team leader submits the initial registration and adds one teammate; additional members join via invite link.",
+          "All team members must provide valid student credentials and college ID cards.",
+        ],
+      },
+      {
+        title: "Evaluation Focus",
+        items: [
+          "Clarity and significance of the technical problem statement.",
+          "Technical innovation, feasibility, and architectural soundness of the proposed solution.",
+          "Realistic implementation strategy and measurable technical impact.",
+        ],
+      },
     ],
     prizeBreakdown: {
       total: "Exciting Gifts & Prizes",
@@ -1498,13 +1535,15 @@ export const EVENTS: EventItem[] = [
     borderColor: "rgba(96,165,250,.4)",
     image: "/events/Bgmi.jpg",
     highlights: [
+      "Only mobile phones/handheld mobile devices are allowed · iPads, tablets, and emulators are prohibited.",
       "One three-map series · all registered squads play all three maps.",
       "4 main players + 1 optional substitute · ₹200 per registered player · 25-squad cap.",
       "Cumulative placement and kill points decide the standings.",
       "Exciting Gifts & Prizes.",
     ],
     rules: [
-      "Advanced Custom Room restrictions apply. Emulators, unauthorized peripherals, macros, hacks, cheats, exploits, and unauthorized software/hardware are prohibited.",
+      "Only mobile phones/handheld mobile devices are allowed for all participants. iPads, tablets, and emulators are prohibited.",
+      "Advanced Custom Room restrictions apply. Unauthorized peripherals, macros, hacks, cheats, exploits, and third-party software/hardware are prohibited.",
       "Match-fixing, account sharing, ID spoofing, and impersonation are prohibited. Violations may result in disqualification, forfeiture of prizes/certificates, and referral to university administration.",
     ],
     eligibility: [
@@ -1550,9 +1589,9 @@ export const EVENTS: EventItem[] = [
       {
         title: "What device do I need?",
         items: [
-          "Play on your own physical mobile device. Emulators are not allowed for players or room hosting; BGMI permanently bans accounts played on emulators.",
-          "The host room runs on a high-performance physical phone or tablet; an iPhone or iPad is preferred. An Advance Room Pass is required to host the custom room.",
-          "The venue provides dedicated high-speed internet, with a backup hotspot/dongle. Charging stations are available between maps; players are responsible for bringing their own devices.",
+          "Only mobile phones/handheld mobile devices are allowed for all participants. iPads, tablets, and emulators are strictly prohibited.",
+          "Participants must play on their own physical mobile phone. Use of tablets, iPads, or emulators will result in immediate squad disqualification; BGMI permanently bans accounts played on emulators.",
+          "The venue provides dedicated high-speed internet, with a backup hotspot/dongle. Charging stations are available between maps; players are responsible for bringing their own devices and chargers.",
         ],
       },
       {
@@ -1590,6 +1629,7 @@ export const EVENTS: EventItem[] = [
       {
         title: "Full rules and participant guide",
         items: [
+          "Only mobile phones are permitted. The use of iPads, tablets, emulators, aimbots, trigger-bots, ESP, hacks, macros, or unauthorized peripherals/software will result in immediate disqualification.",
           "Be at your station at least 15 minutes before each map. Squads that do not join the room on time receive zero points for that map.",
           "Aimbots, trigger-bots, ESP, hacks, and other third-party software result in instant disqualification and may incur an additional committee-decided penalty.",
           "Macros, unauthorized peripherals or software/hardware, match-fixing, account sharing, ID spoofing, impersonation, exploiting glitches, or leaving a match without a valid reason result in disqualification. All squads involved in teaming are disqualified.",
@@ -1695,7 +1735,7 @@ export const EVENTS: EventItem[] = [
     trackId: "track-c",
     trackName: "TRACK C",
     shortDesc: "Tech Treasure Hunt",
-    fullDesc: "Cipher Chase is a team-based campus treasure hunt with club-based eliminations. Teams follow clues through the Green Card round, a QR-code Smiley, and three hunts before the six surviving teams enter the final rounds.",
+    fullDesc: "Cipher Chase is a team-based campus treasure hunt featuring progressive, level-wise elimination challenges. Teams follow clues through Level 1 (The Green Card Round), Level 2 (QR-Code Smiley & Progressive Hunts), and Level 3 (The Final Round featuring Mind Games and a Physical Challenge), where final elimination and victory are decided based on participant score.",
     date: "31st Oct",
     time: "TBA",
     prize: "Exciting Gifts & Prizes",
@@ -1708,8 +1748,8 @@ export const EVENTS: EventItem[] = [
     image: "/images/events/event-07.jpeg",
     highlights: [
       "Teams of 4 · ₹400 per team.",
-      "Club groupings organize elimination rounds; teams in a club do not play as one combined team.",
-      "Winning team prize: ₹4,000. Participants receive participation certificates.",
+      "Level-wise structure: Level 1 Green Card, Level 2 Progressive QR Hunts, Level 3 Final Round.",
+      "Final round elimination is strictly based on participant score.",
       "Clues may use QR codes, Morse code, binary code, and other puzzle formats.",
     ],
     rules: [
@@ -1724,7 +1764,7 @@ export const EVENTS: EventItem[] = [
       "All courses and departments are eligible. External participants are allowed. No age restriction is specified.",
     ],
     registrationInfo: [
-      "Register exactly 4 members. A team name is not required; choose one team leader to submit the team's registration.",
+      "Register exactly 4 members. A required team name must be provided; choose one team leader to submit the team's registration.",
       "The team leader registers all four members together. Separate member registrations and joining multiple teams are not allowed.",
       "Use an email address and mobile number that are not already registered to another team.",
       "The fee is ₹400 per team. Register before 30 October 2026.",
@@ -1744,42 +1784,41 @@ export const EVENTS: EventItem[] = [
       {
         title: "How does the club system work?",
         items: [
-          "Clubs are groups used to organize the elimination rounds. Teams assigned to the same club remain separate teams; they do not play as one combined team.",
-          "The number of clubs depends on participation. For example, 30 teams are divided into 6 clubs of 5 teams each. Each club competes independently during elimination stages.",
+          "Clubs are groupings used to organize the elimination rounds. Teams assigned to the same club remain separate teams; they do not play as one combined team.",
+          "The number of clubs depends on total participation. Each club competes independently during elimination stages.",
           "Follow the clues and instructions given by the organizers at every stage. The organizing committee makes the final decisions on qualification and elimination.",
         ],
       },
       {
-        title: "Round 1: How do teams find the Green Card?",
+        title: "Level 1: The Green Card Round",
         items: [
           "Each club is assigned a different location on campus, and teams receive clues leading to their club’s location.",
-          "At a five-team club’s location, 4 Green Cards are placed. Find a card, return to De Nobili Hall, and submit it to the designated volunteers.",
-          "The first 4 teams in each club to submit a valid Green Card qualify. The remaining team is eliminated, reducing the 30-team example from 30 teams to 24.",
+          "At each club’s location, Green Cards are placed. Teams must solve clues to locate a card, return to De Nobili Hall, and submit it to designated volunteers.",
+          "The top qualifying teams in each club to submit a valid Green Card qualify for Level 2. The remaining teams are eliminated.",
         ],
       },
       {
-        title: "What happens at the Smiley and during Hunts 1–3?",
+        title: "Level 2: QR-Code Smiley & Progressive Hunts (Hunts 1–3)",
         items: [
-          "Qualified teams receive a clue to a Smiley placed somewhere on campus. Scan its QR code to get the next instruction.",
+          "Qualified teams receive a clue to a Smiley placed somewhere on campus. Scan its QR code to receive the next instruction.",
           "After the Smiley stage, teams continue directly from the QR-code instructions; they do not need to return to De Nobili Hall after each hunt.",
-          "Complete Hunt 1, Hunt 2, and Hunt 3 by following the clues and instructions. One team from each club is eliminated after each hunt.",
-          "In the 30-team example, the count progresses: 30 start → 24 after the Green Card round → 18 after Hunt 1 → 12 after Hunt 2 → 6 after Hunt 3.",
-          "After Hunt 3, the remaining teams return to De Nobili Hall at the designated time for the Final Round.",
+          "Teams progress through Hunt 1, Hunt 2, and Hunt 3 by solving puzzle clues. Progressive eliminations occur after each hunt stage.",
+          "Surviving qualifying teams return to De Nobili Hall at the designated time for Level 3 (The Final Round).",
         ],
       },
       {
-        title: "What happens in the Final Round?",
+        title: "Level 3: The Final Round (Mind Game & Physical Challenge)",
         items: [
-          "Mind Game: all 6 remaining teams compete and are evaluated by score. The team with the lowest score is eliminated; the other 5 advance.",
-          "Physical Game: the qualified teams take part in a Physical/Run-to-Hunt challenge.",
-          "Physical Game rules, scoring, and elimination criteria: TBA.",
-          "The overall winning team receives the ₹4,000 prize.",
+          "Mind Game: All qualifying finalist teams compete in an intensive mental puzzle challenge and are evaluated strictly by participant score.",
+          "Score-based elimination: Elimination in the final round is decided based on participant scores; the lowest-scoring team is eliminated, and top scorers advance.",
+          "Physical Challenge: The remaining top teams take part in the Physical / Run-to-Hunt challenge across campus checkpoints.",
+          "The overall winning team is decided based on cumulative performance and score across the final round challenges.",
         ],
       },
       {
         title: "How do I register my team?",
         items: [
-          "Register exactly 4 team members. One team leader submits all four members in a single registration; a team name is not required.",
+          "Register exactly 4 team members. One team leader submits all four members in a single registration; a team name is required.",
           "The fee is ₹400 per team. Register before 30 October 2026. Fees are non-refundable after cancellation.",
           "Each member provides their full name, institution, student ID/roll number, city, and a valid college ID. Department/course is optional.",
           "The team leader provides a mobile number and email address that are not used by another team. A profile photo is optional; year/semester and section are not collected.",
@@ -1789,9 +1828,8 @@ export const EVENTS: EventItem[] = [
       {
         title: "What prizes and certificates are provided?",
         items: [
-          "The winning team receives a prize of ₹4,000 and a winning certificate. A trophy is optional.",
-          "Participants receive participation certificates.",
-          "Participation ID and refreshments: TBA.",
+          "The winning team receives awards, gifts, and winning certificates.",
+          "All participants receive official participation certificates.",
         ],
       },
       {
@@ -1810,7 +1848,7 @@ export const EVENTS: EventItem[] = [
           "Teams may visit campus before their assigned time to become familiar with it, but must not search for clues. Anyone caught searching for clues early is immediately eliminated.",
           "Follow organizers’ and volunteers’ instructions and your team’s clues at every stage. Qualification and elimination decisions made by the organizing committee are final.",
           "Do not tamper with clues, QR codes, Green Cards, or other game materials. Disrupting the game or obstructing other teams may lead to disqualification.",
-          "Physical/Run-to-Hunt rules, scoring, and elimination criteria: TBA. The organizing committee may make necessary changes to the format; its decision is final.",
+          "Final round ranking and elimination are based on participant scores. The organizing committee's decisions are final.",
         ],
       },
     ],
@@ -1818,9 +1856,8 @@ export const EVENTS: EventItem[] = [
       "Provide coordinators with team-wise participant lists, contact details, uploaded ID cards, registration/payment/check-in status, and records for cancelled teams.",
     ],
     prizeBreakdown: {
-      total: "₹4,000 for the winning team",
-      first: "₹4,000",
-      note: "The winning team receives a certificate; a trophy is optional. Participants receive participation certificates.",
+      total: "Exciting Gifts & Prizes",
+      note: "The winning team receives certificates and awards. All participants receive participation certificates.",
     },
     documents: [
       {
@@ -1848,8 +1885,10 @@ export const EVENTS: EventItem[] = [
       feeDisplay: "₹400 per team",
       deadline: "Before 30 October 2026",
       deadlineDate: "2026-10-29",
-      teamNameRequired: false,
-      teamFields: [],
+      teamNameRequired: true,
+      teamFields: [
+        { id: "teamName", label: "Team name", type: "text", required: true },
+      ],
       participantFields: cipherChaseFields,
       coordinator: {
         name: "Sunny Kumar & Shristi Singh",
@@ -1878,7 +1917,7 @@ export const EVENTS: EventItem[] = [
         },
       ],
       policy: {
-        teamNamePolicy: "never",
+        teamNamePolicy: "always",
         maxInitialFormParticipants: 4,
       },
     },
@@ -1909,11 +1948,13 @@ export const EVENTS: EventItem[] = [
     borderColor: "rgba(96,165,250,.4)",
     image: "/images/events/event-08.jpeg",
     highlights: [
-      "Pilot a custom robot through a timed, five-zone obstacle course.",
+      "RC cars are permitted for participants up to Class 12 · All safety rules remain strictly mandatory.",
+      "Pilot a custom robot or permitted RC car through a timed, five-zone obstacle course.",
       "Teams of 2–4 · ₹700 per team · 31 October 2026.",
-      "The course tests robot control, traction, durability, and driving precision.",
+      "The course tests control, traction, durability, and driving precision.",
     ],
     rules: [
+      "Participants up to Class 12 are permitted to compete using Remote-Controlled (RC) cars. All standard safety and design rules remain strictly mandatory for all participants including Class 12 entries.",
       "Pilots must stand behind the marked control barrier and operate by remote control or approved onboard automation.",
       "Do not touch the robot after a run begins. A pilot may request one manual reset if the robot is trapped; a 15-second penalty applies.",
       "Runs have a five-minute time limit. An unfinished run is recorded as incomplete.",
@@ -1927,14 +1968,14 @@ export const EVENTS: EventItem[] = [
       "The fee is ₹700 per team.",
     ],
     requirements: [
-      "Bring a custom-built terrestrial robot no larger than 30 cm long × 30 cm wide × 30 cm high. Maximum weight: TBA.",
-      "Robots must use onboard rechargeable batteries only (LiPo, NiMH, or sealed lead-acid), at no more than 24 V.",
+      "Bring a custom-built terrestrial robot or permitted RC car (up to Class 12) no larger than 30 cm long × 30 cm wide × 30 cm high. Maximum weight: TBA.",
+      "Vehicles must use onboard rechargeable batteries only (LiPo, NiMH, or sealed lead-acid), at no more than 24 V.",
       "Manual wired, manual wireless (RF, Bluetooth, Wi-Fi), or fully autonomous control is allowed.",
-      "Each member provides their name, institution, mobile number, and student ID/roll number; each uploads a valid college ID and verifies email/mobile.",
+      "Each member provides their name, institution, mobile number, and student ID/roll number; each uploads a valid college/school ID and verifies email/mobile.",
     ],
     eligibility: [
-      "Designed for engineering students, robotics enthusiasts, and student clubs. Spectators are welcome to watch from the designated area.",
-      "Each competing team must register 2–4 members and bring a robot that passes the safety and technical inspection.",
+      "Open to school students (up to Class 12) as well as college/university students, engineering students, robotics enthusiasts, and student clubs. Participants up to Class 12 are permitted to compete using Remote-Controlled (RC) cars.",
+      "Each competing team must register 2–4 members and bring a robot or permitted RC car that passes the safety and technical inspection.",
     ],
     prizeBreakdown: {
       total: "Exciting Gifts & Prizes",
@@ -1959,8 +2000,9 @@ export const EVENTS: EventItem[] = [
       {
         title: "Eligibility",
         items: [
-          "The event is designed for engineering students, robotics enthusiasts, and student clubs. Spectators can watch from the designated area.",
-          "Competing teams must have 2–4 members and bring a robot that passes the safety and technical inspection.",
+          "Open to school students (up to Class 12) as well as college/university students, engineering students, robotics enthusiasts, and student clubs. Spectators can watch from the designated area.",
+          "Participants up to Class 12 are permitted to compete using Remote-Controlled (RC) cars.",
+          "Competing teams must have 2–4 members and bring a robot or permitted RC car that passes the safety and technical inspection.",
         ],
       },
       {
@@ -1985,8 +2027,8 @@ export const EVENTS: EventItem[] = [
       {
         title: "What robot can I bring?",
         items: [
-          "Robot type: custom-built terrestrial robot. Maximum dimensions: 30 cm long × 30 cm wide × 30 cm high.",
-          "Maximum weight: TBA.",
+          "Robot type: custom-built terrestrial robot. School participants up to Class 12 are permitted to participate using Remote-Controlled (RC) cars.",
+          "Maximum dimensions & weight: TBA.",
           "Power: onboard rechargeable batteries only (LiPo, NiMH, or sealed lead-acid), at a maximum of 24 V.",
           "Control: manual wired, manual wireless (RF, Bluetooth, or Wi-Fi), or fully autonomous.",
         ],
@@ -1994,10 +2036,11 @@ export const EVENTS: EventItem[] = [
       {
         title: "What are the safety rules?",
         items: [
+          "All safety rules remain strictly mandatory for all participants, including Class 12 RC car entries.",
           "Weapons and destructive mechanisms, including wedges, spinners, and saws, are prohibited.",
           "Do not use exposed sharp metal edges, untaped glass or hard acrylic corners, liquid sprays, combustion engines, flames, or untethered projectiles.",
           "Fit a clearly marked master power cutoff switch and secure the battery enclosure. Protect electrical components, especially when crossing the water pit.",
-          "Pilots must remain behind the marked control barrier. Do not touch the robot after a run begins; request a manual reset if it is trapped. A reset adds 15 seconds.",
+          "Pilots must remain behind the marked control barrier. Do not touch the vehicle after a run begins; request a manual reset if it is trapped. A reset adds 15 seconds.",
           "Do not interfere with marshals, timing equipment, or another lane. Unsafe operation or fire risk results in disqualification.",
         ],
       },
@@ -2060,6 +2103,7 @@ export const EVENTS: EventItem[] = [
         phone: "7856802097",
         email: "jaivardhan27062007@gmail.com",
         coCoordinator: "Suraj Kaushik",
+        coCoordinatorEmail: "surajkaushik2007@gmail.com",
       },
       declarations: deathRaceDeclarations,
       documents: [
