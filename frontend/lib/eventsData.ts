@@ -810,7 +810,7 @@ export const EVENTS: EventItem[] = [
     trackId: "track-b",
     trackName: "TRACK B",
     shortDesc: "Data Analytics",
-    fullDesc: "XAVITECH 2026 Data Analytics is a team competition for pairs. Participants should know Excel and Power BI. The event is open to Class 7–12, undergraduate, and postgraduate students over 16 years old.",
+    fullDesc: "XAVITECH 2026 VLookUp is a team-based Data Analytics competition for pairs, requiring proficiency in Excel and Power BI. The event is open to Class 7–12, undergraduate, and postgraduate students.",
     date: "31st Oct",
     time: "TBA",
     prize: "Exciting Gifts & Prizes",
