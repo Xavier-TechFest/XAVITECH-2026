@@ -143,7 +143,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
           {!event.exploreSections?.length && event.requirements?.length ? <ContentList title="Requirements" items={event.requirements} /> : null}
           {event.exploreSections?.length ? <EventExploreSections sections={event.exploreSections} /> : null}
 
-          {event.registrationConfig?.coordinator && <div className="mt-6 border-t border-line pt-5"><h3 className="font-oxanium text-xs font-bold uppercase tracking-wider text-circuit">Event Contact</h3><Contact name={event.registrationConfig.coordinator.name} role="Event Coordinator" email={event.registrationConfig.coordinator.email} phone={event.registrationConfig.coordinator.phone}/>{event.registrationConfig.coordinator.coCoordinator && <Contact name={event.registrationConfig.coordinator.coCoordinator} role="Event Coordinator"/>}</div>}
+          {event.registrationConfig?.coordinator && <div className="mt-6 border-t border-line pt-5"><h3 className="font-oxanium text-xs font-bold uppercase tracking-wider text-circuit">Event Contact</h3><Contact name={event.registrationConfig.coordinator.name} role="Event Coordinator" email={event.registrationConfig.coordinator.email} phone={event.registrationConfig.coordinator.phone}/>{event.registrationConfig.coordinator.coCoordinator && <Contact name={event.registrationConfig.coordinator.coCoordinator} role="Event Coordinator" email={event.registrationConfig.coordinator.coCoordinatorEmail} phone={event.registrationConfig.coordinator.coCoordinatorPhone}/>}</div>}
 
           {/* Protocol & Rules */}
           {!event.exploreSections?.length && event.rules && event.rules.length > 0 && (
