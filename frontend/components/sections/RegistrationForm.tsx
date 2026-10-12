@@ -548,8 +548,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               if (Number.isNaN(Date.parse(val))) {
                 errors[fieldKey] = "Enter a valid date.";
                 summary.push(`Participant ${index + 1} (Date): Invalid date format.`);
-              } else if (field.id === "birthDate" || config.policy?.minAge) {
-                const minAge = config.policy?.minAge ?? 16;
+              } else if (config.policy?.minAge !== undefined || config.policy?.minimumAge !== undefined) {
+                const minAge = config.policy?.minAge ?? config.policy?.minimumAge ?? 0;
                 const bday = new Date(val);
                 const today = new Date();
                 let age = today.getFullYear() - bday.getFullYear();
@@ -1961,7 +1961,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                             error={fieldErrors[fieldKey]}
                             onTextChange={(val) => handleInputChange(fieldKey, val)}
                             onFileChange={(f) => handleFileChange(fieldKey, f)}
-                            minAge={config.policy?.minAge}
+                            minAge={config.policy?.minAge ?? config.policy?.minimumAge}
                             readOnly={isLeaderEmail}
                             disabled={isLeaderEmail}
                           />
@@ -2301,11 +2301,7 @@ function DynamicFieldRenderer({
                 onTextChange(e.target.value);
               }
             }}
-            max={
-              field.id === "birthDate" || minAge
-                ? getEligibleMaxBirthDate(minAge ?? 16)
-                : undefined
-            }
+            max={field.type === "date" && minAge !== undefined ? getEligibleMaxBirthDate(minAge) : undefined}
             className={`${inputClass} ${
               readOnly || disabled
                 ? "cursor-not-allowed bg-[#020508] text-slate-400 border-white/10 opacity-85 select-none"
