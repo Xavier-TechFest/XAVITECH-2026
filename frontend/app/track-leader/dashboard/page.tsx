@@ -58,11 +58,11 @@ export default function TrackLeaderDashboardPage() {
     <div className="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-8">
       {/* 1. Header & Welcome Banner */}
       <div
-        className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b ${
+        className={`flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 pb-6 border-b ${
           isLight ? "border-slate-200" : "border-neutral-800/80"
         }`}
       >
-        <div>
+        <div className="min-w-0 flex-1">
           <div
             className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono uppercase tracking-widest mb-3 ${
               isLight
@@ -74,35 +74,40 @@ export default function TrackLeaderDashboardPage() {
             TRACK OPERATIONS CONSOLE
           </div>
           <h1
-            className={`text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight ${
+            className={`text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight break-words ${
               isLight ? "text-slate-900" : "text-white"
             }`}
           >
             Welcome, {leaderName}
           </h1>
-          <p className={`text-xs sm:text-sm mt-1 ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
-            Signed in as{" "}
-            <span className={`font-mono font-medium ${isLight ? "text-slate-900" : "text-neutral-200"}`}>
-              {leaderEmail}
+          <p className={`text-xs sm:text-sm mt-1.5 leading-relaxed ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
+            <span>
+              Signed in as{" "}
+              <span className={`font-mono font-medium ${isLight ? "text-slate-900" : "text-neutral-200"}`}>
+                {leaderEmail}
+              </span>
             </span>
             {assignedTrack && (
-              <span className="hidden sm:inline">
-                {" "}— Assigned Track:{" "}
-                <span className={`font-mono font-semibold ${isLight ? "text-teal-700" : "text-[#35e0c9]"}`}>
-                  {assignedTrack.name}
+              <>
+                <span className="hidden sm:inline text-neutral-600 mx-2">•</span>
+                <span className="block sm:inline mt-0.5 sm:mt-0">
+                  Assigned Track:{" "}
+                  <span className={`font-mono font-semibold ${isLight ? "text-teal-700" : "text-[#35e0c9]"}`}>
+                    {assignedTrack.name}
+                  </span>
                 </span>
-              </span>
+              </>
             )}
           </p>
         </div>
 
-        {/* Primary Action + Sync Data */}
-        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+        {/* Action Group: View Registrations (Primary) + Sync Live Data (Secondary) */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full sm:w-auto">
           <Link
             href="/track-leader/registrations"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#35e0c9] hover:bg-[#2bc4b0] text-black font-bold text-xs font-mono uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-[#35e0c9]/20"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 h-10 rounded-xl bg-[#35e0c9] hover:bg-[#2bc4b0] active:scale-[0.99] text-black font-bold text-xs font-mono uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-[#35e0c9]/20 w-full sm:w-auto shrink-0"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -110,7 +115,7 @@ export default function TrackLeaderDashboardPage() {
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
               />
             </svg>
-            <span>View Registrations</span>
+            <span className="whitespace-nowrap">View Registrations</span>
           </Link>
 
           <button
@@ -123,14 +128,14 @@ export default function TrackLeaderDashboardPage() {
               ]);
             }}
             disabled={isEventsLoading || isStatsLoading || registrationsRefreshing}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 ${
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 h-10 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 active:scale-[0.99] w-full sm:w-auto shrink-0 ${
               isLight
-                ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
+                ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700 shadow-sm"
                 : "bg-neutral-900/90 border-neutral-800 hover:border-neutral-700 text-neutral-300 hover:text-white"
             }`}
           >
             <svg
-              className={`w-3.5 h-3.5 ${isLight ? "text-teal-600" : "text-[#35e0c9]"} ${
+              className={`w-3.5 h-3.5 shrink-0 ${isLight ? "text-teal-600" : "text-[#35e0c9]"} ${
                 isEventsLoading || isStatsLoading || registrationsRefreshing ? "animate-spin" : ""
               }`}
               fill="none"
@@ -144,7 +149,7 @@ export default function TrackLeaderDashboardPage() {
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            <span>
+            <span className="whitespace-nowrap">
               {isEventsLoading || isStatsLoading || registrationsRefreshing ? "Syncing..." : "Sync Live Data"}
             </span>
           </button>
