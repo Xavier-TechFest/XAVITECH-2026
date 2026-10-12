@@ -31,6 +31,8 @@ function RegistrationsListContent() {
   const validInitialType = ["INDIVIDUAL", "TEAM"].includes(queryType) ? queryType : "";
   const queryTrack = searchParams.get("trackId") || "";
   const queryEvent = searchParams.get("eventId") || "";
+  const queryStatus = (searchParams.get("status") || "").toUpperCase();
+  const queryPaymentStatus = (searchParams.get("paymentStatus") || "").toUpperCase();
 
   // Filter & Search states
   const [search, setSearch] = useState("");
@@ -38,8 +40,8 @@ function RegistrationsListContent() {
   const [selectedTrackId, setSelectedTrackId] = useState(queryTrack);
   const [selectedEventId, setSelectedEventId] = useState(queryEvent);
   const [selectedType, setSelectedType] = useState(validInitialType);
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState(queryStatus);
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState(queryPaymentStatus);
   const [page, setPage] = useState(1);
   const limit = 15;
 

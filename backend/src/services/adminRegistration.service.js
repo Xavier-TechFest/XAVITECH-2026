@@ -82,7 +82,14 @@ export const adminRegistrationService = {
         paymentPendingRegistrations: 0,
         failedOrCancelledRegistrations: 0,
         totalParticipants: 0,
+        confirmedParticipants: 0,
+        pendingParticipants: 0,
+        totalConfirmedParticipants: 0,
+        totalPendingParticipants: 0,
         totalTeams: 0,
+        confirmedTeams: 0,
+        pendingTeams: 0,
+        failedOrCancelledTeams: 0,
         activeEvents: 0,
         registrationStatusCounts: {
           DRAFT: 0,
@@ -123,96 +130,8 @@ export const adminRegistrationService = {
     const allRegs = registrations || [];
     const regIds = allRegs.map((r) => r.id);
 
-    // 4. Calculate registration status counts
-    const registrationStatusCounts = {
-      DRAFT: 0,
-      PAYMENT_PENDING: 0,
-      PAYMENT_SUCCESS: 0,
-      CONFIRMED: 0,
-      PAYMENT_FAILED: 0,
-      CANCELLED: 0,
-    };
-
-    let confirmedCount = 0;
-    let pendingCount = 0;
-    let paymentPendingCount = 0;
-    let failedOrCancelledCount = 0;
-
-    for (const r of allRegs) {
-      const st = r.status || 'DRAFT';
-      registrationStatusCounts[st] = (registrationStatusCounts[st] || 0) + 1;
-      if (st === 'CONFIRMED' || st === 'PAYMENT_SUCCESS') {
-        confirmedCount++;
-      } else if (st === 'DRAFT') {
-        pendingCount++;
-      } else if (st === 'PAYMENT_PENDING') {
-        paymentPendingCount++;
-      } else if (st === 'CANCELLED' || st === 'PAYMENT_FAILED') {
-        failedOrCancelledCount++;
-      }
-    }
-
-    // 5. Calculate total registered teams
-    // Scoped automatically (allRegs is already scoped to track events if resolvedTrackId is set):
-    // Count unique registered teams: registrations where registration_type is TEAM.
-    // For team registrations with a linked team_id, count unique team_ids.
-    // For team registrations without a team_id, count each registration as an independent team squad.
-    const teamRegs = allRegs.filter((r) => r.registration_type === 'TEAM');
-    const linkedTeamIds = new Set(teamRegs.filter((r) => r.team_id).map((r) => r.team_id));
-    const unlinkedTeamRegs = teamRegs.filter((r) => !r.team_id);
-    const totalTeams = linkedTeamIds.size + unlinkedTeamRegs.length;
-
-    // 6. Fetch registration_participants for accurate participant counts
-    let totalParticipants = 0;
-    if (regIds.length > 0) {
-      const chunkSize = 200;
-      let participantCountsByReg = {};
-
-      for (let i = 0; i < regIds.length; i += chunkSize) {
-        const chunk = regIds.slice(i, i + chunkSize);
-        const { data: pRows } = await client
-          .from('registration_participants')
-          .select('id, registration_id')
-          .in('registration_id', chunk);
-
-        if (Array.isArray(pRows)) {
-          for (const p of pRows) {
-            participantCountsByReg[p.registration_id] =
-              (participantCountsByReg[p.registration_id] || 0) + 1;
-          }
-        }
-      }
-
-      // Check for legacy registrations without registration_participants
-      const legacyRegs = allRegs.filter((r) => !participantCountsByReg[r.id]);
-      let memberCountByTeam = {};
-      if (legacyRegs.some((r) => r.registration_type === 'TEAM' && r.team_id)) {
-        const legacyTeamIds = legacyRegs.filter((r) => r.team_id).map((r) => r.team_id);
-        const { data: tmRows } = await client
-          .from('team_members')
-          .select('id, team_id')
-          .in('team_id', legacyTeamIds);
-
-        if (Array.isArray(tmRows)) {
-          for (const tm of tmRows) {
-            memberCountByTeam[tm.team_id] = (memberCountByTeam[tm.team_id] || 0) + 1;
-          }
-        }
-      }
-
-      for (const r of allRegs) {
-        if (participantCountsByReg[r.id]) {
-          totalParticipants += participantCountsByReg[r.id];
-        } else if (r.registration_type === 'INDIVIDUAL') {
-          totalParticipants += 1;
-        } else if (r.registration_type === 'TEAM') {
-          const extra = r.team_id && memberCountByTeam[r.team_id] ? memberCountByTeam[r.team_id] : 0;
-          totalParticipants += 1 + extra;
-        }
-      }
-    }
-
-    // 7. Payment status counts
+    // 4. Batch fetch payment_transactions
+    const transactionsByRegId = new Map();
     const paymentStatusCounts = {
       SUCCESS: 0,
       PENDING: 0,
@@ -234,19 +153,173 @@ export const adminRegistrationService = {
           for (const tx of txRows) {
             const txSt = (tx.status || 'INITIATED').toUpperCase();
             paymentStatusCounts[txSt] = (paymentStatusCounts[txSt] || 0) + 1;
+            if (!transactionsByRegId.has(tx.registration_id)) {
+              transactionsByRegId.set(tx.registration_id, []);
+            }
+            transactionsByRegId.get(tx.registration_id).push(tx);
           }
         }
       }
     }
 
-    // 8. Event-wise breakdown
-    const eventCountsMap = {};
-    for (const r of allRegs) {
-      if (r.event_id) {
-        eventCountsMap[r.event_id] = (eventCountsMap[r.event_id] || 0) + 1;
+    // 5. Batch fetch registration_participants for accurate participant counts
+    const participantCountsByReg = {};
+    if (regIds.length > 0) {
+      const chunkSize = 200;
+      for (let i = 0; i < regIds.length; i += chunkSize) {
+        const chunk = regIds.slice(i, i + chunkSize);
+        const { data: pRows } = await client
+          .from('registration_participants')
+          .select('id, registration_id')
+          .in('registration_id', chunk);
+
+        if (Array.isArray(pRows)) {
+          for (const p of pRows) {
+            participantCountsByReg[p.registration_id] =
+              (participantCountsByReg[p.registration_id] || 0) + 1;
+          }
+        }
       }
     }
 
+    // Check for legacy registrations without registration_participants
+    const legacyRegs = allRegs.filter((r) => !participantCountsByReg[r.id]);
+    let memberCountByTeam = {};
+    if (legacyRegs.some((r) => r.registration_type === 'TEAM' && r.team_id)) {
+      const legacyTeamIds = legacyRegs.filter((r) => r.team_id).map((r) => r.team_id);
+      const { data: tmRows } = await client
+        .from('team_members')
+        .select('id, team_id')
+        .in('team_id', legacyTeamIds);
+
+      if (Array.isArray(tmRows)) {
+        for (const tm of tmRows) {
+          memberCountByTeam[tm.team_id] = (memberCountByTeam[tm.team_id] || 0) + 1;
+        }
+      }
+    }
+
+    // 6. Calculate authoritative registration, participant, and status distributions
+    const registrationStatusCounts = {
+      DRAFT: 0,
+      PAYMENT_PENDING: 0,
+      PAYMENT_SUCCESS: 0,
+      CONFIRMED: 0,
+      PAYMENT_FAILED: 0,
+      CANCELLED: 0,
+    };
+
+    let confirmedCount = 0;
+    let pendingCount = 0; // DRAFT
+    let paymentPendingCount = 0;
+    let failedOrCancelledCount = 0;
+
+    let totalParticipants = 0;
+    let confirmedParticipants = 0;
+    let pendingParticipants = 0;
+
+    const eventCountsMap = {};
+    const eventConfirmedCountsMap = {};
+    const eventPendingCountsMap = {};
+
+    for (const r of allRegs) {
+      const rawStatus = r.status || 'DRAFT';
+      registrationStatusCounts[rawStatus] = (registrationStatusCounts[rawStatus] || 0) + 1;
+
+      if (r.event_id) {
+        eventCountsMap[r.event_id] = (eventCountsMap[r.event_id] || 0) + 1;
+      }
+
+      let partCount = 0;
+      if (participantCountsByReg[r.id]) {
+        partCount = participantCountsByReg[r.id];
+      } else if (r.registration_type === 'INDIVIDUAL') {
+        partCount = 1;
+      } else if (r.registration_type === 'TEAM') {
+        const extra = r.team_id && memberCountByTeam[r.team_id] ? memberCountByTeam[r.team_id] : 0;
+        partCount = 1 + extra;
+      }
+      r._participantCount = partCount;
+      totalParticipants += partCount;
+
+      const regTxList = transactionsByRegId.get(r.id) || [];
+      const hasSuccessTxn = regTxList.some((tx) => (tx.status || '').toUpperCase() === 'SUCCESS');
+      const isExplicitlyConfirmed = rawStatus === 'CONFIRMED' || rawStatus === 'PAYMENT_SUCCESS';
+      const isCancelled = rawStatus === 'CANCELLED';
+      const isFailed = rawStatus === 'PAYMENT_FAILED';
+
+      if (isCancelled) {
+        failedOrCancelledCount++;
+        r._effectiveCategory = 'FAILED_OR_CANCELLED';
+      } else if (isExplicitlyConfirmed || hasSuccessTxn) {
+        confirmedCount++;
+        confirmedParticipants += partCount;
+        r._effectiveCategory = 'CONFIRMED';
+        if (r.event_id) {
+          eventConfirmedCountsMap[r.event_id] = (eventConfirmedCountsMap[r.event_id] || 0) + 1;
+        }
+      } else if (isFailed) {
+        failedOrCancelledCount++;
+        r._effectiveCategory = 'FAILED_OR_CANCELLED';
+      } else if (rawStatus === 'PAYMENT_PENDING') {
+        paymentPendingCount++;
+        pendingParticipants += partCount;
+        r._effectiveCategory = 'PAYMENT_PENDING';
+        if (r.event_id) {
+          eventPendingCountsMap[r.event_id] = (eventPendingCountsMap[r.event_id] || 0) + 1;
+        }
+      } else {
+        pendingCount++;
+        pendingParticipants += partCount;
+        r._effectiveCategory = 'DRAFT';
+        if (r.event_id) {
+          eventPendingCountsMap[r.event_id] = (eventPendingCountsMap[r.event_id] || 0) + 1;
+        }
+      }
+    }
+
+    // 7. Calculate total registered teams with confirmed & pending status breakdown
+    const teamRegs = allRegs.filter((r) => r.registration_type === 'TEAM');
+    const uniqueTeamMap = new Map();
+
+    for (const r of teamRegs) {
+      const key = r.team_id ? `team:${r.team_id}` : `reg:${r.id}`;
+      if (!uniqueTeamMap.has(key)) {
+        uniqueTeamMap.set(key, {
+          key,
+          teamId: r.team_id || null,
+          regId: r.id,
+          hasConfirmed: false,
+          hasPending: false,
+          hasFailedOrCancelled: false,
+        });
+      }
+      const entry = uniqueTeamMap.get(key);
+      if (r._effectiveCategory === 'CONFIRMED') {
+        entry.hasConfirmed = true;
+      } else if (r._effectiveCategory === 'PAYMENT_PENDING' || r._effectiveCategory === 'DRAFT') {
+        entry.hasPending = true;
+      } else {
+        entry.hasFailedOrCancelled = true;
+      }
+    }
+
+    let confirmedTeams = 0;
+    let pendingTeams = 0;
+    let failedOrCancelledTeams = 0;
+
+    for (const team of uniqueTeamMap.values()) {
+      if (team.hasConfirmed) {
+        confirmedTeams++;
+      } else if (team.hasPending) {
+        pendingTeams++;
+      } else {
+        failedOrCancelledTeams++;
+      }
+    }
+    const totalTeams = uniqueTeamMap.size;
+
+    // 8. Event-wise breakdown with confirmed & pending counts
     const eventCounts = (events || []).map((ev) => ({
       eventId: ev.id,
       name: ev.name,
@@ -255,10 +328,14 @@ export const adminRegistrationService = {
       subtitle: ev.event_type || null,
       trackId: ev.track_id,
       count: eventCountsMap[ev.id] || 0,
+      confirmedCount: eventConfirmedCountsMap[ev.id] || 0,
+      pendingCount: eventPendingCountsMap[ev.id] || 0,
     }));
 
     // 9. Track-wise breakdown (for Admin or overall)
     const trackCountsMap = {};
+    const trackConfirmedCountsMap = {};
+    const trackPendingCountsMap = {};
     const eventsById = {};
     for (const ev of events || []) {
       eventsById[ev.id] = ev;
@@ -268,6 +345,11 @@ export const adminRegistrationService = {
       const ev = eventsById[r.event_id];
       if (ev && ev.track_id) {
         trackCountsMap[ev.track_id] = (trackCountsMap[ev.track_id] || 0) + 1;
+        if (r._effectiveCategory === 'CONFIRMED') {
+          trackConfirmedCountsMap[ev.track_id] = (trackConfirmedCountsMap[ev.track_id] || 0) + 1;
+        } else if (r._effectiveCategory === 'PAYMENT_PENDING' || r._effectiveCategory === 'DRAFT') {
+          trackPendingCountsMap[ev.track_id] = (trackPendingCountsMap[ev.track_id] || 0) + 1;
+        }
       }
     }
 
@@ -276,6 +358,8 @@ export const adminRegistrationService = {
       name: tr.name,
       slug: tr.slug,
       count: trackCountsMap[tr.id] || 0,
+      confirmedCount: trackConfirmedCountsMap[tr.id] || 0,
+      pendingCount: trackPendingCountsMap[tr.id] || 0,
     }));
 
     return {
@@ -285,7 +369,14 @@ export const adminRegistrationService = {
       paymentPendingRegistrations: paymentPendingCount,
       failedOrCancelledRegistrations: failedOrCancelledCount,
       totalParticipants,
+      confirmedParticipants,
+      pendingParticipants,
+      totalConfirmedParticipants: confirmedParticipants,
+      totalPendingParticipants: pendingParticipants,
       totalTeams,
+      confirmedTeams,
+      pendingTeams,
+      failedOrCancelledTeams,
       activeEvents: activeEventsCount,
       registrationStatusCounts,
       paymentStatusCounts,

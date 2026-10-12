@@ -788,10 +788,36 @@ export interface AdminDashboardStats {
   pendingRegistrations?: number;
   paymentPendingRegistrations?: number;
   failedOrCancelledRegistrations?: number;
+  confirmedParticipants?: number;
+  pendingParticipants?: number;
+  totalConfirmedParticipants?: number;
+  totalPendingParticipants?: number;
+  confirmedTeams?: number;
+  pendingTeams?: number;
+  failedOrCancelledTeams?: number;
   registrationStatusCounts?: Record<string, number>;
   paymentStatusCounts?: Record<string, number>;
-  eventCounts?: Array<{ eventId: string; name: string; slug: string; trackId?: string; count: number }>;
-  trackCounts?: Array<{ trackId: string; name: string; slug: string; count: number }>;
+  eventCounts?: Array<{
+    eventId: string;
+    name: string;
+    slug: string;
+    eventType?: string | null;
+    subtitle?: string | null;
+    trackId?: string;
+    count: number;
+    confirmedCount?: number;
+    pendingCount?: number;
+    confirmedParticipants?: number;
+    pendingParticipants?: number;
+  }>;
+  trackCounts?: Array<{
+    trackId: string;
+    name: string;
+    slug: string;
+    count: number;
+    confirmedCount?: number;
+    pendingCount?: number;
+  }>;
   assignedTrack?: TrackLeaderAssignedTrack | null;
 }
 
