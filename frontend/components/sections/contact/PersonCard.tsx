@@ -394,6 +394,11 @@ export default function PersonCard({
                 decoding="async"
                 onError={() => setAttempt((n) => n + 1)}
                 className="absolute inset-0 h-full w-full object-cover object-top"
+                style={{
+                  objectPosition: person.name === "Adarsh Sinha" ? "center 75%" : "center top",
+                  transform: person.name === "Manaswi" ? "scale(1.1)" : undefined,
+                  transformOrigin: person.name === "Manaswi" ? "center bottom" : undefined,
+                }}
               />
             ) : (
               <Silhouette stroke={a.stroke} />

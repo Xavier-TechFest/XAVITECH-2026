@@ -18,7 +18,7 @@ const m = (name: string, email?: string, linkedin?: string, image?: string): Per
 
 // Patron, Co-Patron & Convenor show their designation on the card (no email / LinkedIn).
 export const patron: Person = { name: "Fr. Dr. Martin Poras SJ", designation: "Vice-Chancellor" };
-export const coPatron: Person = { name: "Dr. Fr. Sherry George SJ", designation: "Registrar" };
+export const coPatron: Person = { name: "Fr. Dr. Sherry George SJ", designation: "Registrar", image: "/committee/fr-dr-sherry-george-sj.png" };
 export const convenor: Person = { name: "Dr. Piyush Verma", designation: "Assistant Professor, Department of Computer Science", image: "/committee/dr-piyush-verma.png" };
 
 export const overallCoordinators: Person[] = [
@@ -72,7 +72,7 @@ export const tracks: TrackData[] = [
     events: [
       { name: "Circuit of Minds", leads: [m("Princy Kumari", "swatibhagat1306@gmail.com", "https://www.linkedin.com/in/princy-kumari-b020893a0?utm_source=share_via&utm_content=profile&utm_medium=member_android"), m("Aman Raj", "drrajaman31@gmail.com", "https://www.linkedin.com/in/raj-aman-3a032742a?utm_source=share_via&utm_content=profile&utm_medium=member_android")] },
       { name: "Unscripted Nations", leads: [m("Zoha Ashraf Azad", "zohaashrafazad11@gmail.com ", "https://www.linkedin.com/in/zoha-ashraf-azad-b47971375?utm_source=share_via&utm_content=profile&utm_medium=member_android"), m("Archie Mrinal", "archie22mrinal@gmail.com", "https://www.linkedin.com/in/archie-mrinal-b90007344?utm_source=share_via&utm_content=profile&utm_medium=member_ios")] },
-      { name: "ThoughtLab", leads: [m("Amanjeet Kumar", "sinhaamanjeet@gmail.com")] },
+      { name: "ThoughtLab", leads: [m("Amanjeet Kumar", "sinhaamanjeet@gmail.com"), m("Manaswi", "manaswi0608@gmail.com", "https://linkedin.com/in/manaswi06", "/committee/manaswi.png")] },
     ],
   },
   {

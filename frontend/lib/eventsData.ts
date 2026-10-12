@@ -47,6 +47,7 @@ export interface PrizeBreakdown {
 export interface EventExploreSection {
   title: string;
   items: string[];
+  layout?: "rounds";
 }
 
 /**
@@ -75,7 +76,7 @@ export interface RegistrationPolicy {
   substituteOptional?: boolean;
 
   /**
-   * Minimum participant age if applicable (e.g. 16 for Data Analytics)
+   * Minimum participant age when an event sets an age requirement.
    */
   minimumAge?: number;
   minAge?: number;
@@ -354,7 +355,7 @@ const debugDerbyFields: ParticipantFieldSpec[] = [
   { id: "email", label: "Email address", type: "email", required: true, placeholder: "For event updates" },
   { id: "city", label: "City (optional)", type: "text", required: false, placeholder: "Home city" },
   { id: "hackerRank", label: "HackerRank username / account email", type: "text", required: true, placeholder: "Valid HackerRank account" },
-  { id: "language", label: "Programming language", type: "text", required: true, placeholder: "A language enabled for the contest" },
+  { id: "language", label: "Programming language", type: "select", required: true, options: ["Java", "C", "C++", "Python", "JavaScript"] },
   { ...idPhoto, label: "Valid School / College ID Card" },
   { ...profilePhoto, label: "Profile photo (optional)", required: false },
 ];
@@ -377,7 +378,7 @@ const dataAnalyticsFields: ParticipantFieldSpec[] = [
   { id: "fullName", label: "Full name", type: "text", required: true },
   { id: "college", label: "Institution name", type: "text", required: true },
   { id: "course", label: "Department / Course / Class", type: "text", required: true },
-  { id: "birthDate", label: "Date of birth", type: "date", required: true, helpText: "Select your date of birth from the calendar. Participants must be over 16." },
+  { id: "birthDate", label: "Date of birth", type: "date", required: true, helpText: "Select your date of birth from the calendar." },
   { id: "year", label: "Year / Semester (optional)", type: "text", required: false },
   { id: "section", label: "Section (optional)", type: "text", required: false },
   { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "Valid mobile number" },
@@ -392,7 +393,7 @@ const webWeaveFields: ParticipantFieldSpec[] = [
   { id: "fullName", label: "Full name", type: "text", required: true, placeholder: "As shown on your ID" },
   { id: "college", label: "Institution name", type: "text", required: true, placeholder: "School or college name" },
   { id: "course", label: "Department / Course", type: "text", required: true, placeholder: "For school students, enter School; e.g. BCA" },
-  { id: "year", label: "Class / Year / Semester", type: "select", required: true, options: ["Class 10", "Class 11", "Class 12", "UG Year 1", "UG Year 2", "UG Year 3", "UG Year 4", "UG Semester 1", "UG Semester 2", "UG Semester 3", "UG Semester 4", "UG Semester 5", "UG Semester 6", "UG Semester 7", "UG Semester 8", "Other"] },
+  { id: "year", label: "Class / Year / Semester", type: "text", required: true, placeholder: "Enter your class, year, or semester" },
   { id: "mobile", label: "Mobile number", type: "tel", required: true, placeholder: "10-digit mobile number", pattern: "[0-9]{10}" },
   { id: "email", label: "Email address", type: "email", required: true, placeholder: "Confirmation will be sent to the team leader" },
   { id: "studentId", label: "Student ID / Roll number (optional)", type: "text", required: false, placeholder: "Letters and numbers", pattern: "[A-Za-z0-9]+" },
@@ -822,15 +823,16 @@ export const EVENTS: EventItem[] = [
     borderColor: "rgba(53,224,201,.4)",
     image: "/images/events/event-04.jpeg",
     highlights: [
-      "Team of two · Excel and Power BI knowledge required.",
+      "Team Size: 2 Members",
+      "Skills Required: Excel & Power BI",
     ],
     rules: [
-      "Every participant must be over 16 years old.",
       "Participants must have a valid, unexpired school/college ID card. If unavailable, provide a proper undertaking signed by the current or previous institution.",
     ],
     eligibility: [
-      "Open to Class 7–12, undergraduate, and postgraduate students over 16 years old.",
-      "Any course or department is eligible; all years/semesters are eligible. External participants are allowed.",
+      "Open to Class 7–12, undergraduate, and postgraduate students.",
+      "Any course or department is eligible; all years/semesters are eligible.",
+      "External participants are allowed.",
       "Participants must know Excel and Power BI.",
     ],
     registrationInfo: [
@@ -901,7 +903,6 @@ export const EVENTS: EventItem[] = [
       ],
       policy: {
         teamNamePolicy: "always",
-        minimumAge: 16,
       },
     },
   },
@@ -1095,7 +1096,7 @@ export const EVENTS: EventItem[] = [
     ],
     rules: [],
     eligibility: [
-      "Open to college/university students. Course, academic-year, external-participant, and age restrictions: TBA.",
+      "Open to school students in Classes 9–12, undergraduate (UG) students, and postgraduate (PG) students.",
     ],
     registrationInfo: [
       "Register individually (₹500) or register both delegates together as a team of two (₹1,000).",
@@ -1146,7 +1147,9 @@ export const EVENTS: EventItem[] = [
         name: "Zoha Ashraf Azad",
         phone: "8935987885",
         email: "zohaashrafazad11@gmail.com",
-        coCoordinator: "Archie",
+        coCoordinator: "Archie Mrinal",
+        coCoordinatorPhone: "7970352643",
+        coCoordinatorEmail: "archie22mrinal@gmail.com",
       },
       details: {
         committee: "United Nations Commission on Science and Technology for Development (CSTD)",
@@ -1425,7 +1428,7 @@ export const EVENTS: EventItem[] = [
       {
         title: "Pitch & Presentation Guidelines",
         items: [
-          "The pitch must centre on a technology-based solution to a concrete problem.",
+          "This is a technology-focused pitch, not a business pitch. Present a technology-based solution to a concrete problem.",
           "Presentations must address: Technical Problem Statement, Proposed Solution, Tech Stack / Architecture, Implementation Feasibility, and Technical Impact.",
           "Presentations should emphasize engineering design, technical viability, and real-world applicability rather than revenue models or commercial business metrics.",
         ],
@@ -1523,7 +1526,7 @@ export const EVENTS: EventItem[] = [
     trackId: "track-c",
     trackName: "TRACK C",
     shortDesc: "BGMI",
-    fullDesc: "Battleground Blitz is XAVITECH 2026's squad-based Battlegrounds Mobile India tournament. Up to 25 squads play one Best-of-3 series across Erangel, Miramar, and Rondo. The winner is decided by cumulative placement and kill points, with live coverage for spectators at De Nobili Hall.",
+    fullDesc: "Battleground Blitz is XAVITECH 2026's squad-based Battlegrounds Mobile India tournament. Registered squads play one Best-of-3 series across Erangel, Miramar, and Rondo. The winner is decided by cumulative placement and kill points, with live coverage for spectators at De Nobili Hall.",
     date: "31st Oct",
     time: "8:00 AM–1:00 PM",
     prize: "Exciting Gifts & Prizes",
@@ -1535,14 +1538,14 @@ export const EVENTS: EventItem[] = [
     borderColor: "rgba(96,165,250,.4)",
     image: "/events/Bgmi.jpg",
     highlights: [
-      "Only mobile phones/handheld mobile devices are allowed · iPads, tablets, and emulators are prohibited.",
+      "Only physical mobile phones are allowed · tablets and emulators are prohibited.",
       "One three-map series · all registered squads play all three maps.",
-      "4 main players + 1 optional substitute · ₹200 per registered player · 25-squad cap.",
+      "4 main players + 1 optional substitute · ₹200 per registered player.",
       "Cumulative placement and kill points decide the standings.",
       "Exciting Gifts & Prizes.",
     ],
     rules: [
-      "Only mobile phones/handheld mobile devices are allowed for all participants. iPads, tablets, and emulators are prohibited.",
+      "Only physical mobile phones are allowed for all participants. Tablets and emulators are prohibited.",
       "Advanced Custom Room restrictions apply. Unauthorized peripherals, macros, hacks, cheats, exploits, and third-party software/hardware are prohibited.",
       "Match-fixing, account sharing, ID spoofing, and impersonation are prohibited. Violations may result in disqualification, forfeiture of prizes/certificates, and referral to university administration.",
     ],
@@ -1553,7 +1556,7 @@ export const EVENTS: EventItem[] = [
     registrationInfo: [
       "Register one squad with four main players and up to one optional substitute. Provide a team name and choose one team leader to submit the squad registration.",
       "The fee is ₹200 per registered player, payable through the official Tech Fest portal. A player may not join more than one squad.",
-      "Entries are limited to 25 squads and accepted first come, first served. Registration closes on 20 October 2026 or when all places are filled.",
+      "Entries are accepted first come, first served. Registration closes on 20 October 2026.",
       "Fees are non-refundable. The organising committee may accept or decline an entry without stating a reason.",
     ],
     requirements: [
@@ -1566,7 +1569,7 @@ export const EVENTS: EventItem[] = [
         title: "Eligibility",
         items: [
           "Open to Xavier University Patna students and external participants of all skill levels. All courses, departments, and academic years are eligible; no age restriction is specified.",
-          "Each squad has 4 main players and may register 1 optional substitute. The tournament is capped at 25 squads; entries are accepted first come, first served.",
+          "Each squad has 4 main players and may register 1 optional substitute.",
         ],
       },
       {
@@ -1583,15 +1586,15 @@ export const EVENTS: EventItem[] = [
           "Map 1 · Erangel — the opening match.",
           "Map 2 · Miramar — the second match.",
           "Map 3 · Rondo — the deciding match.",
-          "All registered squads compete in all three matches. The 25-squad cap fits the stated custom-room capacity.",
+          "All registered squads compete in all three matches.",
         ],
       },
       {
         title: "What device do I need?",
         items: [
-          "Only mobile phones/handheld mobile devices are allowed for all participants. iPads, tablets, and emulators are strictly prohibited.",
-          "Participants must play on their own physical mobile phone. Use of tablets, iPads, or emulators will result in immediate squad disqualification; BGMI permanently bans accounts played on emulators.",
-          "The venue provides dedicated high-speed internet, with a backup hotspot/dongle. Charging stations are available between maps; players are responsible for bringing their own devices and chargers.",
+          "Only physical mobile phones are allowed. Tablets and emulators are strictly prohibited.",
+          "Participants must play on their own physical mobile phone. Use of a tablet or emulator will result in immediate squad disqualification; BGMI permanently bans accounts played on emulators.",
+          "The venue provides dedicated internet, with a backup hotspot/dongle. Charging stations are available between maps; players are responsible for bringing their own phones and chargers.",
         ],
       },
       {
@@ -1606,11 +1609,11 @@ export const EVENTS: EventItem[] = [
         title: "How do I register my squad?",
         items: [
           "One team leader submits one registration for the squad. Register 4 main players and, if needed, 1 substitute. A player cannot be registered on more than one squad.",
-          "Registration costs ₹200 per player through the official Tech Fest portal. The 25-squad cap is first come, first served; registration closes 20 October 2026 or once all places are filled. Fees are non-refundable.",
+          "Registration costs ₹200 per player through the official Tech Fest portal. Registration closes 20 October 2026. Fees are non-refundable.",
           "A Squad ID is generated after registration. The custom-room ID and password are shared with the squad leader before each map.",
           "Provide each player's full name, institution, active mobile number, verified email, BGMI in-game name (IGN), and Character ID/UID. Department/course, year/semester, profile photo, and city are optional; no section field is required.",
           "Upload valid ID for every player: Xavier University Patna students use their college ID; external players use a government-issued photo ID. XUP student ID/roll number is required for XUP students.",
-          "All squad members must check in together with valid college/school ID. Arrive by 8:30 AM, at least 30 minutes before the 9:00 AM tournament start.",
+          "All squad members must check in together with valid college/school ID. Arrive by 8:00 AM for squad check-in, which runs from 8:00–8:30 AM before the 9:00 AM tournament start.",
         ],
       },
       {
@@ -1629,7 +1632,7 @@ export const EVENTS: EventItem[] = [
       {
         title: "Full rules and participant guide",
         items: [
-          "Only mobile phones are permitted. The use of iPads, tablets, emulators, aimbots, trigger-bots, ESP, hacks, macros, or unauthorized peripherals/software will result in immediate disqualification.",
+          "Only mobile phones are permitted. The use of tablets, emulators, aimbots, trigger-bots, ESP, hacks, macros, or unauthorized peripherals/software will result in immediate disqualification.",
           "Be at your station at least 15 minutes before each map. Squads that do not join the room on time receive zero points for that map.",
           "Aimbots, trigger-bots, ESP, hacks, and other third-party software result in instant disqualification and may incur an additional committee-decided penalty.",
           "Macros, unauthorized peripherals or software/hardware, match-fixing, account sharing, ID spoofing, impersonation, exploiting glitches, or leaving a match without a valid reason result in disqualification. All squads involved in teaming are disqualified.",
@@ -1639,11 +1642,9 @@ export const EVENTS: EventItem[] = [
           "Player-side connectivity problems do not qualify for a replay. Players are responsible for their own devices; the event team does not provide backup devices. If a device fails, the squad continues with its remaining functional devices and players.",
           "For a venue internet outage, a backup hotspot/dongle is available. Matches are paused and resumed where possible rather than replayed.",
           "Venue zones include player stations with charging access, a spectator seating area facing the large display, a streaming/casting desk, and a central admin/referee table. Directional signs guide attendees to De Nobili Hall; spectator capacity is enforced and volunteers manage seating and entry.",
-          "The host device streams with PRISM Mobile, paired through the app's CONNECT feature with PRISM Live Studio on a laptop. The laptop sends the feed to the large display; screen recordings provide a backup if the stream drops.",
           "A live scoring sheet is updated after every map and shown at the admin table. Power backup (UPS/generator) covers charging stations, the streaming desk, and displays.",
           "A sound system supports announcements, commentary, and result calls. First aid, water, and refreshments are available at the venue.",
-          "Seventeen event volunteers support check-in (2), device checks (2), refereeing (3), streaming/AV (2), commentary (2), scoring (2), crowd management (2), and logistics (2). Referees handle disputes; the Track C Leader monitors the schedule and any overrun.",
-          "Live commentary supports the in-venue audience and social-media coverage. Certificates are issued to all registered squads; formal prize distribution takes place at the Valedictory Ceremony. The event schedule is coordinated with Death Race and Tech Treasure Hunt in Track C.",
+          "Live commentary supports the in-venue audience and social-media coverage. Certificates are issued to all registered squads; formal prize distribution takes place at the Valedictory Ceremony.",
         ],
       },
     ],
@@ -1735,7 +1736,7 @@ export const EVENTS: EventItem[] = [
     trackId: "track-c",
     trackName: "TRACK C",
     shortDesc: "Tech Treasure Hunt",
-    fullDesc: "Cipher Chase is a team-based campus treasure hunt featuring progressive, level-wise elimination challenges. Teams follow clues through Level 1 (The Green Card Round), Level 2 (QR-Code Smiley & Progressive Hunts), and Level 3 (The Final Round featuring Mind Games and a Physical Challenge), where final elimination and victory are decided based on participant score.",
+    fullDesc: "Cipher Chase is a team-based campus treasure hunt featuring progressive, level-wise elimination. Teams solve clues across campus before advancing to a final Brain Games and Physical Challenge.",
     date: "31st Oct",
     time: "TBA",
     prize: "Exciting Gifts & Prizes",
@@ -1748,7 +1749,7 @@ export const EVENTS: EventItem[] = [
     image: "/images/events/event-07.jpeg",
     highlights: [
       "Teams of 4 · ₹400 per team.",
-      "Level-wise structure: Level 1 Green Card, Level 2 Progressive QR Hunts, Level 3 Final Round.",
+      "Progressive, level-wise campus treasure hunt.",
       "Final round elimination is strictly based on participant score.",
       "Clues may use QR codes, Morse code, binary code, and other puzzle formats.",
     ],
@@ -1790,27 +1791,21 @@ export const EVENTS: EventItem[] = [
         ],
       },
       {
-        title: "Level 1: The Green Card Round",
+        title: "Rounds",
+        layout: "rounds",
         items: [
-          "Each club is assigned a different location on campus, and teams receive clues leading to their club’s location.",
-          "At each club’s location, Green Cards are placed. Teams must solve clues to locate a card, return to De Nobili Hall, and submit it to designated volunteers.",
-          "The top qualifying teams in each club to submit a valid Green Card qualify for Level 2. The remaining teams are eliminated.",
+          "Fast and Furious (De Nobili)",
+          "Search the Smilie",
+          "Hunt 1",
+          "Hunt 2",
+          "Hunt 3",
+          "Final Challenge — Brain Games & Physical Challenge",
         ],
       },
       {
-        title: "Level 2: QR-Code Smiley & Progressive Hunts (Hunts 1–3)",
+        title: "Final Round: Final Challenge — Brain Games & Physical Challenge",
         items: [
-          "Qualified teams receive a clue to a Smiley placed somewhere on campus. Scan its QR code to receive the next instruction.",
-          "After the Smiley stage, teams continue directly from the QR-code instructions; they do not need to return to De Nobili Hall after each hunt.",
-          "Teams progress through Hunt 1, Hunt 2, and Hunt 3 by solving puzzle clues. Progressive eliminations occur after each hunt stage.",
-          "Surviving qualifying teams return to De Nobili Hall at the designated time for Level 3 (The Final Round).",
-        ],
-      },
-      {
-        title: "Level 3: The Final Round (Mind Game & Physical Challenge)",
-        items: [
-          "Mind Game: All qualifying finalist teams compete in an intensive mental puzzle challenge and are evaluated strictly by participant score.",
-          "Score-based elimination: Elimination in the final round is decided based on participant scores; the lowest-scoring team is eliminated, and top scorers advance.",
+          "Mind Game: Finalist teams compete in a mental puzzle challenge. Final-round eliminations are based on team scores, with higher-scoring teams advancing.",
           "Physical Challenge: The remaining top teams take part in the Physical / Run-to-Hunt challenge across campus checkpoints.",
           "The overall winning team is decided based on cumulative performance and score across the final round challenges.",
         ],
@@ -1823,13 +1818,6 @@ export const EVENTS: EventItem[] = [
           "Each member provides their full name, institution, student ID/roll number, city, and a valid college ID. Department/course is optional.",
           "The team leader provides a mobile number and email address that are not used by another team. A profile photo is optional; year/semester and section are not collected.",
           "Separate member registrations and participation on multiple teams are not allowed.",
-        ],
-      },
-      {
-        title: "What prizes and certificates are provided?",
-        items: [
-          "The winning team receives awards, gifts, and winning certificates.",
-          "All participants receive official participation certificates.",
         ],
       },
       {
@@ -1847,7 +1835,7 @@ export const EVENTS: EventItem[] = [
           "Cheating, disrupting equipment, or using a proxy disqualifies the entire team.",
           "Teams may visit campus before their assigned time to become familiar with it, but must not search for clues. Anyone caught searching for clues early is immediately eliminated.",
           "Follow organizers’ and volunteers’ instructions and your team’s clues at every stage. Qualification and elimination decisions made by the organizing committee are final.",
-          "Do not tamper with clues, QR codes, Green Cards, or other game materials. Disrupting the game or obstructing other teams may lead to disqualification.",
+          "Do not tamper with clues, QR codes, or other game materials. Disrupting the game or obstructing other teams may lead to disqualification.",
           "Final round ranking and elimination are based on participant scores. The organizing committee's decisions are final.",
         ],
       },
@@ -1857,7 +1845,6 @@ export const EVENTS: EventItem[] = [
     ],
     prizeBreakdown: {
       total: "Exciting Gifts & Prizes",
-      note: "The winning team receives certificates and awards. All participants receive participation certificates.",
     },
     documents: [
       {
@@ -2027,7 +2014,7 @@ export const EVENTS: EventItem[] = [
       {
         title: "What robot can I bring?",
         items: [
-          "Robot type: custom-built terrestrial robot. School participants up to Class 12 are permitted to participate using Remote-Controlled (RC) cars.",
+          "Bring a custom-built terrestrial robot. School participants up to Class 12 may compete using a Remote-Controlled (RC) car.",
           "Maximum dimensions & weight: TBA.",
           "Power: onboard rechargeable batteries only (LiPo, NiMH, or sealed lead-acid), at a maximum of 24 V.",
           "Control: manual wired, manual wireless (RF, Bluetooth, or Wi-Fi), or fully autonomous.",
@@ -2103,6 +2090,7 @@ export const EVENTS: EventItem[] = [
         phone: "7856802097",
         email: "jaivardhan27062007@gmail.com",
         coCoordinator: "Suraj Kaushik",
+        coCoordinatorPhone: "9153002217",
         coCoordinatorEmail: "surajkaushik2007@gmail.com",
       },
       declarations: deathRaceDeclarations,
