@@ -33,12 +33,24 @@ export default function TrackLeaderDashboardPage() {
   const leaderName = trackLeader?.name || "Track Leader";
   const leaderEmail = trackLeader?.email || "";
 
-  // Build event count map from live backend aggregation
+  // Build event count map and rich stats from live backend aggregation
   const eventCountsMap = new Map<string, number>();
+  const eventStatsMap = new Map<string, { count: number; confirmedCount: number; pendingCount: number }>();
   if (dashboardStats?.eventCounts) {
     for (const ec of dashboardStats.eventCounts) {
-      if (ec.eventId) eventCountsMap.set(ec.eventId, ec.count);
-      if (ec.slug) eventCountsMap.set(ec.slug, ec.count);
+      const statsObj = {
+        count: ec.count ?? 0,
+        confirmedCount: ec.confirmedCount ?? 0,
+        pendingCount: ec.pendingCount ?? 0,
+      };
+      if (ec.eventId) {
+        eventCountsMap.set(ec.eventId, ec.count);
+        eventStatsMap.set(ec.eventId, statsObj);
+      }
+      if (ec.slug) {
+        eventCountsMap.set(ec.slug, ec.count);
+        eventStatsMap.set(ec.slug, statsObj);
+      }
     }
   }
 
@@ -46,11 +58,11 @@ export default function TrackLeaderDashboardPage() {
     <div className="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-8">
       {/* 1. Header & Welcome Banner */}
       <div
-        className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b ${
+        className={`flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 pb-6 border-b ${
           isLight ? "border-slate-200" : "border-neutral-800/80"
         }`}
       >
-        <div>
+        <div className="min-w-0 flex-1">
           <div
             className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono uppercase tracking-widest mb-3 ${
               isLight
@@ -62,35 +74,40 @@ export default function TrackLeaderDashboardPage() {
             TRACK OPERATIONS CONSOLE
           </div>
           <h1
-            className={`text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight ${
+            className={`text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight break-words ${
               isLight ? "text-slate-900" : "text-white"
             }`}
           >
             Welcome, {leaderName}
           </h1>
-          <p className={`text-xs sm:text-sm mt-1 ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
-            Signed in as{" "}
-            <span className={`font-mono font-medium ${isLight ? "text-slate-900" : "text-neutral-200"}`}>
-              {leaderEmail}
+          <p className={`text-xs sm:text-sm mt-1.5 leading-relaxed ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
+            <span>
+              Signed in as{" "}
+              <span className={`font-mono font-medium ${isLight ? "text-slate-900" : "text-neutral-200"}`}>
+                {leaderEmail}
+              </span>
             </span>
             {assignedTrack && (
-              <span className="hidden sm:inline">
-                {" "}— Assigned Track:{" "}
-                <span className={`font-mono font-semibold ${isLight ? "text-teal-700" : "text-[#35e0c9]"}`}>
-                  {assignedTrack.name}
+              <>
+                <span className="hidden sm:inline text-neutral-600 mx-2">•</span>
+                <span className="block sm:inline mt-0.5 sm:mt-0">
+                  Assigned Track:{" "}
+                  <span className={`font-mono font-semibold ${isLight ? "text-teal-700" : "text-[#35e0c9]"}`}>
+                    {assignedTrack.name}
+                  </span>
                 </span>
-              </span>
+              </>
             )}
           </p>
         </div>
 
-        {/* Primary Action + Sync Data */}
-        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+        {/* Action Group: View Registrations (Primary) + Sync Live Data (Secondary) */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full sm:w-auto">
           <Link
             href="/track-leader/registrations"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#35e0c9] hover:bg-[#2bc4b0] text-black font-bold text-xs font-mono uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-[#35e0c9]/20"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 h-10 rounded-xl bg-[#35e0c9] hover:bg-[#2bc4b0] active:scale-[0.99] text-black font-bold text-xs font-mono uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-[#35e0c9]/20 w-full sm:w-auto shrink-0"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -98,7 +115,7 @@ export default function TrackLeaderDashboardPage() {
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
               />
             </svg>
-            <span>View Registrations</span>
+            <span className="whitespace-nowrap">View Registrations</span>
           </Link>
 
           <button
@@ -111,14 +128,14 @@ export default function TrackLeaderDashboardPage() {
               ]);
             }}
             disabled={isEventsLoading || isStatsLoading || registrationsRefreshing}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 ${
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 h-10 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 active:scale-[0.99] w-full sm:w-auto shrink-0 ${
               isLight
-                ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
+                ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700 shadow-sm"
                 : "bg-neutral-900/90 border-neutral-800 hover:border-neutral-700 text-neutral-300 hover:text-white"
             }`}
           >
             <svg
-              className={`w-3.5 h-3.5 ${isLight ? "text-teal-600" : "text-[#35e0c9]"} ${
+              className={`w-3.5 h-3.5 shrink-0 ${isLight ? "text-teal-600" : "text-[#35e0c9]"} ${
                 isEventsLoading || isStatsLoading || registrationsRefreshing ? "animate-spin" : ""
               }`}
               fill="none"
@@ -132,7 +149,7 @@ export default function TrackLeaderDashboardPage() {
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            <span>
+            <span className="whitespace-nowrap">
               {isEventsLoading || isStatsLoading || registrationsRefreshing ? "Syncing..." : "Sync Live Data"}
             </span>
           </button>
@@ -150,96 +167,229 @@ export default function TrackLeaderDashboardPage() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {/* Total Registrations */}
-          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl ${
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* 1. Total Registrations (All Statuses) */}
+          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl flex flex-col justify-between ${
             isLight ? "bg-white border-slate-200 shadow-slate-200/50" : "bg-[#0e131f]/90 border-neutral-800/80"
           }`}>
-            <span className={`text-[11px] font-mono uppercase tracking-wider block mb-2 ${
-              isLight ? "text-slate-500" : "text-neutral-400"
-            }`}>
-              Total Registrations
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span className={`text-3xl sm:text-4xl font-extrabold font-mono ${
-                isLight ? "text-slate-900" : "text-white"
-              }`}>
-                {dashboardStats ? dashboardStats.totalRegistrations : 0}
-              </span>
-              <span className="text-xs text-neutral-500 font-mono">records</span>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-[11px] font-mono uppercase tracking-wider ${
+                  isLight ? "text-slate-500" : "text-neutral-400"
+                }`}>
+                  Total Registrations
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+                  isLight ? "bg-slate-100 text-slate-700" : "bg-neutral-800 text-neutral-300"
+                }`}>
+                  All Statuses
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-3xl sm:text-4xl font-extrabold font-mono ${
+                  isLight ? "text-slate-900" : "text-white"
+                }`}>
+                  {dashboardStats ? dashboardStats.totalRegistrations : 0}
+                </span>
+                <span className="text-xs text-neutral-500 font-mono">records</span>
+              </div>
+              <p className="mt-2 text-[11px] text-neutral-500 font-mono">
+                Total entries submitted under your assigned track
+              </p>
             </div>
-            <div className="mt-3 pt-3 border-t border-dashed border-neutral-800/40 text-[11px] font-mono flex items-center justify-between text-neutral-400">
-              <span className="text-emerald-400 font-bold">
+            <div className={`mt-4 pt-3 border-t border-dashed text-[11px] font-mono flex items-center justify-between ${
+              isLight ? "border-slate-200" : "border-neutral-800/60"
+            }`}>
+              <span className="text-emerald-500 font-bold">
                 {dashboardStats?.confirmedRegistrations ?? 0} Confirmed
               </span>
-              <span className="text-amber-400 font-bold">
+              <span className="text-amber-500 font-bold">
                 {dashboardStats?.paymentPendingRegistrations ?? 0} Pending
               </span>
             </div>
           </div>
 
-          {/* Total Participants */}
-          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl ${
-            isLight ? "bg-white border-slate-200 shadow-slate-200/50" : "bg-[#0e131f]/90 border-neutral-800/80"
+          {/* 2. Confirmed Registrations */}
+          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl flex flex-col justify-between ${
+            isLight
+              ? "bg-white border-emerald-200 shadow-slate-200/50"
+              : "bg-[#0e131f]/90 border-emerald-900/40"
           }`}>
-            <span className={`text-[11px] font-mono uppercase tracking-wider block mb-2 ${
-              isLight ? "text-slate-500" : "text-neutral-400"
-            }`}>
-              Total Participants
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span className={`text-3xl sm:text-4xl font-extrabold font-mono ${
-                isLight ? "text-slate-900" : "text-white"
-              }`}>
-                {dashboardStats ? dashboardStats.totalParticipants : 0}
-              </span>
-              <span className="text-xs text-neutral-500 font-mono">individuals</span>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-500 font-semibold">
+                  Confirmed Registrations
+                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-500">
+                  {dashboardStats ? (dashboardStats.confirmedRegistrations ?? 0) : 0}
+                </span>
+                <span className="text-xs text-neutral-500 font-mono">verified paid</span>
+              </div>
+              <p className="mt-2 text-[11px] text-neutral-500 font-mono">
+                Successfully paid & confirmed track registrations
+              </p>
             </div>
-            <p className="mt-3 text-[11px] text-neutral-500 font-mono">
-              Individual delegates + team members
-            </p>
+            <div className={`mt-4 pt-3 border-t border-dashed text-[11px] font-mono flex items-center justify-between ${
+              isLight ? "border-emerald-100 text-emerald-700" : "border-emerald-950 text-emerald-400/80"
+            }`}>
+              <span>Official Track Entries</span>
+              <span className="font-bold">Authoritative</span>
+            </div>
           </div>
 
-          {/* Total Teams */}
-          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl ${
-            isLight ? "bg-white border-slate-200 shadow-slate-200/50" : "bg-[#0e131f]/90 border-neutral-800/80"
+          {/* 3. Pending Payment Registrations */}
+          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl flex flex-col justify-between ${
+            isLight
+              ? "bg-white border-amber-200 shadow-slate-200/50"
+              : "bg-[#0e131f]/90 border-amber-900/40"
           }`}>
-            <span className={`text-[11px] font-mono uppercase tracking-wider block mb-2 ${
-              isLight ? "text-slate-500" : "text-neutral-400"
-            }`}>
-              Track Squads / Teams
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span className={`text-3xl sm:text-4xl font-extrabold font-mono ${
-                isLight ? "text-teal-700" : "text-[#35e0c9]"
-              }`}>
-                {dashboardStats ? dashboardStats.totalTeams : 0}
-              </span>
-              <span className="text-xs text-neutral-500 font-mono">teams</span>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-amber-500 font-semibold">
+                  Pending Payment
+                </span>
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-extrabold font-mono text-amber-500">
+                  {dashboardStats ? (dashboardStats.paymentPendingRegistrations ?? 0) : 0}
+                </span>
+                <span className="text-xs text-neutral-500 font-mono">awaiting</span>
+              </div>
+              <p className="mt-2 text-[11px] text-neutral-500 font-mono">
+                Awaiting payment completion at gateway
+              </p>
             </div>
-            <p className="mt-3 text-[11px] text-neutral-500 font-mono">
-              Created squads under this track
-            </p>
+            <div className={`mt-4 pt-3 border-t border-dashed text-[11px] font-mono flex items-center justify-between ${
+              isLight ? "border-amber-100 text-amber-700" : "border-amber-950 text-amber-400/80"
+            }`}>
+              <span>Not Yet Admitted</span>
+              <span className="font-bold">Pending</span>
+            </div>
           </div>
 
-          {/* Active Events */}
-          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl ${
+          {/* 4. Confirmed Participants */}
+          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl flex flex-col justify-between ${
+            isLight
+              ? "bg-white border-emerald-200 shadow-slate-200/50"
+              : "bg-[#0e131f]/90 border-emerald-900/40"
+          }`}>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-500 font-semibold">
+                  Confirmed Participants
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+                  isLight
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : "bg-emerald-950/60 text-emerald-400 border border-emerald-800/40"
+                }`}>
+                  Verified
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-500">
+                  {dashboardStats
+                    ? (dashboardStats.confirmedParticipants ?? dashboardStats.totalConfirmedParticipants ?? 0)
+                    : 0}
+                </span>
+                <span className="text-xs text-neutral-500 font-mono">delegates</span>
+              </div>
+              <p className="mt-2 text-[11px] text-neutral-500 font-mono">
+                Only individuals belonging to confirmed registrations
+              </p>
+            </div>
+            <div className={`mt-4 pt-3 border-t border-dashed text-[11px] font-mono flex items-center justify-between ${
+              isLight ? "border-emerald-100 text-slate-500" : "border-emerald-950 text-neutral-400"
+            }`}>
+              <span>Excludes unpaid entries</span>
+              <span className="text-emerald-500 font-bold">Confirmed</span>
+            </div>
+          </div>
+
+          {/* 5. Pending Participants */}
+          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl flex flex-col justify-between ${
+            isLight
+              ? "bg-white border-amber-200 shadow-slate-200/50"
+              : "bg-[#0e131f]/90 border-amber-900/40"
+          }`}>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-amber-500 font-semibold">
+                  Pending Participants
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+                  isLight
+                    ? "bg-amber-50 text-amber-800 border border-amber-200"
+                    : "bg-amber-950/60 text-amber-400 border border-amber-800/40"
+                }`}>
+                  Awaiting
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-extrabold font-mono text-amber-500">
+                  {dashboardStats
+                    ? (dashboardStats.pendingParticipants ?? dashboardStats.totalPendingParticipants ?? 0)
+                    : 0}
+                </span>
+                <span className="text-xs text-neutral-500 font-mono">individuals</span>
+              </div>
+              <p className="mt-2 text-[11px] text-neutral-500 font-mono">
+                Participants in registrations awaiting payment
+              </p>
+            </div>
+            <div className={`mt-4 pt-3 border-t border-dashed text-[11px] font-mono flex items-center justify-between ${
+              isLight ? "border-amber-100 text-slate-500" : "border-amber-950 text-neutral-400"
+            }`}>
+              <span>Total recorded: {dashboardStats?.totalParticipants ?? 0}</span>
+              <span className="text-amber-500 font-bold">Pending</span>
+            </div>
+          </div>
+
+          {/* 6. Track Squads / Teams */}
+          <div className={`border rounded-2xl p-5 sm:p-6 backdrop-blur-xl flex flex-col justify-between ${
             isLight ? "bg-white border-slate-200 shadow-slate-200/50" : "bg-[#0e131f]/90 border-neutral-800/80"
           }`}>
-            <span className={`text-[11px] font-mono uppercase tracking-wider block mb-2 ${
-              isLight ? "text-slate-500" : "text-neutral-400"
-            }`}>
-              Track Events
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-400">
-                {events.length}
-              </span>
-              <span className="text-xs text-neutral-500 font-mono">events</span>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-[11px] font-mono uppercase tracking-wider ${
+                  isLight ? "text-slate-500" : "text-neutral-400"
+                }`}>
+                  Track Squads / Teams
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+                  isLight
+                    ? "bg-teal-50 text-teal-800 border border-teal-200"
+                    : "bg-purple-950/60 text-purple-400 border border-purple-800/40"
+                }`}>
+                  Squads
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-3xl sm:text-4xl font-extrabold font-mono ${
+                  isLight ? "text-teal-700" : "text-[#35e0c9]"
+                }`}>
+                  {dashboardStats ? dashboardStats.totalTeams : 0}
+                </span>
+                <span className="text-xs text-neutral-500 font-mono">unique teams</span>
+              </div>
+              <p className="mt-2 text-[11px] text-neutral-500 font-mono">
+                Registered squads without leader/member duplication
+              </p>
             </div>
-            <p className="mt-3 text-[11px] text-neutral-500 font-mono">
-              Events in {assignedTrack?.name || "assigned track"}
-            </p>
+            <div className={`mt-4 pt-3 border-t border-dashed text-[11px] font-mono flex items-center justify-between ${
+              isLight ? "border-slate-200" : "border-neutral-800/60"
+            }`}>
+              <span className="text-emerald-500 font-bold">
+                {dashboardStats?.confirmedTeams ?? 0} Confirmed
+              </span>
+              <span className="text-amber-500 font-bold">
+                {dashboardStats?.pendingTeams ?? 0} Pending
+              </span>
+            </div>
           </div>
         </div>
       </section>
@@ -411,7 +561,12 @@ export default function TrackLeaderDashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {events.map((event) => {
               const feeVal = event.fee ?? event.entry_fee ?? 0;
-              const eventRegCount = eventCountsMap.get(event.id) ?? eventCountsMap.get(event.slug) ?? 0;
+              const eventStats = eventStatsMap.get(event.id) ?? eventStatsMap.get(event.slug) ?? {
+                count: eventCountsMap.get(event.id) ?? eventCountsMap.get(event.slug) ?? 0,
+                confirmedCount: 0,
+                pendingCount: 0,
+              };
+              const eventRegCount = eventStats.count;
 
               return (
                 <div
@@ -494,19 +649,32 @@ export default function TrackLeaderDashboardPage() {
                       <span className="text-[11px] text-neutral-500 uppercase tracking-wider">
                         Live Registrations
                       </span>
-                      <span
-                        className={`px-2 py-0.5 rounded font-bold text-[11px] border ${
-                          eventRegCount > 0
-                            ? isLight
-                              ? "bg-teal-50 border-teal-200 text-teal-800"
-                              : "bg-[#35e0c9]/15 border-[#35e0c9]/30 text-[#35e0c9]"
-                            : isLight
-                            ? "bg-slate-100 border-slate-200 text-slate-500"
-                            : "bg-neutral-900 border-neutral-800 text-neutral-500"
-                        }`}
-                      >
-                        {eventRegCount} registered
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`px-2 py-0.5 rounded font-bold text-[11px] border ${
+                            eventRegCount > 0
+                              ? isLight
+                                ? "bg-teal-50 border-teal-200 text-teal-800"
+                                : "bg-[#35e0c9]/15 border-[#35e0c9]/30 text-[#35e0c9]"
+                              : isLight
+                              ? "bg-slate-100 border-slate-200 text-slate-500"
+                              : "bg-neutral-900 border-neutral-800 text-neutral-500"
+                          }`}
+                        >
+                          {eventRegCount} total
+                        </span>
+                        {eventRegCount > 0 && (
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[10px] border font-medium ${
+                              isLight
+                                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                                : "bg-emerald-950/40 border-emerald-800/40 text-emerald-400"
+                            }`}
+                          >
+                            {eventStats.confirmedCount} paid
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

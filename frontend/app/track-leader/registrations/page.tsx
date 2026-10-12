@@ -195,10 +195,10 @@ export default function TrackLeaderRegistrationsPage() {
   return (
     <div className="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
       {/* 1. Top Header Banner with Contextual Track Indicator */}
-      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b ${
+      <div className={`flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 pb-6 border-b ${
         isLight ? "border-slate-200" : "border-neutral-800/80"
       }`}>
-        <div>
+        <div className="min-w-0 flex-1">
           {/* Strict Track Isolation Indicator (NO track dropdown) */}
           <div
             className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono uppercase tracking-wider mb-2 font-semibold ${
@@ -218,14 +218,14 @@ export default function TrackLeaderRegistrationsPage() {
           </div>
 
           <h1
-            className={`text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight ${
+            className={`text-2xl sm:text-3xl font-black font-mono uppercase tracking-tight break-words ${
               isLight ? "text-slate-900" : "text-white"
             }`}
           >
             Registration Management
           </h1>
           <p
-            className={`text-xs sm:text-sm mt-1 ${
+            className={`text-xs sm:text-sm mt-1 leading-relaxed ${
               isLight ? "text-slate-600" : "text-neutral-400"
             }`}
           >
@@ -236,68 +236,81 @@ export default function TrackLeaderRegistrationsPage() {
           </p>
         </div>
 
-        {/* Total Records Counter & Refresh Button */}
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => refreshRegistrations(true)}
-            disabled={registrationsLoading || registrationsRefreshing}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 ${
+        {/* Action Group: Unified Track Records Counter + Refresh + Export Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 shrink-0 w-full lg:w-auto">
+          {/* Dedicated Counter Badge */}
+          <div
+            className={`inline-flex items-center justify-between sm:justify-start gap-2.5 px-3.5 py-2 h-10 rounded-xl border shrink-0 w-full sm:w-auto ${
               isLight
-                ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700 shadow-sm"
-                : "bg-neutral-900/90 border-neutral-800 hover:border-neutral-700 text-neutral-300 hover:text-white"
+                ? "bg-slate-50 border-slate-200 shadow-sm"
+                : "bg-neutral-900/90 border-neutral-800"
             }`}
-            title="Refresh track registrations from server"
           >
-            <svg
-              className={`w-3.5 h-3.5 ${isLight ? "text-teal-600" : "text-[#35e0c9]"} ${
-                registrationsRefreshing ? "animate-spin" : ""
-              }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            <span>{registrationsRefreshing ? "Refreshing..." : "Refresh"}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setExportModalOpen(true)}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-mono uppercase tracking-wider font-bold transition-all cursor-pointer shadow-sm ${
-              isLight
-                ? "bg-teal-50 hover:bg-teal-100 border-teal-300 text-teal-800 shadow-teal-100"
-                : "bg-[#35e0c9]/10 hover:bg-[#35e0c9]/20 border-[#35e0c9]/40 hover:border-[#35e0c9] text-[#35e0c9] shadow-[#35e0c9]/10"
-            }`}
-            title="Configure and Export Track Registrations"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            <span>Export</span>
-          </button>
-
-          <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center">
+            <div className="flex items-center gap-2">
+              <span className={`w-1.5 h-1.5 rounded-full ${isLight ? "bg-teal-600" : "bg-[#35e0c9]"}`} />
+              <span
+                className={`text-[11px] font-mono uppercase tracking-wider font-semibold whitespace-nowrap ${
+                  isLight ? "text-slate-500" : "text-neutral-400"
+                }`}
+              >
+                Track Records
+              </span>
+            </div>
             <span
-              className={`text-xs font-mono block ${
-                isLight ? "text-slate-600" : "text-neutral-400"
-              }`}
-            >
-              Track Records
-            </span>
-            <span
-              className={`text-xl sm:text-2xl font-bold font-mono ${
+              className={`text-base sm:text-lg font-extrabold font-mono leading-none ${
                 isLight ? "text-teal-700" : "text-[#35e0c9]"
               }`}
             >
               {isInitialLoading ? "—" : totalRecords}
             </span>
+          </div>
+
+          {/* Action Buttons: Refresh + Export */}
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => refreshRegistrations(true)}
+              disabled={registrationsLoading || registrationsRefreshing}
+              className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 h-10 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 flex-1 sm:flex-none shrink-0 ${
+                isLight
+                  ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700 shadow-sm"
+                  : "bg-neutral-900/90 border-neutral-800 hover:border-neutral-700 text-neutral-300 hover:text-white"
+              }`}
+              title="Refresh track registrations from server"
+            >
+              <svg
+                className={`w-3.5 h-3.5 shrink-0 ${isLight ? "text-teal-600" : "text-[#35e0c9]"} ${
+                  registrationsRefreshing ? "animate-spin" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              <span className="whitespace-nowrap">{registrationsRefreshing ? "Refreshing..." : "Refresh"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setExportModalOpen(true)}
+              className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 h-10 rounded-xl border text-xs font-mono uppercase tracking-wider font-bold transition-all cursor-pointer shadow-sm flex-1 sm:flex-none shrink-0 ${
+                isLight
+                  ? "bg-teal-50 hover:bg-teal-100 border-teal-300 text-teal-800 shadow-teal-100"
+                : "bg-[#35e0c9]/10 hover:bg-[#35e0c9]/20 border-[#35e0c9]/40 hover:border-[#35e0c9] text-[#35e0c9] shadow-[#35e0c9]/10"
+              }`}
+              title="Configure and Export Track Registrations"
+            >
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span className="whitespace-nowrap">Export</span>
+            </button>
           </div>
         </div>
       </div>
