@@ -55,7 +55,11 @@ export default function EventCard({ event, variant }: EventCardProps) {
         router.push(`/events/${event.id}`);
       }}
       className="group relative mx-auto aspect-[2/3] w-full max-w-[408px] select-none overflow-hidden bg-[#04090d] cursor-pointer"
-      style={{ "--event-accent": accent } as React.CSSProperties}
+      style={{
+        "--event-accent": accent,
+        border: isTrackB ? `1px solid ${accent}` : undefined,
+        boxShadow: isTrackB ? `0 0 22px ${accent}20` : undefined,
+      } as React.CSSProperties}
     >
       <img
         src={event.image}
@@ -65,7 +69,10 @@ export default function EventCard({ event, variant }: EventCardProps) {
         style={cropStyle(imageCrop)}
       />
       <div className={`absolute inset-0 bg-gradient-to-b ${event.id === "hack-the-skill" ? "from-[#03080d]/55 via-[#03080d]/20 via-45% to-[#03080d]/65" : "from-[#03080d]/85 via-[#03080d]/45 via-45% to-[#03080d]/92"}`} />
-      <div className="absolute inset-[1px] border border-[var(--event-accent)]/50 transition-colors group-hover:border-[var(--event-accent)]" />
+      <div
+        className="absolute inset-[1px] border transition-colors group-hover:border-[var(--event-accent)]"
+        style={{ borderColor: isTrackB ? `${accent}b3` : `${accent}80` }}
+      />
       <div className="pointer-events-none absolute left-4 top-4 h-5 w-5 border-l-2 border-t-2 border-[var(--event-accent)]" />
       <div className="pointer-events-none absolute right-4 top-4 h-5 w-5 border-r-2 border-t-2 border-[var(--event-accent)]" />
       <div className="pointer-events-none absolute bottom-4 left-4 h-5 w-5 border-b-2 border-l-2 border-[var(--event-accent)]" />
