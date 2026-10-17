@@ -56,14 +56,17 @@ export const computeEventRegistrationStatus = (event, registrationCount = 0, now
 /**
  * Standardize event database record into public API response format
  */
-export const formatEventResponse = (event, registrationCount = 0) => {
+export const formatEventResponse = (event, registrationCount = 0, delegateCount = 0) => {
   if (!event) return null;
 
   const capacity = event.capacity !== null && event.capacity !== undefined ? Number(event.capacity) : null;
+  const capacityMode = event.capacity_mode === 'PER_DELEGATE' ? 'PER_DELEGATE' : 'PER_REGISTRATION';
   const registeredCount = Number(registrationCount || 0);
-  const remainingCapacity = capacity !== null ? Math.max(0, capacity - registeredCount) : null;
-  const isFull = capacity !== null ? registeredCount >= capacity : false;
-  const registrationStatus = computeEventRegistrationStatus(event, registeredCount);
+  const delegates = Number(delegateCount || 0);
+  const currentOccupancy = capacityMode === 'PER_DELEGATE' ? delegates : registeredCount;
+  const remainingCapacity = capacity !== null ? Math.max(0, capacity - currentOccupancy) : null;
+  const isFull = capacity !== null ? currentOccupancy >= capacity : false;
+  const registrationStatus = computeEventRegistrationStatus(event, currentOccupancy);
 
   return {
     id: event.id,
@@ -89,8 +92,11 @@ export const formatEventResponse = (event, registrationCount = 0) => {
     registrationOpen: event.registration_open,
     registrationStartAt: event.registration_start_at || null,
     registrationEndAt: event.registration_end_at || null,
+    capacityMode,
     capacity,
     registeredCount,
+    delegateCount: delegates,
+    currentOccupancy,
     remainingCapacity,
     isFull,
     registrationStatus,
@@ -102,16 +108,16 @@ export const formatEventResponse = (event, registrationCount = 0) => {
 /**
  * Standardize event database record for Admin response format
  */
-export const formatAdminEventResponse = (event, registrationCount = 0) => {
-  return formatEventResponse(event, registrationCount);
+export const formatAdminEventResponse = (event, registrationCount = 0, delegateCount = 0) => {
+  return formatEventResponse(event, registrationCount, delegateCount);
 };
 
 /**
  * Standardize registration settings format for Admin edit view
  */
-export const formatEventRegistrationSettings = (event, registrationCount = 0) => {
+export const formatEventRegistrationSettings = (event, registrationCount = 0, delegateCount = 0) => {
   if (!event) return null;
-  const base = formatEventResponse(event, registrationCount);
+  const base = formatEventResponse(event, registrationCount, delegateCount);
   return {
     eventId: base.id,
     id: base.id,
@@ -123,8 +129,11 @@ export const formatEventRegistrationSettings = (event, registrationCount = 0) =>
     registrationOpen: base.registrationOpen,
     registrationStartAt: base.registrationStartAt,
     registrationEndAt: base.registrationEndAt,
+    capacityMode: base.capacityMode,
     capacity: base.capacity,
     registeredCount: base.registeredCount,
+    delegateCount: base.delegateCount,
+    currentOccupancy: base.currentOccupancy,
     remainingCapacity: base.remainingCapacity,
     isFull: base.isFull,
     registrationStatus: base.registrationStatus,
@@ -146,8 +155,11 @@ export const eventService = {
    */
   getActiveEvents: async ({ registrationOpenOnly = false } = {}) => {
     const events = await EventModel.getAllActiveEvents({ registrationOpenOnly });
-    const counts = await EventModel.getRegistrationCountsForAllEvents();
-    return events.map((e) => formatEventResponse(e, counts[e.id] || 0));
+    const counts = await EventModel.getCountsForAllEvents();
+    return events.map((e) => {
+      const c = counts[e.id] || { registrationCount: 0, delegateCount: 0 };
+      return formatEventResponse(e, c.registrationCount, c.delegateCount);
+    });
   },
 
   /**
@@ -161,8 +173,8 @@ export const eventService = {
     if (!event) {
       return null;
     }
-    const count = await EventModel.getRegistrationCountByEventId(event.id);
-    return formatEventResponse(event, count);
+    const counts = await EventModel.getCountsByEventId(event.id);
+    return formatEventResponse(event, counts.registrationCount, counts.delegateCount);
   },
 
   /**
@@ -178,8 +190,8 @@ export const eventService = {
     if (!event) {
       return null;
     }
-    const count = await EventModel.getRegistrationCountByEventId(event.id);
-    return formatEventResponse(event, count);
+    const counts = await EventModel.getCountsByEventId(event.id);
+    return formatEventResponse(event, counts.registrationCount, counts.delegateCount);
   },
 
   /**
@@ -189,8 +201,11 @@ export const eventService = {
    */
   getAdminEvents: async () => {
     const events = await EventModel.getAllEvents();
-    const counts = await EventModel.getRegistrationCountsForAllEvents();
-    return events.map((e) => formatAdminEventResponse(e, counts[e.id] || 0));
+    const counts = await EventModel.getCountsForAllEvents();
+    return events.map((e) => {
+      const c = counts[e.id] || { registrationCount: 0, delegateCount: 0 };
+      return formatAdminEventResponse(e, c.registrationCount, c.delegateCount);
+    });
   },
 
   /**
@@ -208,8 +223,8 @@ export const eventService = {
 
     if (!event) return null;
 
-    const count = await EventModel.getRegistrationCountByEventId(event.id);
-    return formatEventRegistrationSettings(event, count);
+    const counts = await EventModel.getCountsByEventId(event.id);
+    return formatEventRegistrationSettings(event, counts.registrationCount, counts.delegateCount);
   },
 
   /**
@@ -237,7 +252,22 @@ export const eventService = {
       throw error;
     }
 
-    const currentCount = await EventModel.getRegistrationCountByEventId(event.id);
+    // 0. Validate and determine capacity mode
+    let parsedCapacityMode = undefined;
+    if (payload.capacityMode !== undefined || payload.capacity_mode !== undefined) {
+      const rawMode = String(payload.capacityMode ?? payload.capacity_mode ?? '').trim().toUpperCase();
+      if (!['PER_REGISTRATION', 'PER_DELEGATE'].includes(rawMode)) {
+        const error = new Error("Capacity counting mode must be either 'PER_REGISTRATION' or 'PER_DELEGATE'.");
+        error.statusCode = 400;
+        throw error;
+      }
+      parsedCapacityMode = rawMode;
+    }
+
+    const effectiveMode = parsedCapacityMode || event.capacity_mode || 'PER_REGISTRATION';
+    const counts = await EventModel.getCountsByEventId(event.id);
+    const currentActiveOccupancy = effectiveMode === 'PER_DELEGATE' ? counts.delegateCount : counts.registrationCount;
+    const unitLabel = effectiveMode === 'PER_DELEGATE' ? 'delegate' : 'registration';
 
     // 1. Capacity validation
     let parsedCapacity = undefined;
@@ -257,9 +287,9 @@ export const eventService = {
           throw error;
         }
 
-        if (numCap < currentCount) {
+        if (numCap < currentActiveOccupancy) {
           const error = new Error(
-            `Capacity cannot be lower than the current registration count of ${currentCount}.`
+            `Capacity cannot be lower than the current active ${unitLabel} count of ${currentActiveOccupancy}.`
           );
           error.statusCode = 400;
           throw error;
@@ -333,6 +363,10 @@ export const eventService = {
       updated_at: new Date().toISOString(),
     };
 
+    if (parsedCapacityMode !== undefined) {
+      updateData.capacity_mode = parsedCapacityMode;
+    }
+
     if (payload.registrationOpen !== undefined || payload.registration_open !== undefined) {
       updateData.registration_open = Boolean(payload.registrationOpen ?? payload.registration_open);
     }
@@ -354,9 +388,9 @@ export const eventService = {
     }
 
     const updatedEvent = await EventModel.updateEvent(event.id, updateData);
-    const newCount = await EventModel.getRegistrationCountByEventId(updatedEvent.id);
+    const newCounts = await EventModel.getCountsByEventId(updatedEvent.id);
 
-    return formatEventRegistrationSettings(updatedEvent, newCount);
+    return formatEventRegistrationSettings(updatedEvent, newCounts.registrationCount, newCounts.delegateCount);
   },
 
   /**
@@ -446,23 +480,41 @@ export const eventService = {
     if (event.capacity !== null && event.capacity !== undefined) {
       const numericCapacity = Number(event.capacity);
       if (numericCapacity > 0) {
-        let registrationCount = await EventModel.getRegistrationCountByEventId(event.id);
+        const capacityMode = event.capacity_mode === 'PER_DELEGATE' ? 'PER_DELEGATE' : 'PER_REGISTRATION';
+        const isDelegateMode = capacityMode === 'PER_DELEGATE';
+
+        const counts = await EventModel.getCountsByEventId(event.id);
+        let currentOccupancy = isDelegateMode ? counts.delegateCount : counts.registrationCount;
+
         if (options.excludeRegistrationId) {
-          const { count: ownCount } = await EventModel.checkIfRegistrationBelongsToEvent(
+          const { count: ownCount, delegateCount: ownDelegates } = await EventModel.checkIfRegistrationBelongsToEvent(
             options.excludeRegistrationId,
             event.id
           );
           if (ownCount) {
-            registrationCount = Math.max(0, registrationCount - 1);
+            currentOccupancy = Math.max(0, currentOccupancy - (isDelegateMode ? ownDelegates : ownCount));
           }
         }
-        if (registrationCount >= numericCapacity) {
+
+        // Determine requested occupancy slots
+        let requestedSlots = options.requestedSlots;
+        if (requestedSlots === undefined || requestedSlots === null) {
+          if (isDelegateMode) {
+            requestedSlots = options.participantCount || (requestedType.toUpperCase() === 'TEAM' ? (event.min_team_size || 1) : 1);
+          } else {
+            requestedSlots = 1;
+          }
+        }
+
+        if (currentOccupancy + requestedSlots > numericCapacity || currentOccupancy >= numericCapacity) {
           return {
             isValid: false,
             statusCode: 400,
             code: 'REGISTRATION_FULL',
             registrationStatus: 'FULL',
-            message: 'Registration for this event is full',
+            message: isDelegateMode
+              ? `Registration is full. This event has reached its maximum delegate capacity limit of ${numericCapacity}.`
+              : `Registration is full. This event has reached its maximum registration capacity limit of ${numericCapacity}.`,
           };
         }
       }

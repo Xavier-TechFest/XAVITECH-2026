@@ -177,7 +177,17 @@ export const registrationService = {
     const registrationType = (payload.registration_type || payload.registrationType || 'INDIVIDUAL').toUpperCase();
 
     // 2. Validate event availability and configuration
-    const validation = await eventService.validateEventForRegistration(eventId, registrationType);
+    const rawParticipants = Array.isArray(payload.participants) ? payload.participants : [];
+    const participantCount = rawParticipants.length > 0
+      ? rawParticipants.length
+      : (registrationType === 'TEAM'
+        ? (Array.isArray(payload.members) && payload.members.length ? payload.members.length + 1 : (event.min_team_size || 1))
+        : 1);
+
+    const validation = await eventService.validateEventForRegistration(eventId, registrationType, {
+      requestedSlots: participantCount,
+      participantCount,
+    });
     if (!validation.isValid) {
       const error = new Error(validation.message);
       error.statusCode = validation.statusCode || 400;
@@ -210,8 +220,8 @@ export const registrationService = {
     let teamIdToAssociate = null;
     let newlyCreatedTeamId = null;
     const requestedTeamId = (payload.team_id || payload.teamId || '').trim();
-    const rawParticipants = payload.participants || payload.participantDetails;
-    const rawParticipantsCount = Array.isArray(rawParticipants) ? rawParticipants.length : 0;
+    const teamParticipants = payload.participants || payload.participantDetails;
+    const rawParticipantsCount = Array.isArray(teamParticipants) ? teamParticipants.length : 0;
     if (registrationType === 'TEAM') {
       if (validation.event?.slug === 'unscripted-nations' && rawParticipantsCount > 0 && rawParticipantsCount !== 2) {
         const error = new Error('MUN team registration requires exactly 2 delegates.');
@@ -623,11 +633,22 @@ export const registrationService = {
       throw error;
     }
 
-    // 4. Validate event status & configuration
+    // 4. Validate participant records
+    let participants = registration.participants || [];
+    if (participants.length === 0) {
+      participants = await RegistrationParticipantModel.getParticipantsByRegistrationId(registration.id);
+    }
+    const participantCount = participants.length > 0 ? participants.length : 1;
+
+    // 5. Validate event status & configuration
     const eventValidation = await eventService.validateEventForRegistration(
       registration.event_id,
       registration.registration_type,
-      { excludeRegistrationId: registration.id }
+      {
+        excludeRegistrationId: registration.id,
+        requestedSlots: participantCount,
+        participantCount,
+      }
     );
     if (!eventValidation.isValid) {
       const error = new Error(eventValidation.message);
@@ -636,12 +657,6 @@ export const registrationService = {
       throw error;
     }
     const event = eventValidation.event;
-
-    // 5. Validate participant records
-    let participants = registration.participants || [];
-    if (participants.length === 0) {
-      participants = await RegistrationParticipantModel.getParticipantsByRegistrationId(registration.id);
-    }
 
     if (registration.registration_type === 'TEAM') {
       const minSize = event.min_team_size || 2;

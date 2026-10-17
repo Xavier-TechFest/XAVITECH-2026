@@ -8,6 +8,7 @@ import {
   adminGetEventsList,
   adminUpdateEventRegistrationSettings,
   EventRegistrationStatus,
+  CapacityMode,
 } from "@/lib/api";
 import ModalPortal from "@/components/ui/ModalPortal";
 import { useAdmin } from "@/context/AdminContext";
@@ -102,6 +103,7 @@ export default function AdminEventsManagementPage() {
   // Modal Form State
   const [formIsActive, setFormIsActive] = useState(true);
   const [formRegistrationOpen, setFormRegistrationOpen] = useState(true);
+  const [formCapacityMode, setFormCapacityMode] = useState<CapacityMode>("PER_REGISTRATION");
   const [formCapacityUnlimited, setFormCapacityUnlimited] = useState(true);
   const [formCapacityValue, setFormCapacityValue] = useState<string>("");
   const [formStartAtLocal, setFormStartAtLocal] = useState<string>("");
@@ -234,6 +236,8 @@ export default function AdminEventsManagementPage() {
     setSelectedEvent(ev);
     setFormIsActive(ev.isActive);
     setFormRegistrationOpen(ev.registrationOpen);
+    const mode = ev.capacityMode === "PER_DELEGATE" ? "PER_DELEGATE" : "PER_REGISTRATION";
+    setFormCapacityMode(mode);
     if (ev.capacity !== null && ev.capacity !== undefined && ev.capacity > 0) {
       setFormCapacityUnlimited(false);
       setFormCapacityValue(String(ev.capacity));
@@ -262,18 +266,23 @@ export default function AdminEventsManagementPage() {
     const cap = formCapacityUnlimited ? null : Number(formCapacityValue) || null;
     const startIso = fromDatetimeLocal(formStartAtLocal);
     const endIso = fromDatetimeLocal(formEndAtLocal);
+    const activeCount =
+      formCapacityMode === "PER_DELEGATE"
+        ? (selectedEvent.delegateCount ?? selectedEvent.registeredCount)
+        : selectedEvent.registeredCount;
     return computeDerivedPreview({
       isActive: formIsActive,
       registrationOpen: formRegistrationOpen,
       registrationStartAt: startIso,
       registrationEndAt: endIso,
       capacity: cap,
-      currentCount: selectedEvent.registeredCount || 0,
+      currentCount: activeCount,
     });
   }, [
     selectedEvent,
     formIsActive,
     formRegistrationOpen,
+    formCapacityMode,
     formCapacityUnlimited,
     formCapacityValue,
     formStartAtLocal,
@@ -287,6 +296,12 @@ export default function AdminEventsManagementPage() {
     setModalError(null);
     setModalSuccess(null);
 
+    const activeCount =
+      formCapacityMode === "PER_DELEGATE"
+        ? (selectedEvent.delegateCount ?? selectedEvent.registeredCount)
+        : selectedEvent.registeredCount;
+    const unitLabel = formCapacityMode === "PER_DELEGATE" ? "delegate" : "registration";
+
     // Validate capacity
     let parsedCapacity: number | null = null;
     if (!formCapacityUnlimited) {
@@ -295,9 +310,9 @@ export default function AdminEventsManagementPage() {
         setModalError("Registration capacity must be a positive integer.");
         return;
       }
-      if (num < selectedEvent.registeredCount) {
+      if (num < activeCount) {
         setModalError(
-          `Capacity cannot be lower than current active registration count (${selectedEvent.registeredCount}).`
+          `Capacity cannot be lower than current active ${unitLabel} count (${activeCount}).`
         );
         return;
       }
@@ -320,6 +335,7 @@ export default function AdminEventsManagementPage() {
       const updated = await adminUpdateEventRegistrationSettings(selectedEvent.id, {
         isActive: formIsActive,
         registrationOpen: formRegistrationOpen,
+        capacityMode: formCapacityMode,
         capacity: parsedCapacity,
         registrationStartAt: startIso,
         registrationEndAt: endIso,
@@ -333,10 +349,13 @@ export default function AdminEventsManagementPage() {
                 ...item,
                 isActive: updated.isActive,
                 registrationOpen: updated.registrationOpen,
+                capacityMode: updated.capacityMode,
                 capacity: updated.capacity,
                 registrationStartAt: updated.registrationStartAt,
                 registrationEndAt: updated.registrationEndAt,
                 registeredCount: updated.registeredCount,
+                delegateCount: updated.delegateCount,
+                currentOccupancy: updated.currentOccupancy,
                 remainingCapacity: updated.remainingCapacity,
                 isFull: updated.isFull,
                 registrationStatus: updated.registrationStatus,
@@ -665,7 +684,7 @@ export default function AdminEventsManagementPage() {
                 <th className="py-3.5 px-4">Event & Track</th>
                 <th className="py-3.5 px-4">Type & Fee</th>
                 <th className="py-3.5 px-4">Derived Status</th>
-                <th className="py-3.5 px-4">Registrations / Capacity</th>
+                <th className="py-3.5 px-4">Occupancy / Capacity</th>
                 <th className="py-3.5 px-4">Registration Window</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -691,15 +710,19 @@ export default function AdminEventsManagementPage() {
                 </tr>
               ) : (
                 filteredEvents.map((ev) => {
+                  const isDelegateMode = ev.capacityMode === "PER_DELEGATE";
+                  const activeCount = isDelegateMode
+                    ? (ev.delegateCount ?? ev.registeredCount)
+                    : ev.registeredCount;
                   const capacityDisplay = ev.capacity !== null && ev.capacity !== undefined ? ev.capacity : "∞";
                   const remainingDisplay =
                     ev.capacity !== null && ev.capacity !== undefined
-                      ? `${Math.max(0, ev.capacity - ev.registeredCount)} left`
+                      ? `${Math.max(0, ev.capacity - activeCount)} left`
                       : "Unlimited";
 
                   const fillPercent =
                     ev.capacity && ev.capacity > 0
-                      ? Math.min(100, Math.round((ev.registeredCount / ev.capacity) * 100))
+                      ? Math.min(100, Math.round((activeCount / ev.capacity) * 100))
                       : 0;
 
                   return (
@@ -748,14 +771,27 @@ export default function AdminEventsManagementPage() {
                         </div>
                       </td>
 
-                      {/* Registrations / Capacity */}
+                      {/* Occupancy / Capacity */}
                       <td className="py-3.5 px-4">
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="font-bold text-white text-sm">{ev.registeredCount}</span>
+                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                          <span className="font-bold text-white text-sm">{activeCount}</span>
                           <span className="text-neutral-500">/</span>
                           <span className="text-neutral-300 font-bold">{capacityDisplay}</span>
-                          <span className="text-[10px] text-neutral-400 ml-1">({remainingDisplay})</span>
+                          <span className="text-[11px] font-mono text-neutral-400">
+                            {isDelegateMode ? "delegates" : "registrations"}
+                          </span>
+                          <span className="text-[10px] text-neutral-500 ml-0.5">({remainingDisplay})</span>
                         </div>
+                        {isDelegateMode && (
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[#35e0c9]/10 text-[#35e0c9] border border-[#35e0c9]/30">
+                              PER DELEGATE
+                            </span>
+                            <span className="text-[10px] text-neutral-500 font-mono">
+                              ({ev.registeredCount} regs)
+                            </span>
+                          </div>
+                        )}
                         {ev.capacity && ev.capacity > 0 && (
                           <div className="w-32 h-1.5 bg-neutral-800 rounded-full mt-1.5 overflow-hidden">
                             <div
@@ -857,9 +893,11 @@ export default function AdminEventsManagementPage() {
                       isLight ? "text-slate-600" : "text-neutral-400"
                     }`}
                   >
-                    Track: <span className={isLight ? "text-slate-800 font-semibold" : "text-neutral-200"}>{selectedEvent.track?.name || "General"}</span> · Current registrations:{" "}
+                    Track: <span className={isLight ? "text-slate-800 font-semibold" : "text-neutral-200"}>{selectedEvent.track?.name || "General"}</span> · Occupancy:{" "}
                     <strong className={isLight ? "text-slate-900 font-bold" : "text-white"}>
-                      {selectedEvent.registeredCount}
+                      {formCapacityMode === "PER_DELEGATE"
+                        ? `${selectedEvent.delegateCount ?? selectedEvent.registeredCount} delegates (${selectedEvent.registeredCount} registrations)`
+                        : `${selectedEvent.registeredCount} registrations (${selectedEvent.delegateCount ?? selectedEvent.registeredCount} delegates)`}
                     </strong>
                   </div>
                 </div>
@@ -990,6 +1028,136 @@ export default function AdminEventsManagementPage() {
                     </button>
                   </div>
 
+                  {/* Capacity Counting Mode Selector */}
+                  <div
+                    className={`p-3.5 sm:p-4 rounded-xl border space-y-3 ${
+                      isLight ? "bg-slate-50 border-slate-200" : "bg-neutral-900/50 border-neutral-800"
+                    }`}
+                  >
+                    <div>
+                      <label className={`text-xs font-mono font-bold block ${isLight ? "text-slate-900" : "text-white"}`}>
+                        Capacity Counting Mode
+                      </label>
+                      <span className={`text-[11px] font-mono block mt-0.5 ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
+                        Determines how confirmed registrations consume event capacity.
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* PER_REGISTRATION Card */}
+                      <label
+                        className={`relative flex flex-col p-3 rounded-xl border cursor-pointer transition select-none ${
+                          formCapacityMode === "PER_REGISTRATION"
+                            ? isLight
+                              ? "bg-teal-50/70 border-teal-500 shadow-sm ring-1 ring-teal-500/50"
+                              : "bg-[#35e0c9]/10 border-[#35e0c9] shadow-sm ring-1 ring-[#35e0c9]/40"
+                            : isLight
+                            ? "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                            : "bg-neutral-900/60 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="capacityMode"
+                              value="PER_REGISTRATION"
+                              checked={formCapacityMode === "PER_REGISTRATION"}
+                              onChange={() => setFormCapacityMode("PER_REGISTRATION")}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                formCapacityMode === "PER_REGISTRATION"
+                                  ? isLight
+                                    ? "border-teal-600 bg-teal-600"
+                                    : "border-[#35e0c9] bg-[#35e0c9]"
+                                  : isLight
+                                  ? "border-slate-400 bg-transparent"
+                                  : "border-neutral-600 bg-transparent"
+                              }`}
+                            >
+                              {formCapacityMode === "PER_REGISTRATION" && (
+                                <div className={`w-1.5 h-1.5 rounded-full ${isLight ? "bg-white" : "bg-black"}`} />
+                              )}
+                            </div>
+                            <span className={`text-xs font-mono font-bold ${isLight ? "text-slate-900" : "text-white"}`}>
+                              Per Registration
+                            </span>
+                          </div>
+                          <span
+                            className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
+                              isLight
+                                ? "bg-slate-200 text-slate-700"
+                                : "bg-neutral-800 text-neutral-300"
+                            }`}
+                          >
+                            Default
+                          </span>
+                        </div>
+                        <p className={`text-[11px] font-mono leading-relaxed ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
+                          Counts 1 slot per confirmed registration, regardless of team size. Best for individual events or events where capacity is measured by team/participant count interchangeably.
+                        </p>
+                      </label>
+
+                      {/* PER_DELEGATE Card */}
+                      <label
+                        className={`relative flex flex-col p-3 rounded-xl border cursor-pointer transition select-none ${
+                          formCapacityMode === "PER_DELEGATE"
+                            ? isLight
+                              ? "bg-teal-50/70 border-teal-500 shadow-sm ring-1 ring-teal-500/50"
+                              : "bg-[#35e0c9]/10 border-[#35e0c9] shadow-sm ring-1 ring-[#35e0c9]/40"
+                            : isLight
+                            ? "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                            : "bg-neutral-900/60 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="capacityMode"
+                              value="PER_DELEGATE"
+                              checked={formCapacityMode === "PER_DELEGATE"}
+                              onChange={() => setFormCapacityMode("PER_DELEGATE")}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                formCapacityMode === "PER_DELEGATE"
+                                  ? isLight
+                                    ? "border-teal-600 bg-teal-600"
+                                    : "border-[#35e0c9] bg-[#35e0c9]"
+                                  : isLight
+                                  ? "border-slate-400 bg-transparent"
+                                  : "border-neutral-600 bg-transparent"
+                              }`}
+                            >
+                              {formCapacityMode === "PER_DELEGATE" && (
+                                <div className={`w-1.5 h-1.5 rounded-full ${isLight ? "bg-white" : "bg-black"}`} />
+                              )}
+                            </div>
+                            <span className={`text-xs font-mono font-bold ${isLight ? "text-slate-900" : "text-white"}`}>
+                              Per Delegate
+                            </span>
+                          </div>
+                          <span
+                            className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
+                              isLight
+                                ? "bg-purple-100 text-purple-700"
+                                : "bg-purple-950/60 text-purple-300 border border-purple-800/50"
+                            }`}
+                          >
+                            MUN &amp; Delegate Caps
+                          </span>
+                        </div>
+                        <p className={`text-[11px] font-mono leading-relaxed ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
+                          Counts 1 slot per confirmed delegate/participant (including team leader + all members). Ideal for MUN (e.g. 120 total delegates).
+                        </p>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Capacity Controls */}
                   <div
                     className={`p-3.5 sm:p-4 rounded-xl border space-y-2.5 ${
@@ -998,7 +1166,7 @@ export default function AdminEventsManagementPage() {
                   >
                     <div className="flex items-center justify-between">
                       <label className={`text-xs font-mono font-bold ${isLight ? "text-slate-900" : "text-white"}`}>
-                        Maximum Capacity
+                        Maximum Capacity ({formCapacityMode === "PER_DELEGATE" ? "Delegates" : "Registrations"})
                       </label>
                       <label
                         className={`flex items-center gap-2 text-xs font-mono cursor-pointer ${
@@ -1011,7 +1179,12 @@ export default function AdminEventsManagementPage() {
                           onChange={(e) => {
                             setFormCapacityUnlimited(e.target.checked);
                             if (e.target.checked) setFormCapacityValue("");
-                            else setFormCapacityValue(String(Math.max(selectedEvent.registeredCount, 50)));
+                            else {
+                              const activeOccupancy = formCapacityMode === "PER_DELEGATE"
+                                ? (selectedEvent.delegateCount ?? selectedEvent.registeredCount)
+                                : selectedEvent.registeredCount;
+                              setFormCapacityValue(String(Math.max(activeOccupancy, formCapacityMode === "PER_DELEGATE" ? 120 : 50)));
+                            }
                           }}
                           className={`w-4 h-4 rounded cursor-pointer ${
                             isLight
@@ -1028,10 +1201,10 @@ export default function AdminEventsManagementPage() {
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
-                            min={selectedEvent.registeredCount}
+                            min={formCapacityMode === "PER_DELEGATE" ? (selectedEvent.delegateCount ?? selectedEvent.registeredCount) : selectedEvent.registeredCount}
                             value={formCapacityValue}
                             onChange={(e) => setFormCapacityValue(e.target.value)}
-                            placeholder="e.g. 50"
+                            placeholder={formCapacityMode === "PER_DELEGATE" ? "e.g. 120" : "e.g. 50"}
                             className={`w-full px-3 py-2 rounded-xl text-xs font-mono border transition ${
                               isLight
                                 ? "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
@@ -1039,11 +1212,15 @@ export default function AdminEventsManagementPage() {
                             }`}
                           />
                           <span className={`text-xs font-mono shrink-0 font-medium ${isLight ? "text-slate-600" : "text-neutral-400"}`}>
-                            slots
+                            {formCapacityMode === "PER_DELEGATE" ? "delegates" : "registrations"}
                           </span>
                         </div>
                         <span className={`text-[10px] font-mono block ${isLight ? "text-slate-500" : "text-neutral-500"}`}>
-                          Must be at least {selectedEvent.registeredCount} (current active registrations).
+                          Must be at least{" "}
+                          {formCapacityMode === "PER_DELEGATE"
+                            ? `${selectedEvent.delegateCount ?? selectedEvent.registeredCount} (current active delegates)`
+                            : `${selectedEvent.registeredCount} (current active registrations)`}
+                          .
                         </span>
                       </div>
                     )}

@@ -151,9 +151,17 @@ export const teamService = {
     if (event.capacity !== null && event.capacity !== undefined) {
       const cap = Number(event.capacity);
       if (cap > 0) {
-        const count = await EventModel.getRegistrationCountByEventId(event.id);
-        if (count >= cap) {
-          const error = new Error('Registration for this event is full');
+        const isDelegateMode = event.capacity_mode === 'PER_DELEGATE';
+        const occupancy = isDelegateMode
+          ? await EventModel.getDelegateCountByEventId(event.id)
+          : await EventModel.getRegistrationCountByEventId(event.id);
+        const needed = isDelegateMode ? (event.min_team_size || 1) : 1;
+        if (occupancy + needed > cap || occupancy >= cap) {
+          const error = new Error(
+            isDelegateMode
+              ? `Registration is full. This event has reached its maximum delegate capacity limit of ${cap}.`
+              : `Registration for this event is full`
+          );
           error.statusCode = 400;
           throw error;
         }
@@ -394,6 +402,22 @@ export const teamService = {
       );
       error.statusCode = 400;
       throw error;
+    }
+
+    const ev = teamWithDetails.event;
+    if (ev && ev.capacity !== null && ev.capacity !== undefined) {
+      const cap = Number(ev.capacity);
+      if (cap > 0) {
+        const isDelegateMode = ev.capacity_mode === 'PER_DELEGATE';
+        if (isDelegateMode) {
+          const currentDelegates = await EventModel.getDelegateCountByEventId(ev.id);
+          if (currentDelegates + 1 > cap || currentDelegates >= cap) {
+            const error = new Error(`Cannot add member: This event has reached its maximum delegate capacity limit of ${cap}.`);
+            error.statusCode = 400;
+            throw error;
+          }
+        }
+      }
     }
 
     const memberName = (payload.name || '').trim();

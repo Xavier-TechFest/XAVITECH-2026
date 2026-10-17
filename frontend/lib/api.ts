@@ -1280,6 +1280,7 @@ export async function adminGetEvents(): Promise<
 }
 
 export type EventRegistrationStatus = "DISABLED" | "CLOSED" | "COMING_SOON" | "FULL" | "OPEN";
+export type CapacityMode = "PER_REGISTRATION" | "PER_DELEGATE";
 
 export interface AdminEventItem {
   id: string;
@@ -1299,8 +1300,11 @@ export interface AdminEventItem {
   registrationOpen: boolean;
   registrationStartAt?: string | null;
   registrationEndAt?: string | null;
+  capacityMode?: CapacityMode;
   capacity?: number | null;
   registeredCount: number;
+  delegateCount?: number;
+  currentOccupancy?: number;
   remainingCapacity?: number | null;
   isFull: boolean;
   registrationStatus: EventRegistrationStatus;
@@ -1319,8 +1323,11 @@ export interface AdminEventRegistrationSettings {
   registrationOpen: boolean;
   registrationStartAt?: string | null;
   registrationEndAt?: string | null;
+  capacityMode?: CapacityMode;
   capacity?: number | null;
   registeredCount: number;
+  delegateCount?: number;
+  currentOccupancy?: number;
   remainingCapacity?: number | null;
   isFull: boolean;
   registrationStatus: EventRegistrationStatus;
@@ -1332,6 +1339,7 @@ export interface UpdateEventRegistrationSettingsPayload {
   isActive?: boolean;
   registrationStartAt?: string | null;
   registrationEndAt?: string | null;
+  capacityMode?: CapacityMode;
   capacity?: number | null;
 }
 
