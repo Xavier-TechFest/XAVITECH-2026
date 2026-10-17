@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ScheduleBackdrop } from "./Backdrops";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { EVENT_DATE } from "./Countdown";
@@ -132,6 +133,16 @@ export default function Schedule() {
             );
           })}
         </ol>
+
+        <div className="mt-10 sm:mt-12">
+          <Link
+            href="/schedule"
+            className="group inline-flex items-center gap-3 rounded-full border border-circuit/60 bg-circuit/10 px-6 py-3 font-mono text-xs font-semibold uppercase tracking-wider text-circuit transition-all duration-300 hover:border-circuit hover:bg-circuit hover:text-bg hover:shadow-[0_0_25px_rgba(53,224,201,0.4)]"
+          >
+            <span>Explore Full 13-Event Timetable & Master Flow</span>
+            <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
+          </Link>
+        </div>
       </div>
     </section>
   );
