@@ -197,7 +197,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
                 <div className="mb-5 grid grid-cols-2 gap-x-4 gap-y-4 border border-white/15 bg-[#03080d]/85 p-4 backdrop-blur-sm">
                   <CardFact icon={<Calendar size={14} />} label="DATE" value={event.date} accent={event.accentColor} />
                   <CardFact icon={<Clock size={14} />} label="TIME" value={event.time} accent={event.accentColor} />
-                  <CardFact icon={<MapPin size={14} />} label="VENUE" value="Xaviers university campus" accent={event.accentColor} />
+                  <CardFact icon={<MapPin size={14} />} label="VENUE" value="Xavier University Campus" accent={event.accentColor} />
                   {event.team !== "TBA" && <CardFact icon={<Users size={14} />} label="TEAM SIZE" value={event.team} accent={event.accentColor} />}
                 </div>
 
