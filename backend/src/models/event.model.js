@@ -81,17 +81,16 @@ export const EventModel = {
   },
 
   /**
-   * Count registrations with verified successful payment for a single event.
+   * Count registrations and delegates with verified successful payment for a single event.
    *
    * Only registrations in CONFIRMED or PAYMENT_SUCCESS status,
    * or having at least one SUCCESS payment transaction (and not CANCELLED),
    * are counted. Excludes PAYMENT_PENDING, PAYMENT_FAILED, CANCELLED, and DRAFT.
-   * Duplicate transactions never cause a registration to be counted more than once.
    *
    * @param {string} eventId - Event UUID
-   * @returns {Promise<number>}
+   * @returns {Promise<{ registrationCount: number, delegateCount: number }>}
    */
-  getRegistrationCountByEventId: async (eventId) => {
+  getCountsByEventId: async (eventId) => {
     const client = getSupabaseClient();
     if (!client) {
       throw new Error('Database client is not available');
@@ -99,7 +98,14 @@ export const EventModel = {
 
     const { data, error } = await client
       .from('registrations')
-      .select('id, status, payment_transactions(status)')
+      .select(`
+        id,
+        status,
+        registration_type,
+        team_id,
+        payment_transactions(status),
+        registration_participants(id)
+      `)
       .eq('event_id', eventId)
       .neq('status', 'CANCELLED')
       .limit(10000);
@@ -108,7 +114,10 @@ export const EventModel = {
       throw error;
     }
 
-    let count = 0;
+    let registrationCount = 0;
+    let delegateCount = 0;
+    const legacyTeamIds = [];
+
     for (const reg of data || []) {
       const isConfirmed = reg.status === 'CONFIRMED' || reg.status === 'PAYMENT_SUCCESS';
       const hasSuccessTxn =
@@ -116,22 +125,66 @@ export const EventModel = {
         reg.payment_transactions.some((tx) => tx?.status === 'SUCCESS');
 
       if (isConfirmed || hasSuccessTxn) {
-        count++;
+        registrationCount++;
+        const pCount = Array.isArray(reg.registration_participants) ? reg.registration_participants.length : 0;
+        if (pCount > 0) {
+          delegateCount += pCount;
+        } else if (reg.registration_type === 'INDIVIDUAL') {
+          delegateCount += 1;
+        } else if (reg.registration_type === 'TEAM' && reg.team_id) {
+          legacyTeamIds.push(reg.team_id);
+        } else {
+          delegateCount += 1;
+        }
       }
     }
 
-    return count;
+    if (legacyTeamIds.length > 0) {
+      const { data: tmRows } = await client
+        .from('team_members')
+        .select('team_id')
+        .in('team_id', legacyTeamIds);
+
+      const teamExtraMap = {};
+      for (const tm of tmRows || []) {
+        teamExtraMap[tm.team_id] = (teamExtraMap[tm.team_id] || 0) + 1;
+      }
+      for (const tId of legacyTeamIds) {
+        delegateCount += 1 + (teamExtraMap[tId] || 0); // 1 leader + extra team members
+      }
+    }
+
+    return { registrationCount, delegateCount };
   },
 
   /**
-   * Count registrations with verified successful payment grouped by event_id for all events.
+   * Count registrations with verified successful payment for a single event.
    *
-   * Excludes PAYMENT_PENDING, PAYMENT_FAILED, CANCELLED, and DRAFT unless verified paid.
-   * Deduplicates multiple transactions per registration so each eligible registration counts once.
-   *
-   * @returns {Promise<Record<string, number>>}
+   * @param {string} eventId - Event UUID
+   * @returns {Promise<number>}
    */
-  getRegistrationCountsForAllEvents: async () => {
+  getRegistrationCountByEventId: async (eventId) => {
+    const counts = await EventModel.getCountsByEventId(eventId);
+    return counts.registrationCount;
+  },
+
+  /**
+   * Count delegates (participants) with verified successful payment for a single event.
+   *
+   * @param {string} eventId - Event UUID
+   * @returns {Promise<number>}
+   */
+  getDelegateCountByEventId: async (eventId) => {
+    const counts = await EventModel.getCountsByEventId(eventId);
+    return counts.delegateCount;
+  },
+
+  /**
+   * Count registrations and delegates with verified successful payment grouped by event_id for all events.
+   *
+   * @returns {Promise<Record<string, { registrationCount: number, delegateCount: number }>>}
+   */
+  getCountsForAllEvents: async () => {
     const client = getSupabaseClient();
     if (!client) {
       throw new Error('Database client is not available');
@@ -139,7 +192,15 @@ export const EventModel = {
 
     const { data, error } = await client
       .from('registrations')
-      .select('id, event_id, status, payment_transactions(status)')
+      .select(`
+        id,
+        event_id,
+        status,
+        registration_type,
+        team_id,
+        payment_transactions(status),
+        registration_participants(id)
+      `)
       .neq('status', 'CANCELLED')
       .limit(10000);
 
@@ -148,6 +209,9 @@ export const EventModel = {
     }
 
     const counts = {};
+    const legacyTeamIds = [];
+    const legacyRegList = [];
+
     for (const reg of data || []) {
       const isConfirmed = reg.status === 'CONFIRMED' || reg.status === 'PAYMENT_SUCCESS';
       const hasSuccessTxn =
@@ -155,10 +219,69 @@ export const EventModel = {
         reg.payment_transactions.some((tx) => tx?.status === 'SUCCESS');
 
       if ((isConfirmed || hasSuccessTxn) && reg.event_id) {
-        counts[reg.event_id] = (counts[reg.event_id] || 0) + 1;
+        if (!counts[reg.event_id]) {
+          counts[reg.event_id] = { registrationCount: 0, delegateCount: 0 };
+        }
+        counts[reg.event_id].registrationCount += 1;
+
+        const pCount = Array.isArray(reg.registration_participants) ? reg.registration_participants.length : 0;
+        if (pCount > 0) {
+          counts[reg.event_id].delegateCount += pCount;
+        } else if (reg.registration_type === 'INDIVIDUAL') {
+          counts[reg.event_id].delegateCount += 1;
+        } else if (reg.registration_type === 'TEAM' && reg.team_id) {
+          legacyTeamIds.push(reg.team_id);
+          legacyRegList.push(reg);
+        } else {
+          counts[reg.event_id].delegateCount += 1;
+        }
       }
     }
+
+    if (legacyTeamIds.length > 0) {
+      const { data: tmRows } = await client
+        .from('team_members')
+        .select('team_id')
+        .in('team_id', legacyTeamIds);
+
+      const teamExtraMap = {};
+      for (const tm of tmRows || []) {
+        teamExtraMap[tm.team_id] = (teamExtraMap[tm.team_id] || 0) + 1;
+      }
+      for (const reg of legacyRegList) {
+        counts[reg.event_id].delegateCount += 1 + (teamExtraMap[reg.team_id] || 0);
+      }
+    }
+
     return counts;
+  },
+
+  /**
+   * Count registrations with verified successful payment grouped by event_id for all events.
+   *
+   * @returns {Promise<Record<string, number>>}
+   */
+  getRegistrationCountsForAllEvents: async () => {
+    const allCounts = await EventModel.getCountsForAllEvents();
+    const result = {};
+    for (const eventId of Object.keys(allCounts)) {
+      result[eventId] = allCounts[eventId].registrationCount;
+    }
+    return result;
+  },
+
+  /**
+   * Count delegates with verified successful payment grouped by event_id for all events.
+   *
+   * @returns {Promise<Record<string, number>>}
+   */
+  getDelegateCountsForAllEvents: async () => {
+    const allCounts = await EventModel.getCountsForAllEvents();
+    const result = {};
+    for (const eventId of Object.keys(allCounts)) {
+      result[eventId] = allCounts[eventId].delegateCount;
+    }
+    return result;
   },
 
   /**
@@ -166,7 +289,7 @@ export const EventModel = {
    *
    * @param {string} registrationId - UUID or registration_id code
    * @param {string} eventId - Event UUID
-   * @returns {Promise<{ count: number }>}
+   * @returns {Promise<{ count: number, delegateCount: number }>}
    */
   checkIfRegistrationBelongsToEvent: async (registrationId, eventId) => {
     const client = getSupabaseClient();
@@ -176,7 +299,7 @@ export const EventModel = {
 
     let query = client
       .from('registrations')
-      .select('id, status, payment_transactions(status)')
+      .select('id, status, registration_type, team_id, payment_transactions(status), registration_participants(id)')
       .eq('event_id', eventId)
       .neq('status', 'CANCELLED');
 
@@ -192,6 +315,7 @@ export const EventModel = {
     }
 
     let count = 0;
+    let delegateCount = 0;
     for (const reg of data || []) {
       const isConfirmed = reg.status === 'CONFIRMED' || reg.status === 'PAYMENT_SUCCESS';
       const hasSuccessTxn =
@@ -200,10 +324,12 @@ export const EventModel = {
 
       if (isConfirmed || hasSuccessTxn) {
         count++;
+        const pCount = Array.isArray(reg.registration_participants) ? reg.registration_participants.length : 0;
+        delegateCount += pCount > 0 ? pCount : 1;
       }
     }
 
-    return { count };
+    return { count, delegateCount };
   },
 
   /**

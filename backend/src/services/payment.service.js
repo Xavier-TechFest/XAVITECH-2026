@@ -207,6 +207,29 @@ export const paymentService = {
     }
 
     const participants = await RegistrationParticipantModel.getParticipantsByRegistrationId(registration.id);
+
+    // Capacity validation before checkout
+    if (event.capacity !== null && event.capacity !== undefined) {
+      const numCap = Number(event.capacity);
+      if (numCap > 0) {
+        const isDelegateMode = event.capacity_mode === 'PER_DELEGATE';
+        const needed = isDelegateMode ? (participants.length || 1) : 1;
+        const currentOccupancy = isDelegateMode
+          ? await EventModel.getDelegateCountByEventId(event.id)
+          : await EventModel.getRegistrationCountByEventId(event.id);
+
+        if (currentOccupancy + needed > numCap || currentOccupancy >= numCap) {
+          const error = new Error(
+            isDelegateMode
+              ? `Cannot initiate payment: Event has reached its maximum delegate capacity limit of ${numCap}.`
+              : `Cannot initiate payment: Event has reached its maximum registration capacity limit of ${numCap}.`
+          );
+          error.statusCode = 400;
+          throw error;
+        }
+      }
+    }
+
     const payableAmount = calculatePayableAmount(event, registration, participants);
 
     // Guard: Zero or unconfirmed (TBA) registration fee cannot initiate payment
