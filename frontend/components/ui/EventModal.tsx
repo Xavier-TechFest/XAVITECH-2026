@@ -98,17 +98,17 @@ export default function EventModal({ event, onClose }: EventModalProps) {
               <span className="mt-1 block font-semibold text-ink">{event.date}</span>
             </div>
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider">Exciting Gifts &amp; Prizes</span>
-              <span className="mt-1 block font-extrabold text-marigold text-sm">Exciting Gifts &amp; Prizes</span>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">Time</span>
+              <span className="mt-1 block font-semibold text-marigold">{event.time}</span>
+            </div>
+            <div>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">Venue</span>
+              <span className="mt-1 block font-semibold text-circuit truncate">{event.venue}</span>
             </div>
             {event.team !== "TBA" && <div>
               <span className="text-muted block text-[10px] uppercase tracking-wider">Participants</span>
               <span className="mt-1 block font-semibold text-ink">{event.team}</span>
             </div>}
-            <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider">Venue</span>
-              <span className="mt-1 block font-semibold text-ink truncate">{event.venue}</span>
-            </div>
             <div><span className="text-muted block text-[10px] uppercase tracking-wider">Registration Fee</span><span className="mt-1 block font-semibold text-ink">{event.price}</span></div>
             <div><span className="text-muted block text-[10px] uppercase tracking-wider">Registration Deadline</span><span className="mt-1 block font-semibold text-ink">{event.registrationConfig?.deadline ?? "TBA"}</span></div>
           </div>
