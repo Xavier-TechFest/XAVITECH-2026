@@ -29,7 +29,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
   const facts = [
     { label: "Date", value: event.date },
     { label: "Time", value: event.time },
-    { label: "Venue", value: "Xaviers university campus" },
+    { label: "Venue", value: "XUP campus" },
     ...(event.team !== "TBA" ? [{ label: "Team Size", value: event.team }] : []),
     { label: "Registration Fee", value: event.price },
     { label: "Registration Deadline", value: config?.deadline ?? "TBA" },
@@ -96,7 +96,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
                 VENUE
               </span>
               <span className="mt-1.5 block font-space text-sm sm:text-base font-bold text-circuit truncate">
-                Xaviers university campus
+                XUP campus
               </span>
             </div>
 
