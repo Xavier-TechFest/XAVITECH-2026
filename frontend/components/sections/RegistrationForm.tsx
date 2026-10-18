@@ -1739,6 +1739,22 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               <Summary label="Event Date" value={event.date} />
             </div>
 
+            {/* MUN Official Guidelines Callout */}
+            {event.id === "unscripted-nations" && (
+              <div className="rounded border border-cyan-400/30 bg-cyan-400/5 p-4 text-xs font-space text-cyan-100/90 space-y-2">
+                <p className="font-oxanium text-xs font-bold uppercase tracking-wider text-cyan-200">
+                  Model United Nations (UNCSTD) — Official Guidelines
+                </p>
+                <div className="space-y-1.5 text-cyan-100/80">
+                  <p>• <strong className="text-white">Single Committee:</strong> United Nations Commission on Science and Technology for Development (UNCSTD). Only this committee is available.</p>
+                  <p>• <strong className="text-white">Agenda:</strong> <em>Addressing the Opportunities and Risks of Artificial Intelligence and Emerging Technologies for Inclusive and Sustainable Development.</em> Participants should review and understand this agenda in the Event Details section before registering and preparing.</p>
+                  <p>• <strong className="text-white">Country Representation:</strong> Country assignments are made solely by the organising team. Teams of two jointly represent one common country. Individual delegates will be paired with another participant and will jointly represent one common country.</p>
+                  <p>• <strong className="text-white">Registration Policy:</strong> First-come, first-served. Registrations close when the available capacity (~120 delegates) is reached.</p>
+                  <p>• <strong className="text-white">Venue & Schedule:</strong> Xavier University Patna · 9:00 AM–4:30 PM.</p>
+                </div>
+              </div>
+            )}
+
             {/* Team Configuration Section */}
             {(config.eventFormat === "team" || config.eventFormat === "both" || (config.minTeamSize ?? 1) > 1) && (
               <section className="space-y-5 rounded border border-white/10 bg-white/[.02] p-5">
@@ -1746,7 +1762,9 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                   title={config.eventFormat === "both" ? "Participation Format" : "Team Details"}
                   note={
                     config.eventFormat === "both"
-                      ? "Choose whether you are registering as an individual delegate or as a two-delegate team."
+                      ? event.id === "unscripted-nations"
+                        ? "Choose individual registration or a two-delegate team. Both delegates in a team jointly represent one common country. Individual delegates will be paired with another participant to represent one common country."
+                        : "Choose whether you are registering as an individual delegate or as a two-delegate team."
                       : config.policy?.joinByInviteAfterCreation
                       ? "The team leader completes this initial form. Additional members join via team link."
                       : "The team leader registers the team and enters all participant details."

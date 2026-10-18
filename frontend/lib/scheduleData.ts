@@ -213,7 +213,7 @@ export const SCHEDULE_EVENTS: ScheduleEvent[] = [
     trackName: "Track D — Stage & Central Events",
     time: "9:00 AM–4:30 PM",
     duration: "Full day",
-    venue: "Xavier University Campus",
+    venue: "Xavier University Patna",
     isFullDay: true,
     accentColor: "#34d399",
     image: "/events/MUN.jpg",

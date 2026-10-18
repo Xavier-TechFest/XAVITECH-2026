@@ -29,7 +29,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
   const facts = [
     { label: "Date", value: event.date },
     { label: "Time", value: event.time },
-    { label: "Venue", value: "XUP campus" },
+    { label: "Venue", value: event.venue || "XUP Campus" },
     ...(event.team !== "TBA" ? [{ label: event.team.toLowerCase().includes("individual") ? "Participation" : "Team Size", value: event.team }] : []),
     { label: "Registration Fee", value: event.price },
     { label: "Registration Deadline", value: config?.deadline ?? "TBA" },
@@ -48,7 +48,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
   };
 
   return (
-    <main className="relative mx-auto min-h-screen max-w-[1360px] px-5 pb-32 pt-28 sm:px-8">
+    <div className="relative mx-auto min-h-screen max-w-[1360px] px-5 pb-32 pt-28 sm:pt-32 lg:pt-36 sm:px-8">
       <Link href="/events" className="mb-8 inline-flex items-center gap-2 font-oxanium text-xs uppercase tracking-widest text-slate-400 hover:text-cyan-300">
         <ChevronLeft size={16} />All events
       </Link>
@@ -58,7 +58,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
           <p className="mb-4 font-oxanium text-xs font-bold uppercase tracking-[.2em] text-cyan-300">
             {event.badge} <span className="px-2 text-slate-600">/</span> XAVITECH 2026
           </p>
-          <h1 className="font-space text-4xl font-black uppercase leading-tight tracking-tight text-white sm:text-6xl">
+          <h1 className="font-space text-2xl sm:text-4xl lg:text-[clamp(2.25rem,3.2vw,3rem)] font-black uppercase leading-[1.1] tracking-tight text-white break-words">
             {event.name}
           </h1>
           <p className="mt-2 font-oxanium text-base font-bold uppercase tracking-wider text-cyan-200">
@@ -96,7 +96,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
                 VENUE
               </span>
               <span className="mt-1.5 block font-space text-sm sm:text-base font-bold text-circuit truncate">
-                XUP campus
+                {event.venue || "XUP campus"}
               </span>
             </div>
 
@@ -246,7 +246,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
           {buttonLabel}
         </div>
       )}
-    </main>
+    </div>
   );
 }
 

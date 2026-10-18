@@ -7,19 +7,37 @@ import Eyebrow from "@/components/ui/Eyebrow";
 import { EVENT_DATE } from "./Countdown";
 import { firePulse } from "@/lib/pulse";
 
-const schedule = [
-  { time: "08:30", label: "Check-in & campus opens" },
-  { time: "09:00", label: "Opening ceremony" },
-  { time: "10:00", label: "Events begin" },
-  { time: "13:00", label: "Lunch break" },
-  { time: "14:00", label: "Judging rounds" },
-  { time: "17:30", label: "Results published" },
-  { time: "18:30", label: "Closing & prize distribution" },
+interface ScheduleItem {
+  time: string;
+  label: string;
+  start: string;
+}
+
+const schedule: ScheduleItem[] = [
+  { time: "8:00–8:30 AM", label: "Registration", start: "08:00" },
+  { time: "8:35–9:00 AM", label: "Opening Ceremony", start: "08:35" },
+  { time: "9:00 AM–4:30 PM", label: "Full-day Events", start: "09:00" },
+  { time: "4:00–4:30 PM", label: "Final Closure Window", start: "16:00" },
+  { time: "4:30–5:30 PM", label: "Results Verification & Venue Reset", start: "16:30" },
+  { time: "5:30 PM onwards", label: "Valedictory Ceremony & Prize Distribution", start: "17:30" },
 ];
 
 /** "T-39d 04h 12m" until a slot on the day of the fest (or "LIVE / DONE" once past). */
 function tMinus(time: string, now: number) {
-  const [h, m] = time.split(":").map(Number);
+  let h = 0;
+  let m = 0;
+  if (/^\d{1,2}:\d{2}$/.test(time)) {
+    [h, m] = time.split(":").map(Number);
+  } else {
+    const match = time.match(/(\d{1,2}):(\d{2})/);
+    if (match) {
+      h = parseInt(match[1], 10);
+      m = parseInt(match[2], 10);
+      if (/PM/i.test(time) && h < 12 && !/AM/i.test(time.split(/[-–—]/)[0])) {
+        h += 12;
+      }
+    }
+  }
   const slot = new Date(EVENT_DATE);
   slot.setHours(h, m, 0, 0);
   const diff = slot.getTime() - now;
@@ -88,6 +106,16 @@ export default function Schedule() {
         </div>
 
         <ol ref={listRef} className="relative mt-10 max-w-xl sm:mt-14">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-4 left-[9.0625rem] sm:left-[12.8125rem] top-4 w-px bg-line/40"
+          >
+            <div
+              ref={fillRef}
+              className="h-full origin-top bg-gradient-to-b from-circuit to-marigold shadow-[0_0_8px_rgba(53,224,201,0.6)]"
+              style={{ transform: "scaleY(0)" }}
+            />
+          </div>
           {schedule.map((item, i) => {
             const open = selected === i;
             return (
@@ -99,10 +127,10 @@ export default function Schedule() {
                     setSelected(open ? null : i);
                     firePulse(i);
                   }}
-                  className="group flex w-full gap-6 rounded-lg py-2 text-left"
+                  className="group flex w-full gap-3 sm:gap-6 rounded-lg py-2 text-left"
                 >
                   <span
-                    className={`w-16 shrink-0 pt-0.5 text-right text-sm tabular-nums transition-colors ${
+                    className={`w-32 sm:w-44 shrink-0 pt-0.5 text-right font-mono text-xs sm:text-sm tabular-nums whitespace-nowrap transition-colors ${
                       open ? "text-marigold" : "text-muted"
                     }`}
                   >
@@ -124,9 +152,9 @@ export default function Schedule() {
                 </button>
 
                 {open && (
-                  <div className="ml-[7.625rem] mt-1 border-l border-circuit/40 pl-4 font-mono text-[11px] uppercase tracking-[0.18em] text-circuit sm:text-xs">
+                  <div className="ml-[10.125rem] sm:ml-[14.625rem] mt-1 border-l border-circuit/40 pl-4 font-mono text-[11px] uppercase tracking-[0.18em] text-circuit sm:text-xs">
                     <span className="text-muted">MISSION CLOCK </span>
-                    {now === null ? "…" : tMinus(item.time, now)}
+                    {now === null ? "…" : tMinus(item.start, now)}
                   </div>
                 )}
               </li>
