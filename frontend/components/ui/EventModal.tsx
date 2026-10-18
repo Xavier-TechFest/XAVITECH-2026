@@ -218,6 +218,12 @@ export default function EventModal({ event, onClose }: EventModalProps) {
                       Expected duration: {event.registrationConfig.details.duration}
                     </p>
                   )}
+                  {event.registrationConfig?.details?.format && (
+                    <p className="mt-2 rounded-xl border border-line/60 bg-surface-raised p-3 font-space text-xs text-white">
+                      <strong className="text-circuit font-oxanium uppercase tracking-wider">Format: </strong>
+                      {event.registrationConfig.details.format}
+                    </p>
+                  )}
                   {event.registrationConfig?.details?.game && (
                     <p className="mt-3 font-space text-xs text-white">
                       <strong className="text-marigold font-oxanium uppercase tracking-wider">Game: </strong>
@@ -228,6 +234,12 @@ export default function EventModal({ event, onClose }: EventModalProps) {
                     <p className="mt-2 font-space text-xs text-white">
                       <strong className="text-marigold font-oxanium uppercase tracking-wider">Maps: </strong>
                       {event.registrationConfig.details.maps.join(", ")}
+                    </p>
+                  )}
+                  {event.registrationConfig?.details?.note && (
+                    <p className="mt-2 rounded-xl border border-line/60 bg-surface-raised p-3 font-space text-xs text-white">
+                      <strong className="text-marigold font-oxanium uppercase tracking-wider">Notice: </strong>
+                      {event.registrationConfig.details.note}
                     </p>
                   )}
                   {event.highlights.length > 0 && (
