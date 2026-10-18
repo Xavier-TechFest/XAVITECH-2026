@@ -88,7 +88,7 @@ export const EVENTS: FestEvent[] = [
   { slug: "runtime-rush", name: "RUNTIME RUSH", realName: "Code Sprint", track: "coding", status: "Registration open", format: "1–2 participants", image: card("runtime-rush") },
   { slug: "vlookup", name: "VLookUp", realName: "Data Analytics", track: "coding", status: "Registration open", format: "2 participants", image: card("vlookup") },
   { slug: "debug-derby", name: "DEBUG DERBY", realName: "Debugging Challenge", track: "coding", status: "Registration open", format: "1 participant", image: card("debug-derby") },
-  { slug: "battle-of-bots", name: "BATTLE OF BOTS", realName: "AI Prompt Battle", track: "coding", status: "Registration open", format: "1–3 participants", image: card("battle-of-bots") },
+  { slug: "battle-of-bots", name: "BATTLE OF BOTS", realName: "AI Prompt Battle", track: "coding", status: "Registration open", format: "Individual", image: card("battle-of-bots") },
   { slug: "loot-goblins", name: "Battleground Blitz", realName: "BGMI", track: "gaming", status: "Registration open", format: "4–5 participants", image: "/events/Bgmi.jpg" },
   { slug: "cipher-chase", name: "CIPHER CHASE", realName: "Tech Treasure Hunt", track: "gaming", status: "Registration open", format: "4 participants", image: card("cipher-chase") },
   { slug: "velocityx", name: "VelocityX", realName: "Death Race", track: "gaming", status: "Registration open", format: "2–4 participants", image: card("velocityx") },

@@ -223,6 +223,11 @@ export const registrationService = {
     const teamParticipants = payload.participants || payload.participantDetails;
     const rawParticipantsCount = Array.isArray(teamParticipants) ? teamParticipants.length : 0;
     if (registrationType === 'TEAM') {
+      if (validation.event?.slug === 'battle-of-bots' || validation.event?.registration_type === 'INDIVIDUAL') {
+        const error = new Error('Battle of Bots is an individual event and does not allow team registration.');
+        error.statusCode = 400;
+        throw error;
+      }
       if (validation.event?.slug === 'unscripted-nations' && rawParticipantsCount > 0 && rawParticipantsCount !== 2) {
         const error = new Error('MUN team registration requires exactly 2 delegates.');
         error.statusCode = 400;

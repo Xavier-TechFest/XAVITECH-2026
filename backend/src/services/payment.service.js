@@ -125,7 +125,13 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return Number((unitFee * count).toFixed(2));
   }
 
-  // 10. All other events have standard flat team or individual fee configured in DB
+  // 10. Battle of Bots: ₹150 per individual registration
+  if (event.slug === 'battle-of-bots') {
+    const fee = baseFee > 0 ? baseFee : 150.0;
+    return Number(fee.toFixed(2));
+  }
+
+  // 11. All other events have standard flat team or individual fee configured in DB
   return Number(baseFee.toFixed(2));
 };
 
