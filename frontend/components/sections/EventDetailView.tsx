@@ -30,7 +30,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
     { label: "Date", value: event.date },
     { label: "Time", value: event.time },
     { label: "Venue", value: "XUP campus" },
-    ...(event.team !== "TBA" ? [{ label: "Team Size", value: event.team }] : []),
+    ...(event.team !== "TBA" ? [{ label: event.team.toLowerCase().includes("individual") ? "Participation" : "Team Size", value: event.team }] : []),
     { label: "Registration Fee", value: event.price },
     { label: "Registration Deadline", value: config?.deadline ?? "TBA" },
     ...(eventData?.capacity !== null && eventData?.capacity !== undefined
@@ -198,7 +198,14 @@ export default function EventDetailView({ event }: { event: EventItem }) {
                   <CardFact icon={<Calendar size={14} />} label="DATE" value={event.date} accent={event.accentColor} />
                   <CardFact icon={<Clock size={14} />} label="TIME" value={event.time} accent={event.accentColor} />
                   <CardFact icon={<MapPin size={14} />} label="VENUE" value="Xavier University Campus" accent={event.accentColor} />
-                  {event.team !== "TBA" && <CardFact icon={<Users size={14} />} label="TEAM SIZE" value={event.team} accent={event.accentColor} />}
+                  {event.team !== "TBA" && (
+                    <CardFact
+                      icon={<Users size={14} />}
+                      label={event.team.toLowerCase().includes("individual") ? "PARTICIPATION" : "TEAM SIZE"}
+                      value={event.team}
+                      accent={event.accentColor}
+                    />
+                  )}
                 </div>
 
                 <div className="grid gap-2 sm:grid-cols-2">

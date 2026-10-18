@@ -1304,12 +1304,12 @@ export const EVENTS: EventItem[] = [
     trackId: "track-b",
     trackName: "TRACK B",
     shortDesc: "Battle of Prompts",
-    fullDesc: "Battle of Bots is a battle of prompts. During the event, participating teams receive unlimited access to Claude and use their creativity to build a website, web page, or web app.",
+    fullDesc: "Battle of Bots is an AI prompt battle. During the event, participants receive access to AI tools and use their creativity to build a website, web page, or web app.",
     date: "31 October 2026",
     time: "1:30 PM–3:30 PM",
     prize: "Exciting Gifts & Prizes",
-    price: "₹550 registration fee",
-    team: "1–3 participants",
+    price: "₹150 per registration",
+    team: "Individual",
     venue: "XUP campus",
     accentColor: "#f0a15b",
     glowColor: "rgba(240,161,91,.2)",
@@ -1321,24 +1321,23 @@ export const EVENTS: EventItem[] = [
       "All you need to bring is your creativity.",
     ],
     rules: [
-      "Event rules and regulations: TBA.",
-      "Team leaders are responsible for the accuracy of submitted team information and must follow the event rules.",
+      "Event rules and regulations will be shared by the organizers.",
+      "Participants are responsible for the accuracy of submitted registration information and must follow the event rules.",
     ],
     eligibility: [
       "Open to participants from all courses and academic years. External participants are allowed.",
       "No age restriction is specified.",
     ],
     registrationInfo: [
-      "Choose individual registration or a team of up to three. A team leader submits team registration and enters all members during registration.",
-      "A team name and team leader are required for teams. Separate member registrations and joining multiple teams are not allowed.",
-      "Registration deadline: 27 October 2026. Registration fee: ₹550. Fee basis: TBA.",
+      "Individual registration only. Team registration is not allowed.",
+      "Registration deadline: 27 October 2026. Registration fee: ₹150 per participant.",
     ],
     requirements: [
       "Each participant must provide full name, institution, department/course, year/semester, mobile number, email address, and a valid college ID card.",
       "Section, student ID/roll number, profile photo, and city are not collected. Email/mobile verification is not required.",
     ],
     coordinatorRequirements: [
-      "Coordinator access should include participant and team lists, contact details, uploaded ID cards, submitted project/material files, registration and attendance status, and CSV/Excel export.",
+      "Coordinator access should include participant lists, contact details, uploaded ID cards, submitted project/material files, registration and attendance status, and CSV/Excel export.",
     ],
     prizeBreakdown: {
       total: "Exciting Gifts & Prizes",
@@ -1353,17 +1352,16 @@ export const EVENTS: EventItem[] = [
       },
     ],
     registrationConfig: {
-      eventFormat: "team",
+      eventFormat: "individual",
       minTeamSize: 1,
-      maxTeamSize: 3,
-      feeAmount: 550,
-      feeDisplay: "₹550 registration fee",
+      maxTeamSize: 1,
+      feeAmount: 150,
+      feeBasis: "per_participant",
+      feeDisplay: "₹150 per participant",
       deadline: "27 October 2026",
       deadlineDate: "2026-10-27",
-      teamNameRequired: true,
-      teamFields: [
-        { id: "teamName", label: "Team name", type: "text", required: true },
-      ],
+      teamNameRequired: false,
+      teamFields: [],
       participantFields: battleOfBotsFields,
       coordinator: {
         name: "Krishna",
@@ -1374,7 +1372,7 @@ export const EVENTS: EventItem[] = [
         coCoordinatorEmail: "Ayushkumarr9308@gmail.com",
       },
       declarations: baseDeclarations,
-      customDeclaration: "I confirm that my team’s submitted information is accurate and agree to follow the event rules.",
+      customDeclaration: "I confirm that my submitted information is accurate and agree to follow the event rules.",
       documents: [
         {
           key: "collegeId",
@@ -1385,7 +1383,7 @@ export const EVENTS: EventItem[] = [
         },
       ],
       policy: {
-        teamNamePolicy: "if_team",
+        teamNamePolicy: "never",
       },
     },
   },

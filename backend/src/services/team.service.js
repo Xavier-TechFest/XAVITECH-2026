@@ -168,8 +168,8 @@ export const teamService = {
       }
     }
 
-    // 2. Validate event registration type (Must not be strictly individual)
-    if (event.registration_type === 'INDIVIDUAL' && event.max_team_size === 1) {
+    // 2. Validate event registration type (Must not be individual)
+    if (event.slug === 'battle-of-bots' || event.registration_type === 'INDIVIDUAL' || (event.max_team_size === 1 && event.registration_type !== 'BOTH')) {
       const error = new Error('This event is for individual participants only and does not support teams');
       error.statusCode = 400;
       throw error;

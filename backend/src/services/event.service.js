@@ -522,6 +522,15 @@ export const eventService = {
 
     // 6. Registration Type Check
     const normalizedRequestedType = requestedType.toUpperCase();
+    if (event.slug === 'battle-of-bots' && normalizedRequestedType !== 'INDIVIDUAL') {
+      return {
+        isValid: false,
+        statusCode: 400,
+        code: 'INVALID_REGISTRATION_TYPE',
+        message: 'Battle of Bots is strictly an individual event and does not support team registration',
+      };
+    }
+
     const isBoth = event.registration_type === 'BOTH' || event.slug === 'unscripted-nations';
     const isFlexibleTeam = event.registration_type === 'TEAM' && event.min_team_size === 1;
     const isAllowed =
