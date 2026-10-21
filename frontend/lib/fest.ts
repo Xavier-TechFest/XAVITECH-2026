@@ -29,7 +29,7 @@ export const TRACKS: Track[] = [
     tag: "HACKATHON",
     detail: "Build, ship and pitch in one stretch",
     blurb:
-      "Build something that works in a single stretch. Bring a team of four, pick a problem, ship a working prototype by judging.",
+      "Build something that works in a single stretch. Bring a team of 2–4; teams with fewer than 4 members get no marks deduction or penalty. Pick a problem and ship a working prototype by judging.",
   },
   {
     id: "coding",
@@ -83,7 +83,7 @@ export interface FestEvent {
 const card = (slug: string) => `/events/cards/${slug}.webp`;
 
 export const EVENTS: FestEvent[] = [
-  { slug: "innocraft", name: "INNOCRAFT", realName: "Hackathon", track: "hackathon", status: "Registration open", format: "4 participants", image: card("innocraft") },
+  { slug: "innocraft", name: "INNOCRAFT", realName: "Hackathon", track: "hackathon", status: "Registration open", format: "2, 3, or 4 members · no marks deduction or penalty for fewer than 4", image: card("innocraft") },
   { slug: "webweave", name: "WEBWEAVE", realName: "Web Development Challenge", track: "coding", status: "Registration open", format: "2 participants", image: card("webweave") },
   { slug: "runtime-rush", name: "RUNTIME RUSH", realName: "Code Sprint", track: "coding", status: "Registration open", format: "1–2 participants", image: card("runtime-rush") },
   { slug: "vlookup", name: "VLookUp", realName: "Data Analytics", track: "coding", status: "Registration open", format: "2 participants", image: card("vlookup") },
@@ -95,7 +95,7 @@ export const EVENTS: FestEvent[] = [
   { slug: "unscripted-nations", name: "Unscripted Nations", realName: "MUN", track: "stage", status: "Registration open", format: "1–2 participants", image: "/events/MUN.jpg" },
   { slug: "circuit-of-minds", name: "Circuit of Minds", realName: "Tech Quiz", track: "stage", status: "Registration open", format: "2 participants", image: card("circuit-of-minds") },
   { slug: "thoughtlab", name: "ThoughtLab", realName: "Ideathon", track: "stage", status: "Registration open", format: "2–4 participants", image: card("thoughtlab") },
-  { slug: "hack-the-skill", name: "Hack the Skill", realName: "Workshop", track: "workshops", status: "Registration open", format: "1–4 participants", image: card("hack-the-skill") },
+  { slug: "hack-the-skill", name: "Hack the Skill", realName: "Workshop", track: "workshops", status: "Registration open", format: "Individual workshop", image: card("hack-the-skill") },
 ];
 
 export const trackById = (id: TrackId) => TRACKS.find((t) => t.id === id)!;

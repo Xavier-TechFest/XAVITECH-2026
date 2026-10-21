@@ -142,6 +142,23 @@ export default function EventDetailView({ event }: { event: EventItem }) {
             </div>
           </div>
 
+          {event.id === "hack-the-skill" && (
+            <section className="mt-8 border border-pink-400/30 bg-pink-400/[.04] p-5 sm:p-6">
+              <p className="font-oxanium text-[10px] font-bold uppercase tracking-[.18em] text-pink-300">
+                Meet your resource person
+              </p>
+              <h2 className="mt-2 font-space text-xl font-bold text-white sm:text-2xl">
+                Praveen Kumar
+              </h2>
+              <p className="mt-1 font-oxanium text-xs font-semibold uppercase tracking-wide text-pink-200 sm:text-sm">
+                AI Consultant at BCG · Founder of Reviving India
+              </p>
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">
+                With 15+ years in technology and digital transformation, Praveen helps turn emerging AI into practical solutions. Join him to explore how to build an AI-powered idea of your own—not just use AI tools.
+              </p>
+            </section>
+          )}
+
           <div className="mt-8">
             <EventExploreSections sections={exploreSections} />
           </div>

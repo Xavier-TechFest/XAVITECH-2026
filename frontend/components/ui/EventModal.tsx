@@ -179,9 +179,20 @@ export default function EventModal({ event, onClose }: EventModalProps) {
                   <div className="rounded-xl border border-line/60 bg-bg/50 p-2.5 sm:p-3">
                     <div className="flex items-center gap-1.5 text-muted text-[10px] uppercase tracking-wider">
                       <Users className="h-3 w-3 text-cyan-400" />
-                      <span>Participants</span>
+                      <span>{event.id === "innocraft" ? "Team Size" : "Participants"}</span>
                     </div>
-                    <span className="mt-1 block font-semibold text-white">{event.team}</span>
+                    {event.id === "innocraft" ? (
+                      <>
+                        <span className="mt-1 block leading-tight text-white">
+                          2–4 Participants
+                        </span>
+                        <span className="mt-1 block font-space text-[10px] leading-tight text-muted sm:text-xs">
+                          No penalty for smaller teams
+                        </span>
+                      </>
+                    ) : (
+                      <span className="mt-1 block font-semibold text-white">{event.team}</span>
+                    )}
                   </div>
                 )}
 
