@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Calendar, Clock, Download, MapPin, Users, ChevronLeft } from "lucide-react";
-import { EventExploreSection, EventItem, TRACKS, isPastDeadline } from "@/lib/eventsData";
+import { EventExploreSection, EventItem, TRACKS, isPastDeadline, formatDeadlineIST } from "@/lib/eventsData";
 import { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
 import EventExploreSections from "@/components/sections/EventExploreSections";
 import { useEventRegistrationStatus } from "@/lib/hooks/useEventRegistrationStatus";
@@ -32,6 +32,8 @@ export default function EventDetailView({ event }: { event: EventItem }) {
     buttonLabel = "REGISTRATION UNAVAILABLE";
   }
 
+  const displayDeadline = formatDeadlineIST(eventData?.registrationEndAt, "TBA");
+
   const facts = [
     { label: "Date", value: event.date },
     { label: "Time", value: event.time },
@@ -40,20 +42,13 @@ export default function EventDetailView({ event }: { event: EventItem }) {
     { label: "Registration Fee", value: event.price },
     {
       label: "Registration Deadline",
-      value: eventData?.registrationEndAt
-        ? new Intl.DateTimeFormat("en-IN", {
-            timeZone: "Asia/Kolkata",
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          }).format(new Date(eventData.registrationEndAt))
-        : (config?.deadline ?? "TBA"),
+      value: displayDeadline,
     },
     ...(eventData?.capacity !== null && eventData?.capacity !== undefined
       ? [{ label: "Capacity", value: `${eventData.registeredCount} / ${eventData.capacity} (${eventData.remainingCapacity} remaining)` }]
       : []),
   ];
-  const exploreSections = buildEventExploreSections(event, effectiveStatus === "CLOSED");
+  const exploreSections = buildEventExploreSections(event, effectiveStatus === "CLOSED", displayDeadline);
   const downloadBrochure = () => {
     const guideContent = event.exploreSections?.length
       ? event.exploreSections.flatMap((section) => [section.title, ...section.items.map((item) => `• ${item}`)])
@@ -142,7 +137,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
                 REGISTRATION DEADLINE
               </span>
               <span className="mt-1.5 block font-space text-sm sm:text-base font-bold text-slate-300">
-                {config?.deadline ?? "TBA"}
+                {displayDeadline}
               </span>
             </div>
           </div>
@@ -266,7 +261,7 @@ export default function EventDetailView({ event }: { event: EventItem }) {
   );
 }
 
-function buildEventExploreSections(event: EventItem, registrationClosed: boolean): EventExploreSection[] {
+function buildEventExploreSections(event: EventItem, registrationClosed: boolean, deadlineStr?: string): EventExploreSection[] {
   const sections = [...(event.exploreSections ?? [])];
   const alreadyCovered = (pattern: RegExp) => sections.some((section) => pattern.test(section.title));
   const addSection = (title: string, items: Array<string | undefined>) => {
@@ -274,11 +269,12 @@ function buildEventExploreSections(event: EventItem, registrationClosed: boolean
     if (cleanedItems.length) sections.push({ title, items: cleanedItems });
   };
   const details = event.registrationConfig?.details;
+  const deadlineDisplay = deadlineStr || event.registrationConfig?.deadline;
   const feeItems = [
     event.price ? `Registration fee: ${event.price}.` : undefined,
     ...(event.registrationConfig?.policy?.poolOptions ?? []).map((pool) => `${pool.label}: ${pool.feeDisplay}.`),
     ...(event.registrationInfo ?? []),
-    event.registrationConfig?.deadline ? `Registration deadline: ${event.registrationConfig.deadline}.` : undefined,
+    deadlineDisplay ? `Registration deadline: ${deadlineDisplay}.` : undefined,
   ];
   const eventDetails = [
     details?.committee ? `Committee: ${details.committee}` : undefined,
