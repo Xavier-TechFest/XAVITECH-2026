@@ -271,13 +271,13 @@ export const SCHEDULE_EVENTS: ScheduleEvent[] = [
     type: "Workshop",
     trackLetter: "E",
     trackName: "Track E — Workshops & Knowledge",
-    time: "9:00 AM–4:30 PM",
-    duration: "Full day",
-    venue: "Xavier University Campus",
-    isFullDay: true,
+    time: "To be confirmed",
+    duration: "3–4 hours",
+    venue: "XUP campus",
+    isFullDay: false,
     accentColor: "#f472b6",
     image: "/events/hack-the-skill.png",
-    clashWarning: "Full-day masterclass; participants cannot enter parallel timed competitions.",
+    clashWarning: "Workshop duration is 3–4 hours; the exact session time will be confirmed.",
   },
 ];
 

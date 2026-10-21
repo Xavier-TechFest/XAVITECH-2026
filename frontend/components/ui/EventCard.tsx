@@ -107,7 +107,25 @@ export default function EventCard({ event, variant }: EventCardProps) {
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-3 border-t border-white/20 py-4 font-space text-xs leading-snug text-slate-100 sm:text-sm">
           <div><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Date</span><span className="mt-1 block">{event.date}</span></div>
-          {event.team !== "TBA" && <div><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Participants</span><span className="mt-1 block">{event.team}</span></div>}
+          {event.team !== "TBA" && (
+            <div className="min-w-0">
+              <span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">
+                {isHackathon ? "Team Size" : "Participants"}
+              </span>
+              {isHackathon ? (
+                <>
+                  <span className="mt-1 block leading-snug text-white">
+                    2–4 Participants
+                  </span>
+                  <span className="mt-0.5 block font-space text-[10px] leading-snug text-slate-300 sm:text-xs">
+                    No penalty for smaller teams
+                  </span>
+                </>
+              ) : (
+                <span className="mt-1 block">{event.team}</span>
+              )}
+            </div>
+          )}
           <div className="truncate"><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Venue</span><span className="mt-1 block truncate">{event.venue}</span></div>
           <div><span className="block font-oxanium text-[10px] font-bold uppercase tracking-widest text-[var(--event-accent)] sm:text-xs">Registration Fee</span><span className="mt-1 block">{event.price}</span></div>
         </div>

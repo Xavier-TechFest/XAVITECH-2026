@@ -1828,6 +1828,11 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                         ))}
                       </select>
                     )}
+                    {event.id === "innocraft" && (
+                      <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                        Choose 2, 3, or 4 members. Teams with fewer than 4 receive no marks deduction or penalty.
+                      </p>
+                    )}
                   </div>
 
                   {/* Pool Selector (School vs College) */}
