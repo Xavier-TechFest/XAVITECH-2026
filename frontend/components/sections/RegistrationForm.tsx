@@ -158,12 +158,20 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const [errorSummary, setErrorSummary] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const { status: liveStatus, eventData: liveEventData } = useEventRegistrationStatus(event.id);
+  const { status: liveStatus, eventData: liveEventData, isLoading: isStatusLoading } = useEventRegistrationStatus(event.id);
+  const isPastLiveDeadline = liveEventData?.registrationEndAt
+    ? Date.now() > new Date(liveEventData.registrationEndAt).getTime()
+    : false;
   const isPastConfigDeadline = isPastDeadline(config?.deadlineDate);
   const isEventDisabled = liveStatus === "DISABLED";
   const isEventComingSoon = liveStatus === "COMING_SOON";
   const isEventFull = liveStatus === "FULL";
-  const isEventClosed = liveStatus === "CLOSED" || isPastConfigDeadline;
+  // The PostgreSQL/Admin status is the primary source of truth.
+  // When live status is loaded from the backend, respect it and the dynamic registrationEndAt deadline.
+  // Fall back to static config deadline ONLY when live status is unavailable (e.g. network failure / offline).
+  const isEventClosed = liveStatus !== null
+    ? (liveStatus === "CLOSED" || isPastLiveDeadline)
+    : (!isStatusLoading && isPastConfigDeadline);
 
   const isRegistrationBlocked = !isContinuation && (isEventDisabled || isEventComingSoon || isEventFull || isEventClosed);
 
@@ -1563,7 +1571,19 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
             {/* Fee & Deadline Summaries */}
             <div className="grid gap-3 sm:grid-cols-3">
               <Summary label="Registration Fee" value={config.feeDisplay} />
-              <Summary label="Registration Deadline" value={config.deadline} />
+              <Summary
+                label="Registration Deadline"
+                value={
+                  liveEventData?.registrationEndAt
+                    ? new Intl.DateTimeFormat("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      }).format(new Date(liveEventData.registrationEndAt))
+                    : config.deadline
+                }
+              />
               <Summary label="Event Date" value={event.date} />
             </div>
           </div>

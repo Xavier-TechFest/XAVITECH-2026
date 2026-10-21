@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Calendar, Clock, Download, MapPin, Users, ChevronLeft } from "lucide-react";
-import { EventExploreSection, EventItem, TRACKS } from "@/lib/eventsData";
+import { EventExploreSection, EventItem, TRACKS, isPastDeadline } from "@/lib/eventsData";
 import { cropStyle, useImageCrop } from "@/components/ui/ImageCropEditor";
 import EventExploreSections from "@/components/sections/EventExploreSections";
 import { useEventRegistrationStatus } from "@/lib/hooks/useEventRegistrationStatus";
@@ -11,8 +11,14 @@ export default function EventDetailView({ event }: { event: EventItem }) {
   const track = TRACKS.find((item) => item.id === event.trackId);
   const config = event.registrationConfig;
   const imageCrop = useImageCrop(event, "detail");
-  const { status, eventData } = useEventRegistrationStatus(event.id);
-  const effectiveStatus = status || (config ? "OPEN" : "TBA");
+  const { status, eventData, isLoading } = useEventRegistrationStatus(event.id);
+  const isPastConfig = config?.deadlineDate ? isPastDeadline(config.deadlineDate) : false;
+  const isPastLive = eventData?.registrationEndAt
+    ? Date.now() > new Date(eventData.registrationEndAt).getTime()
+    : false;
+  const effectiveStatus = status !== null
+    ? (isPastLive ? "CLOSED" : status)
+    : (!isLoading && isPastConfig ? "CLOSED" : (config ? "OPEN" : "TBA"));
 
   const isAvailable = effectiveStatus === "OPEN";
   let buttonLabel = "REGISTER NOW";
@@ -32,7 +38,17 @@ export default function EventDetailView({ event }: { event: EventItem }) {
     { label: "Venue", value: event.venue || "XUP Campus" },
     ...(event.team !== "TBA" ? [{ label: event.team.toLowerCase().includes("individual") ? "Participation" : "Team Size", value: event.team }] : []),
     { label: "Registration Fee", value: event.price },
-    { label: "Registration Deadline", value: config?.deadline ?? "TBA" },
+    {
+      label: "Registration Deadline",
+      value: eventData?.registrationEndAt
+        ? new Intl.DateTimeFormat("en-IN", {
+            timeZone: "Asia/Kolkata",
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }).format(new Date(eventData.registrationEndAt))
+        : (config?.deadline ?? "TBA"),
+    },
     ...(eventData?.capacity !== null && eventData?.capacity !== undefined
       ? [{ label: "Capacity", value: `${eventData.registeredCount} / ${eventData.capacity} (${eventData.remainingCapacity} remaining)` }]
       : []),
