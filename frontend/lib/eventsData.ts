@@ -1578,7 +1578,7 @@ export const EVENTS: EventItem[] = [
     registrationInfo: [
       "Register one squad with four main players and up to one optional substitute. Provide a team name and choose one team leader to submit the squad registration.",
       "The fee is ₹200 per registered player, payable through the official Tech Fest portal. A player may not join more than one squad.",
-      "Entries are accepted first come, first served. Registration closes on 20 October 2026.",
+      "Entries are accepted first come, first served. Registration is open.",
       "Fees are non-refundable. The organising committee may accept or decline an entry without stating a reason.",
     ],
     requirements: [
@@ -1631,7 +1631,7 @@ export const EVENTS: EventItem[] = [
         title: "How do I register my squad?",
         items: [
           "One team leader submits one registration for the squad. Register 4 main players and, if needed, 1 substitute. A player cannot be registered on more than one squad.",
-          "Registration costs ₹200 per player through the official Tech Fest portal. Registration closes 20 October 2026. Fees are non-refundable.",
+          "Registration costs ₹200 per player through the official Tech Fest portal. Fees are non-refundable.",
           "A Squad ID is generated after registration. The custom-room ID and password are shared with the squad leader before each map.",
           "Provide each player's full name, institution, active mobile number, verified email, BGMI in-game name (IGN), and Character ID/UID. Department/course, year/semester, profile photo, and city are optional; no section field is required.",
           "Upload valid ID for every player: Xavier University Patna students use their college ID; external players use a government-issued photo ID. XUP student ID/roll number is required for XUP students.",
@@ -1701,8 +1701,8 @@ export const EVENTS: EventItem[] = [
       feeAmount: 200,
       feeBasis: "per_player",
       feeDisplay: "₹200 per player",
-      deadline: "20 October 2026",
-      deadlineDate: "2026-10-20",
+      deadline: "26 October 2026",
+      deadlineDate: "2026-10-30",
       teamNameRequired: true,
       teamFields: [
         { id: "teamName", label: "Team name", type: "text", required: true },
@@ -2328,3 +2328,12 @@ export function getFormParticipantCount(event: EventItem, selectedTeamSize?: num
   }
   return size;
 }
+
+/**
+ * Check if an ISO deadline date (YYYY-MM-DD) has passed based on IST end of day.
+ */
+export function isPastDeadline(deadlineDate?: string): boolean {
+  if (!deadlineDate) return false;
+  return Date.now() >= new Date(`${deadlineDate}T23:59:59.999+05:30`).getTime();
+}
+

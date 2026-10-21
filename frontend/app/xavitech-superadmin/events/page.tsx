@@ -12,6 +12,7 @@ import {
 } from "@/lib/api";
 import ModalPortal from "@/components/ui/ModalPortal";
 import { useAdmin } from "@/context/AdminContext";
+import { clearPublicEventsCache } from "@/lib/hooks/useEventRegistrationStatus";
 
 function formatIST(dateStr: string | null | undefined): string {
   if (!dateStr) return "Not configured";
@@ -340,6 +341,9 @@ export default function AdminEventsManagementPage() {
         registrationStartAt: startIso,
         registrationEndAt: endIso,
       });
+
+      // Clear the public events cache so public pages and forms immediately reflect the updated status
+      clearPublicEventsCache();
 
       // Update state locally and keep cache in sync
       setEvents((prev) => {
