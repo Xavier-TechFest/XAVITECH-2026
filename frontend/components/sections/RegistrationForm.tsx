@@ -29,6 +29,7 @@ import {
   DocumentRequirement,
   isTeamNameRequired,
   getFormParticipantCount,
+  formatDeadlineIST,
 } from "@/lib/eventsData";
 import { useAuth } from "@/context/AuthContext";
 import { api, ApiError, CreatedRegistrationResponse } from "@/lib/api";
@@ -172,6 +173,8 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const isEventClosed = liveStatus !== null
     ? (liveStatus === "CLOSED" || isPastLiveDeadline)
     : (!isStatusLoading && isPastConfigDeadline);
+
+  const displayDeadline = formatDeadlineIST(liveEventData?.registrationEndAt, config?.deadline ?? "TBA");
 
   const isRegistrationBlocked = !isContinuation && (isEventDisabled || isEventComingSoon || isEventFull || isEventClosed);
 
@@ -1571,19 +1574,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
             {/* Fee & Deadline Summaries */}
             <div className="grid gap-3 sm:grid-cols-3">
               <Summary label="Registration Fee" value={config.feeDisplay} />
-              <Summary
-                label="Registration Deadline"
-                value={
-                  liveEventData?.registrationEndAt
-                    ? new Intl.DateTimeFormat("en-IN", {
-                        timeZone: "Asia/Kolkata",
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      }).format(new Date(liveEventData.registrationEndAt))
-                    : config.deadline
-                }
-              />
+              <Summary label="Registration Deadline" value={displayDeadline} />
               <Summary label="Event Date" value={event.date} />
             </div>
           </div>
@@ -1755,7 +1746,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                     : config.feeDisplay
                 }
               />
-              <Summary label="Registration Deadline" value={config.deadline} />
+              <Summary label="Registration Deadline" value={displayDeadline} />
               <Summary label="Event Date" value={event.date} />
             </div>
 

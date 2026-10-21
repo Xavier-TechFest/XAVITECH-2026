@@ -657,8 +657,7 @@ export const EVENTS: EventItem[] = [
       feeAmount: 300,
       feeBasis: "per_team",
       feeDisplay: "₹300 registration fee",
-      deadline: "25 October 2026",
-      deadlineDate: "2026-10-25",
+      deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
         { id: "teamName", label: "Team name", type: "text", required: true },
@@ -700,7 +699,7 @@ export const EVENTS: EventItem[] = [
   {
     id: "runtime-rush",
     name: "RUNTIME RUSH",
-    fullTitle: "RUNTIME RUSH — Code Sprint",
+    fullTitle: "RUNTper participantIME RUSH — Code Sprint",
     badge: "Track B",
     badgeLevel: "Advanced",
     trackId: "track-b",
@@ -710,7 +709,7 @@ export const EVENTS: EventItem[] = [
     date: "31 October 2026",
     time: "9:30 AM–11:30 AM",
     prize: "Exciting Gifts & Prizes",
-    price: "₹250 per participant",
+    price: "₹250 registration fee",
     team: "1–2 participants",
     venue: "XUP campus",
     accentColor: "#f0a15b",
@@ -763,7 +762,7 @@ export const EVENTS: EventItem[] = [
       maxTeamSize: 2,
       feeAmount: 250,
       feeBasis: "per_participant",
-      feeDisplay: "₹250 per participant",
+      feeDisplay: "₹250 registration fee",
       deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
@@ -1366,8 +1365,7 @@ export const EVENTS: EventItem[] = [
       feeAmount: 150,
       feeBasis: "per_participant",
       feeDisplay: "₹150 per participant",
-      deadline: "27 October 2026",
-      deadlineDate: "2026-10-27",
+      deadline: "TBA",
       teamNameRequired: false,
       teamFields: [],
       participantFields: battleOfBotsFields,
@@ -1701,8 +1699,7 @@ export const EVENTS: EventItem[] = [
       feeAmount: 200,
       feeBasis: "per_player",
       feeDisplay: "₹200 per player",
-      deadline: "26 October 2026",
-      deadlineDate: "2026-10-30",
+      deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
         { id: "teamName", label: "Team name", type: "text", required: true },
@@ -1894,8 +1891,7 @@ export const EVENTS: EventItem[] = [
       feeAmount: 400,
       feeBasis: "per_team",
       feeDisplay: "₹400 per team",
-      deadline: "Before 30 October 2026",
-      deadlineDate: "2026-10-29",
+      deadline: "TBA",
       teamNameRequired: true,
       teamFields: [
         { id: "teamName", label: "Team name", type: "text", required: true },
@@ -2336,4 +2332,31 @@ export function isPastDeadline(deadlineDate?: string): boolean {
   if (!deadlineDate) return false;
   return Date.now() >= new Date(`${deadlineDate}T23:59:59.999+05:30`).getTime();
 }
+
+/**
+ * Format an ISO timestamp string into a human-readable Indian Standard Time (IST) deadline.
+ * Example: "28 Oct 2026, 01:14 pm IST"
+ * Falls back to "TBA" if the date is null, undefined, or invalid.
+ */
+export function formatDeadlineIST(dateStr: string | null | undefined, fallback = "TBA"): string {
+  if (!dateStr) return fallback;
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return fallback;
+    return (
+      new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }).format(d) + " IST"
+    );
+  } catch {
+    return fallback;
+  }
+}
+
 

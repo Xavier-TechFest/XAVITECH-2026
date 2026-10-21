@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { EventItem } from "@/lib/eventsData";
+import { EventItem, formatDeadlineIST } from "@/lib/eventsData";
+import { useEventRegistrationStatus } from "@/lib/hooks/useEventRegistrationStatus";
 import Link from "next/link";
 import EventExploreSections from "@/components/sections/EventExploreSections";
 import {
@@ -31,6 +32,15 @@ interface EventModalProps {
 
 export default function EventModal({ event, onClose }: EventModalProps) {
   const [mounted, setMounted] = useState(false);
+  const { status, eventData } = useEventRegistrationStatus(event?.id || "");
+  const isPastLive = eventData?.registrationEndAt
+    ? Date.now() > new Date(eventData.registrationEndAt).getTime()
+    : false;
+  const effectiveStatus = status !== null
+    ? (isPastLive ? "CLOSED" : status)
+    : (event?.registrationConfig ? "OPEN" : "TBA");
+  const isAvailable = effectiveStatus === "OPEN";
+  const displayDeadline = formatDeadlineIST(eventData?.registrationEndAt, event?.registrationConfig?.deadline ?? "TBA");
 
   useEffect(() => {
     setMounted(true);
@@ -189,7 +199,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
                     <span>Deadline</span>
                   </div>
                   <span className="mt-1 block font-semibold text-white truncate">
-                    {event.registrationConfig?.deadline ?? "TBA"}
+                    {displayDeadline}
                   </span>
                 </div>
               </div>
@@ -332,14 +342,31 @@ export default function EventModal({ event, onClose }: EventModalProps) {
                     <ExternalLink className="h-3.5 w-3.5" />
                   </Link>
 
-                  <Link
-                    href={`/events/${event.id}/register`}
-                    onClick={onClose}
-                    className="group inline-flex items-center justify-center gap-2 rounded-xl bg-circuit px-6 py-2.5 font-oxanium text-xs font-bold uppercase tracking-wider text-bg transition-transform duration-200 hover:scale-[1.02] hover:bg-circuit/90 shadow-[0_0_20px_rgba(53,224,201,0.25)]"
-                  >
-                    <span>Register Now</span>
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
+                  {isAvailable ? (
+                    <Link
+                      href={`/events/${event.id}/register`}
+                      onClick={onClose}
+                      className="group inline-flex items-center justify-center gap-2 rounded-xl bg-circuit px-6 py-2.5 font-oxanium text-xs font-bold uppercase tracking-wider text-bg transition-transform duration-200 hover:scale-[1.02] hover:bg-circuit/90 shadow-[0_0_20px_rgba(53,224,201,0.25)]"
+                    >
+                      <span>Register Now</span>
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                  ) : (
+                    <button
+                      disabled
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-800 border border-neutral-700 px-6 py-2.5 font-oxanium text-xs font-bold uppercase tracking-wider text-slate-400 opacity-70 cursor-not-allowed"
+                    >
+                      <span>
+                        {effectiveStatus === "COMING_SOON"
+                          ? "Opens Soon"
+                          : effectiveStatus === "CLOSED"
+                          ? "Registration Closed"
+                          : effectiveStatus === "FULL"
+                          ? "Registration Full"
+                          : "Unavailable"}
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
