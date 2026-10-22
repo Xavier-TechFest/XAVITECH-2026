@@ -4,6 +4,7 @@ import { useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
+import BrochureAnnouncement from "@/components/sections/BrochureAnnouncement";
 
 const links = [
   { label: "HOME", href: "/" },
@@ -50,6 +51,7 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-line/60 bg-bg/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+      {pathname === "/" && <BrochureAnnouncement />}
       <nav className="mx-auto flex max-w-6xl items-center justify-between pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] py-2 sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] md:py-4">
         <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
           <a href="https://xup.ac.in/" target="_blank" rel="noopener noreferrer" aria-label="Xavier University, Patna — visit website" title="Xavier University, Patna" className="flex h-8 w-8 shrink-0 items-center justify-center sm:h-10 sm:w-10">

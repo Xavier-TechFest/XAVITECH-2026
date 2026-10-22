@@ -54,6 +54,16 @@
 }
 
 @layer utilities {
+  @keyframes brochure-marquee {
+    to {
+      transform: translateX(-12.5%);
+    }
+  }
+
+  .brochure-marquee-track {
+    animation: brochure-marquee 22s linear infinite;
+  }
+
   /* full-screen hero that doesn't jump when mobile browser bars show/hide:
      svh = the *small* viewport height (100vh fallback for older browsers) */
   .min-h-hero {
