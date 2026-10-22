@@ -49,15 +49,6 @@ export default function EventDetailView({ event }: { event: EventItem }) {
       : []),
   ];
   const exploreSections = buildEventExploreSections(event, effectiveStatus === "CLOSED", displayDeadline);
-  const downloadBrochure = () => {
-    const guideContent = event.exploreSections?.length
-      ? event.exploreSections.flatMap((section) => [section.title, ...section.items.map((item) => `• ${item}`)])
-      : [...(event.eligibility ?? []), ...(event.highlights ?? []), ...(event.registrationInfo ?? []), ...(event.requirements ?? []), ...(event.rules ?? [])].map((item) => `• ${item}`);
-    const text = [`XAVITECH 2026 — ${event.name}`, `Category: ${track?.name ?? event.trackName}`, ...facts.map((fact) => `${fact.label}: ${fact.value}`), "", event.fullDesc, ...guideContent].join("\n");
-    const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-    const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${event.id}-xavitech-2026.txt`; anchor.click(); URL.revokeObjectURL(url);
-  };
-
   return (
     <div className="relative mx-auto min-h-screen max-w-[1360px] px-5 pb-32 pt-28 sm:pt-32 lg:pt-36 sm:px-8">
       <Link href="/events" className="mb-8 inline-flex items-center gap-2 font-oxanium text-xs uppercase tracking-widest text-slate-400 hover:text-cyan-300">
@@ -253,9 +244,9 @@ export default function EventDetailView({ event }: { event: EventItem }) {
                       {buttonLabel}
                     </button>
                   )}
-                  <button onClick={downloadBrochure} className="flex min-h-14 items-center justify-center gap-2 border border-white/40 bg-[#03080d]/75 px-3 py-3 font-oxanium text-[10px] font-bold uppercase tracking-wide text-white transition hover:border-white/80 hover:bg-[#03080d]/95">
+                  <a href="/xavitech-2026-brochure.pdf" download="XAVITECH-2026-Brochure.pdf" className="flex min-h-14 items-center justify-center gap-2 border border-white/40 bg-[#03080d]/75 px-3 py-3 font-oxanium text-[10px] font-bold uppercase tracking-wide text-white transition hover:border-white/80 hover:bg-[#03080d]/95">
                     <Download size={16} />DOWNLOAD BROCHURE
-                  </button>
+                  </a>
                 </div>
               </div>
             </div>
