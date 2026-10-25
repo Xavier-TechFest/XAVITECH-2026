@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Rajdhani, Space_Grotesk, Orbitron } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import LoadingScreen from "@/components/effects/LoadingScreen";
 import SoundToggle from "@/components/effects/SoundToggle";
 import ScrollProgress from "@/components/effects/ScrollProgress";
@@ -84,6 +85,7 @@ export default function RootLayout({
           <ScrollProgress />
           {children}
           <SoundToggle />
+          <Analytics />
         </AuthProvider>
       </body>
     </html>
