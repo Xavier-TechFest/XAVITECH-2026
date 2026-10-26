@@ -68,10 +68,10 @@ const multerInstance = multer({
 });
 
 /**
- * Middleware handling single document file upload on field 'file' or 'document'
+ * Middleware handling single document file upload on field 'file', 'document', 'collegeId', 'id_card', etc.
  */
 export const uploadSingleDocument = (req, res, next) => {
-  const upload = multerInstance.single('file');
+  const upload = multerInstance.any();
 
   upload(req, res, (err) => {
     if (err instanceof multer.MulterError) {
@@ -92,6 +92,12 @@ export const uploadSingleDocument = (req, res, next) => {
         success: false,
         message: err.message || 'Invalid file uploaded.',
       });
+    }
+
+    // Attach the single file from req.files to req.file
+    const uploadedFiles = Array.isArray(req.files) ? req.files : [];
+    if (uploadedFiles.length > 0) {
+      req.file = uploadedFiles[0];
     }
 
     if (!req.file) {

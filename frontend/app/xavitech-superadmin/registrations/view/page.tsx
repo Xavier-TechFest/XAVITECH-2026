@@ -315,7 +315,12 @@ function RegistrationDetailContent() {
               </thead>
               <tbody className="divide-y divide-neutral-800/60 font-mono">
                 {registration.participants.map((p) => {
-                  const hasIdCard = p.documents?.idCard?.url || p.idCardUrl;
+                  const rawIdCard = p.documents?.idCard?.url || p.idCardUrl;
+                  const viewIdCard =
+                    p.documents?.idCard?.viewUrl ||
+                    (rawIdCard?.toLowerCase().endsWith(".pdf")
+                      ? rawIdCard.replace(/\.pdf$/i, ".jpg")
+                      : rawIdCard);
                   const hasPhoto = p.documents?.profilePhoto?.url || p.profilePhotoUrl;
                   const customKeys = p.customFields ? Object.keys(p.customFields) : [];
 
@@ -371,17 +376,19 @@ function RegistrationDetailContent() {
 
                       <td className="py-3 px-3 text-[11px]">
                         <div className="flex items-center gap-2">
-                          {hasIdCard ? (
+                          {viewIdCard ? (
                             <a
-                              href={hasIdCard}
+                              href={viewIdCard}
                               target="_blank"
                               rel="noreferrer"
-                              className="px-2 py-0.5 rounded bg-[#35e0c9]/10 text-[#35e0c9] border border-[#35e0c9]/30 text-[10px] hover:underline"
+                              className="px-2 py-0.5 rounded bg-[#35e0c9]/10 text-[#35e0c9] border border-[#35e0c9]/30 text-[10px] font-medium hover:underline inline-flex items-center gap-1"
                             >
                               ID Card ↗
                             </a>
                           ) : (
-                            <span className="text-neutral-600 text-[10px]">No ID</span>
+                            <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-medium">
+                              Missing
+                            </span>
                           )}
 
                           {hasPhoto ? (
@@ -441,6 +448,7 @@ function RegistrationDetailContent() {
                   <th className="py-2.5 px-3">Member Name</th>
                   <th className="py-2.5 px-3">Contact</th>
                   <th className="py-2.5 px-3">Institution</th>
+                  <th className="py-2.5 px-3">Document</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800/60 font-mono">
@@ -458,6 +466,31 @@ function RegistrationDetailContent() {
                   </td>
                   <td className="py-3 px-3 text-neutral-400">
                     {registration.team.leader?.institution || registration.leader?.institution || "—"}
+                  </td>
+                  <td className="py-3 px-3">
+                    {(() => {
+                      const leaderPart = registration.participants?.find(
+                        (p) => p.participantRole === "LEADER" || p.participantOrder === 1
+                      );
+                      const rawId = leaderPart?.documents?.idCard?.url || leaderPart?.idCardUrl;
+                      const viewId =
+                        leaderPart?.documents?.idCard?.viewUrl ||
+                        (rawId?.toLowerCase().endsWith(".pdf") ? rawId.replace(/\.pdf$/i, ".jpg") : rawId);
+                      return viewId ? (
+                        <a
+                          href={viewId}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2 py-0.5 rounded bg-[#35e0c9]/10 text-[#35e0c9] border border-[#35e0c9]/30 text-[10px] font-medium hover:underline inline-flex items-center gap-1"
+                        >
+                          ID Card ↗
+                        </a>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-medium">
+                          Missing
+                        </span>
+                      );
+                    })()}
                   </td>
                 </tr>
 
@@ -478,6 +511,32 @@ function RegistrationDetailContent() {
                         : member.institution && member.institution !== "—"
                         ? member.institution
                         : registration.participants?.find((p) => p.fullName === member.name || p.participantOrder === (member.memberOrder || idx + 1) + 1)?.institutionName || "—"}
+                    </td>
+                    <td className="py-3 px-3">
+                      {(() => {
+                        const targetOrder = (member.memberOrder || idx + 1) + 1;
+                        const memberPart = registration.participants?.find(
+                          (p) => p.fullName === member.name || p.participantOrder === targetOrder
+                        );
+                        const rawId = (member as any).idCardUrl || memberPart?.documents?.idCard?.url || memberPart?.idCardUrl;
+                        const viewId =
+                          memberPart?.documents?.idCard?.viewUrl ||
+                          (rawId?.toLowerCase().endsWith(".pdf") ? rawId.replace(/\.pdf$/i, ".jpg") : rawId);
+                        return viewId ? (
+                          <a
+                            href={viewId}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2 py-0.5 rounded bg-[#35e0c9]/10 text-[#35e0c9] border border-[#35e0c9]/30 text-[10px] font-medium hover:underline inline-flex items-center gap-1"
+                          >
+                            ID Card ↗
+                          </a>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-medium">
+                            Missing
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}

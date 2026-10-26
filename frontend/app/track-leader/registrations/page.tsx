@@ -1308,7 +1308,12 @@ export default function TrackLeaderRegistrationsPage() {
 
                     <div className="space-y-2">
                       {inspectDetail.participants.map((p) => {
-                        const hasIdCard = p.documents?.idCard?.url || p.idCardUrl;
+                        const rawIdCard = p.documents?.idCard?.url || p.idCardUrl;
+                        const viewIdCard =
+                          p.documents?.idCard?.viewUrl ||
+                          (rawIdCard?.toLowerCase().endsWith(".pdf")
+                            ? rawIdCard.replace(/\.pdf$/i, ".jpg")
+                            : rawIdCard);
                         const hasPhoto = p.documents?.profilePhoto?.url || p.profilePhotoUrl;
                         const customKeys = p.customFields ? Object.keys(p.customFields) : [];
 
@@ -1336,15 +1341,19 @@ export default function TrackLeaderRegistrationsPage() {
                               </span>
 
                               <div className="flex items-center gap-1.5">
-                                {hasIdCard && (
+                                {viewIdCard ? (
                                   <a
-                                    href={hasIdCard}
+                                    href={viewIdCard}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="px-1.5 py-0.5 rounded text-[10px] bg-[#35e0c9]/10 text-[#35e0c9] border border-[#35e0c9]/30 hover:underline"
+                                    className="px-1.5 py-0.5 rounded text-[10px] bg-[#35e0c9]/10 text-[#35e0c9] border border-[#35e0c9]/30 hover:underline font-medium"
                                   >
                                     ID Card ↗
                                   </a>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/30 font-medium">
+                                    Missing
+                                  </span>
                                 )}
                                 {hasPhoto && (
                                   <a
