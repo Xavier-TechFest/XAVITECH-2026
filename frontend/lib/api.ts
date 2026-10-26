@@ -408,6 +408,39 @@ export interface CreateRegistrationPayload {
   participants?: RegistrationParticipantInput[];
 }
 
+export interface RegistrationParticipantItem {
+  id: string;
+  teamMemberId?: string | null;
+  participantOrder: number;
+  participantRole: string;
+  fullName: string;
+  institutionName?: string | null;
+  mobileNumber?: string | null;
+  email?: string | null;
+  city?: string | null;
+  studentId?: string | null;
+  standardClass?: string | null;
+  idCardUrl?: string | null;
+  profilePhotoUrl?: string | null;
+  documents?: {
+    idCard?: {
+      url: string;
+      viewUrl?: string;
+      publicId?: string;
+      mimeType?: string;
+      resourceType?: string;
+    } | null;
+    profilePhoto?: {
+      url: string;
+      viewUrl?: string;
+      publicId?: string;
+      mimeType?: string;
+      resourceType?: string;
+    } | null;
+  };
+  customFields?: Record<string, any>;
+}
+
 export interface CreatedRegistrationResponse {
   id: string;
   registrationId: string;
@@ -421,7 +454,7 @@ export interface CreatedRegistrationResponse {
   event?: any;
   team?: any;
   user?: any;
-  participants?: any[];
+  participants?: RegistrationParticipantItem[];
 }
 
 export async function createRegistration(
@@ -487,6 +520,7 @@ export interface UploadDocumentResponse {
   participantOrder: number;
   document: {
     url: string;
+    viewUrl?: string;
     publicId: string;
     mimeType: string;
     resourceType: string;
