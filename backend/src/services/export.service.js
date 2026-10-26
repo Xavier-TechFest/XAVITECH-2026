@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { getSupabaseClient } from '../config/database.js';
 import logger from '../utils/logger.util.js';
+import { resolveRegistrationMetrics } from '../utils/participantMetrics.util.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -29,84 +30,27 @@ const formatDate = (dateStr) => {
  * Resolve canonical participant roster and squad metrics for consistent export mapping.
  */
 export const resolveCanonicalExportRoster = (reg) => {
-  const rawParticipants = Array.isArray(reg.participants) ? [...reg.participants] : [];
-  rawParticipants.sort((a, b) => (a.participant_order || 0) - (b.participant_order || 0));
-
-  const leaderPart =
-    rawParticipants.find((p) => p.participant_role === 'LEADER' || p.participant_order === 1) ||
-    rawParticipants[0] ||
-    null;
-
-  const memberParts = rawParticipants.filter(
-    (p) => p.id !== leaderPart?.id && (p.participant_role === 'MEMBER' || p.participant_order > 1)
-  );
-
-  const teamMembers = Array.isArray(reg.team?.members) ? [...reg.team.members] : [];
-  teamMembers.sort((a, b) => (a.member_order || 0) - (b.member_order || 0));
-
-  const additionalMembers = [];
-
-  // 1. Authoritative member participants from registration_participants
-  for (const p of memberParts) {
-    const isLeaderDupe =
-      leaderPart &&
-      p.full_name &&
-      leaderPart.full_name &&
-      p.full_name.toLowerCase().trim() === leaderPart.full_name.toLowerCase().trim() &&
-      (!p.email || !leaderPart.email || p.email.toLowerCase().trim() === leaderPart.email.toLowerCase().trim());
-
-    if (isLeaderDupe) continue;
-
-    additionalMembers.push({
-      id: p.id,
-      name: p.full_name || '—',
-      email: p.email || '—',
-      phone: (p.mobile_number && p.mobile_number.trim()) || (p.custom_fields?.mobileNumber && p.custom_fields.mobileNumber.trim()) || '—',
-      institution: (p.institution_name && p.institution_name.trim()) || (p.custom_fields?.institutionName && p.custom_fields.institutionName.trim()) || '—',
-      standardClass: p.standard_class || '—',
-    });
-  }
-
-  // 2. Members from team_members table not already accounted for
-  for (const tm of teamMembers) {
-    const tmName = (tm.name || '').toLowerCase().trim();
-    const isLeader =
-      (reg.user?.name && tmName === reg.user.name.toLowerCase().trim()) ||
-      (leaderPart?.full_name && tmName === leaderPart.full_name.toLowerCase().trim());
-
-    const alreadyCovered = additionalMembers.some(
-      (m) => (m.id && m.id === tm.id) || (tmName && m.name && m.name.toLowerCase().trim() === tmName)
-    );
-
-    if (!alreadyCovered && (!isLeader || rawParticipants.length === 0)) {
-      additionalMembers.push({
-        id: tm.id,
-        name: tm.name || '—',
-        email: '—',
-        phone: '—',
-        institution: '—',
-        standardClass: '—',
-      });
-    }
-  }
-
-  const teamSize = reg.registration_type === 'TEAM' ? 1 + additionalMembers.length : 1;
+  const metrics = resolveRegistrationMetrics(reg);
 
   const leader = {
-    name: (leaderPart?.full_name && leaderPart.full_name.trim()) || reg.user?.name || reg.team?.leader?.name || '—',
-    email: (leaderPart?.email && leaderPart.email.trim()) || reg.user?.email || reg.team?.leader?.email || '—',
-    phone:
-      (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) ||
-      (leaderPart?.custom_fields?.mobileNumber && leaderPart.custom_fields.mobileNumber.trim()) ||
-      '—',
-    institution:
-      (leaderPart?.institution_name && leaderPart.institution_name.trim()) ||
-      (leaderPart?.custom_fields?.institutionName && leaderPart.custom_fields.institutionName.trim()) ||
-      '—',
-    standardClass: (leaderPart?.standard_class && leaderPart.standard_class.trim()) || '—',
+    name: metrics.leaderInfo.name,
+    email: metrics.leaderInfo.email,
+    phone: metrics.leaderInfo.phone,
+    institution: metrics.leaderInfo.institution,
+    standardClass: metrics.leaderInfo.standardClass,
   };
 
-  const actualTeamName = reg.team?.team_name || '—';
+  const additionalMembers = metrics.additionalMembers.map((m) => ({
+    id: m.id,
+    name: m.name,
+    email: m.email,
+    phone: m.phone,
+    institution: m.institution,
+    standardClass: m.standardClass,
+  }));
+
+  const teamSize = metrics.totalTeamSize;
+  const actualTeamName = reg.team?.team_name || metrics.leaderInfo.name || '—';
 
   return {
     leader,

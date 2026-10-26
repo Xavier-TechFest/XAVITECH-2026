@@ -1,6 +1,7 @@
 import { getSupabaseClient } from '../config/database.js';
 import logger from '../utils/logger.util.js';
 import { calculatePayableAmount } from './payment.service.js';
+import { resolveRegistrationMetrics } from '../utils/participantMetrics.util.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -395,6 +396,7 @@ export const adminRegistrationService = {
     limit = 20,
     search = '',
     trackId = '',
+    trackIdConstraint = null,
     eventId = '',
     registrationType = '',
     status = '',
@@ -402,6 +404,8 @@ export const adminRegistrationService = {
   }) => {
     const client = getSupabaseClient();
     if (!client) throw new Error('Database client is not available');
+
+    const effectiveTrackId = trackIdConstraint || trackId;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
@@ -483,8 +487,8 @@ export const adminRegistrationService = {
     // Apply event filter or track filter
     if (eventId && UUID_REGEX.test(eventId)) {
       query = query.eq('event_id', eventId);
-    } else if (trackId && typeof trackId === 'string' && trackId.trim()) {
-      const cleanTrackId = trackId.trim();
+    } else if (effectiveTrackId && typeof effectiveTrackId === 'string' && effectiveTrackId.trim()) {
+      const cleanTrackId = effectiveTrackId.trim();
       let targetTrackId = cleanTrackId;
       if (!UUID_REGEX.test(cleanTrackId)) {
         const { data: trackRow } = await client
@@ -631,38 +635,12 @@ export const adminRegistrationService = {
         }
       }
 
-      const participantsList = Array.isArray(reg.participants) ? [...reg.participants] : [];
-      participantsList.sort((a, b) => (a.participant_order || 0) - (b.participant_order || 0));
-
-      const leaderPart =
-        participantsList.find((p) => p.participant_role === 'LEADER' || p.participant_order === 1) ||
-        participantsList[0] ||
-        null;
-      const memberParts = participantsList.filter(
-        (p) => p.id !== leaderPart?.id && (p.participant_role === 'MEMBER' || p.participant_order > 1)
-      );
-
-      const teamMembers = Array.isArray(teamObj?.members) ? teamObj.members : [];
-
-      // Deduplicate unique additional members count
-      const seenMemberKeys = new Set();
-      for (const p of memberParts) {
-        const k = (p.email ? p.email.toLowerCase().trim() : '') || (p.full_name ? p.full_name.toLowerCase().trim() : '') || p.id;
-        seenMemberKeys.add(k);
-      }
-      for (const tm of teamMembers) {
-        const tmName = (tm.name || '').toLowerCase().trim();
-        const isLeader =
-          (reg.user?.name && tmName === reg.user.name.toLowerCase().trim()) ||
-          (leaderPart?.full_name && tmName === leaderPart.full_name.toLowerCase().trim());
-        if (!isLeader) {
-          seenMemberKeys.add(tmName || tm.id);
-        }
-      }
-
-      const uniqueMemberCount = seenMemberKeys.size;
-      const totalTeamSize = reg.registration_type === 'TEAM' ? 1 + uniqueMemberCount : 1;
-      const participantCount = totalTeamSize;
+      const metrics = resolveRegistrationMetrics(reg, teamObj);
+      const participantsList = metrics.uniqueParticipants;
+      const leaderPart = metrics.leaderParticipant;
+      const uniqueMemberCount = metrics.memberCount;
+      const totalTeamSize = metrics.totalTeamSize;
+      const participantCount = metrics.participantCount;
 
       // Extract latest payment transaction
       const txs = Array.isArray(reg.payment_transactions) ? [...reg.payment_transactions] : [];
@@ -711,22 +689,22 @@ export const adminRegistrationService = {
                 : null,
             }
           : null,
-        phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || (leaderPart?.custom_fields?.mobileNumber && leaderPart.custom_fields.mobileNumber.trim()) || '—',
-        institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || (leaderPart?.custom_fields?.institutionName && leaderPart.custom_fields.institutionName.trim()) || '—',
+        phone: metrics.leaderInfo.phone,
+        institution: metrics.leaderInfo.institution,
         user: reg.user
           ? {
               id: reg.user.id,
-              name: (leaderPart?.full_name && leaderPart.full_name.trim()) || reg.user.name || '—',
-              email: (leaderPart?.email && leaderPart.email.trim()) || reg.user.email || '—',
-              phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || (leaderPart?.custom_fields?.mobileNumber && leaderPart.custom_fields.mobileNumber.trim()) || '—',
-              institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || (leaderPart?.custom_fields?.institutionName && leaderPart.custom_fields.institutionName.trim()) || '—',
+              name: metrics.leaderInfo.name,
+              email: metrics.leaderInfo.email,
+              phone: metrics.leaderInfo.phone,
+              institution: metrics.leaderInfo.institution,
             }
           : {
               id: null,
-              name: (leaderPart?.full_name && leaderPart.full_name.trim()) || '—',
-              email: (leaderPart?.email && leaderPart.email.trim()) || '—',
-              phone: (leaderPart?.mobile_number && leaderPart.mobile_number.trim()) || (leaderPart?.custom_fields?.mobileNumber && leaderPart.custom_fields.mobileNumber.trim()) || '—',
-              institution: (leaderPart?.institution_name && leaderPart.institution_name.trim()) || (leaderPart?.custom_fields?.institutionName && leaderPart.custom_fields.institutionName.trim()) || '—',
+              name: metrics.leaderInfo.name,
+              email: metrics.leaderInfo.email,
+              phone: metrics.leaderInfo.phone,
+              institution: metrics.leaderInfo.institution,
             },
         team: teamObj
           ? {
@@ -908,131 +886,15 @@ export const adminRegistrationService = {
       }
     }
 
-    // Sort raw participants by participant_order
-    const rawParticipants = Array.isArray(reg.participants) ? [...reg.participants] : [];
-    rawParticipants.sort((a, b) => (a.participant_order || 0) - (b.participant_order || 0));
-
-    // Identify leader participant (role LEADER or order 1)
-    const leaderParticipant =
-      rawParticipants.find((p) => p.participant_role === 'LEADER' || p.participant_order === 1) ||
-      rawParticipants[0] ||
-      null;
-
-    // Identify raw member participants (excluding the leader)
-    const memberParticipants = rawParticipants.filter(
-      (p) => p.id !== leaderParticipant?.id && (p.participant_role === 'MEMBER' || p.participant_order > 1)
-    );
-
-    // Raw team members from team_members table
-    const rawTeamMembers = Array.isArray(resolvedTeam?.members) ? [...resolvedTeam.members] : [];
-    rawTeamMembers.sort((a, b) => (a.member_order || 0) - (b.member_order || 0));
-
-    // Canonical Deduplicated Additional Members List
-    const additionalMembers = [];
-    const seenMemberKeys = new Set();
-
-    // 1. First add members from registration_participants (authoritative detailed snapshot)
-    for (const p of memberParticipants) {
-      // Guard against leader duplication
-      const isLeaderDuplicate =
-        leaderParticipant &&
-        p.full_name &&
-        leaderParticipant.full_name &&
-        p.full_name.toLowerCase().trim() === leaderParticipant.full_name.toLowerCase().trim() &&
-        (!p.email || !leaderParticipant.email || p.email.toLowerCase().trim() === leaderParticipant.email.toLowerCase().trim());
-
-      if (isLeaderDuplicate) continue;
-
-      additionalMembers.push({
-        id: p.id,
-        teamMemberId: p.team_member_id || null,
-        name: p.full_name || '—',
-        fullName: p.full_name || '—',
-        email: p.email || '—',
-        phone: p.mobile_number || '—',
-        mobileNumber: p.mobile_number || '—',
-        institution: p.institution_name || '—',
-        institutionName: p.institution_name || '—',
-        standardClass: p.standard_class || '—',
-        city: p.city || '—',
-        studentId: p.student_id || '—',
-        customFields: p.custom_fields || {},
-        documents: {
-          idCard: p.id_card_url
-            ? {
-                url: p.id_card_url,
-                publicId: p.id_card_public_id,
-                mimeType: p.id_card_mime_type,
-                resourceType: p.id_card_resource_type,
-                viewUrl: p.id_card_url.toLowerCase().endsWith('.pdf')
-                  ? p.id_card_url.replace(/\.pdf$/i, '.jpg')
-                  : p.id_card_url,
-              }
-            : null,
-          profilePhoto: p.profile_photo_url
-            ? {
-                url: p.profile_photo_url,
-                publicId: p.profile_photo_public_id,
-                mimeType: p.profile_photo_mime_type,
-                resourceType: p.profile_photo_resource_type,
-                viewUrl: p.profile_photo_url,
-              }
-            : null,
-        },
-        idCardUrl: p.id_card_url || null,
-        profilePhotoUrl: p.profile_photo_url || null,
-        memberOrder: p.participant_order ? Math.max(1, p.participant_order - 1) : additionalMembers.length + 1,
-        createdAt: p.created_at || resolvedTeam?.created_at || reg.created_at,
-        updatedAt: p.updated_at || reg.updated_at,
-        source: 'participant',
-      });
-    }
-
-    // 2. Add any team_members from team_members table not already accounted for
-    for (const tm of rawTeamMembers) {
-      const tmName = (tm.name || '').toLowerCase().trim();
-      const isLeaderName =
-        (reg.user?.name && tmName === reg.user.name.toLowerCase().trim()) ||
-        (leaderParticipant?.full_name && tmName === leaderParticipant.full_name.toLowerCase().trim());
-
-      const alreadyCovered =
-        additionalMembers.some(
-          (m) =>
-            (m.teamMemberId && m.teamMemberId === tm.id) ||
-            (m.id && m.id === tm.id) ||
-            (tmName && m.name && m.name.toLowerCase().trim() === tmName)
-        );
-
-      if (!alreadyCovered && (!isLeaderName || rawParticipants.length === 0)) {
-        additionalMembers.push({
-          id: tm.id,
-          teamMemberId: tm.id,
-          name: tm.name || '—',
-          fullName: tm.name || '—',
-          email: '—',
-          phone: '—',
-          mobileNumber: '—',
-          institution: '—',
-          institutionName: '—',
-          standardClass: '—',
-          city: '—',
-          studentId: '—',
-          customFields: {},
-          documents: { idCard: null, profilePhoto: null },
-          idCardUrl: null,
-          profilePhotoUrl: null,
-          memberOrder: tm.member_order || additionalMembers.length + 1,
-          createdAt: tm.created_at || resolvedTeam?.created_at || reg.created_at,
-          updatedAt: tm.created_at || reg.updated_at,
-          source: 'team_member',
-        });
-      }
-    }
-
-    // Calculate canonical squad sizes
-    const memberCount = additionalMembers.length;
-    const totalTeamSize = reg.registration_type === 'TEAM' ? 1 + memberCount : 1;
-    const totalParticipants = totalTeamSize;
+    // Canonical participant and squad metrics resolution
+    const metrics = resolveRegistrationMetrics(reg, resolvedTeam);
+    const rawParticipants = metrics.uniqueParticipants;
+    const leaderParticipant = metrics.leaderParticipant;
+    const memberParticipants = metrics.memberParticipants;
+    const additionalMembers = metrics.additionalMembers;
+    const memberCount = metrics.memberCount;
+    const totalTeamSize = metrics.totalTeamSize;
+    const totalParticipants = metrics.participantCount;
 
     // Process payment transactions
     const transactions = Array.isArray(reg.payment_transactions)
@@ -1145,16 +1007,10 @@ export const adminRegistrationService = {
       });
     });
 
-    const submittedLeaderPhone =
-      (leaderParticipant?.mobile_number && leaderParticipant.mobile_number.trim()) ||
-      (leaderParticipant?.custom_fields?.mobileNumber && leaderParticipant.custom_fields.mobileNumber.trim()) ||
-      '—';
-    const submittedLeaderInstitution =
-      (leaderParticipant?.institution_name && leaderParticipant.institution_name.trim()) ||
-      (leaderParticipant?.custom_fields?.institutionName && leaderParticipant.custom_fields.institutionName.trim()) ||
-      '—';
-    const submittedLeaderName = (leaderParticipant?.full_name && leaderParticipant.full_name.trim()) || reg.user?.name || '—';
-    const submittedLeaderEmail = (leaderParticipant?.email && leaderParticipant.email.trim()) || reg.user?.email || '—';
+    const submittedLeaderPhone = metrics.leaderInfo.phone;
+    const submittedLeaderInstitution = metrics.leaderInfo.institution;
+    const submittedLeaderName = metrics.leaderInfo.name;
+    const submittedLeaderEmail = metrics.leaderInfo.email;
 
     const leaderObj = reg.user
       ? {
@@ -1504,12 +1360,12 @@ export const adminRegistrationService = {
           : 'INITIATED';
       }
 
-      const participantsList = activeReg?.participants || [];
-      const memberParticipants = participantsList.filter(
-        (p) => p.participant_order > 1 || p.participant_role === 'MEMBER'
+      const teamMetrics = resolveRegistrationMetrics(
+        activeReg || { registration_type: 'TEAM', participants: [] },
+        t
       );
-      const effectiveMemberCount = members.length > 0 ? members.length : memberParticipants.length;
-      const totalTeamSize = Math.max(1 + effectiveMemberCount, participantsList.length > 0 ? participantsList.length : 1);
+      const effectiveMemberCount = teamMetrics.memberCount;
+      const totalTeamSize = teamMetrics.totalTeamSize;
 
       return {
         id: t.id,
@@ -1673,82 +1529,14 @@ export const adminRegistrationService = {
         : 'INITIATED';
     }
 
-    let participants = [];
-    if (reg && Array.isArray(reg.participants)) {
-      participants = [...reg.participants].sort(
-        (a, b) => (a.participant_order || 0) - (b.participant_order || 0)
-      );
-    }
-
-    const leaderPart = participants.find((p) => p.participant_role === 'LEADER' || p.participant_order === 1) || null;
-    const memberParts = participants.filter((p) => p.id !== leaderPart?.id && (p.participant_role === 'MEMBER' || p.participant_order > 1));
-
-    // Resolve members roster with deduplication and rich attributes
-    const additionalMembers = [];
-    const seenMemberKeys = new Set();
-
-    for (const p of memberParts) {
-      const isLeaderDupe =
-        leaderPart &&
-        ((p.email && leaderPart.email && p.email.toLowerCase().trim() === leaderPart.email.toLowerCase().trim()) ||
-          (p.full_name &&
-            leaderPart.full_name &&
-            p.full_name.toLowerCase().trim() === leaderPart.full_name.toLowerCase().trim()));
-      if (isLeaderDupe) continue;
-
-      const dedupeKey =
-        (p.email ? p.email.toLowerCase().trim() : '') ||
-        (p.full_name ? p.full_name.toLowerCase().trim() : '') ||
-        p.id;
-      if (!seenMemberKeys.has(dedupeKey)) {
-        seenMemberKeys.add(dedupeKey);
-        additionalMembers.push({
-          id: p.id,
-          name: p.full_name || '—',
-          fullName: p.full_name || '—',
-          email: p.email || '—',
-          phone: p.mobile_number || '—',
-          mobileNumber: p.mobile_number || '—',
-          institution: p.institution_name || '—',
-          institutionName: p.institution_name || '—',
-          standardClass: p.standard_class || '—',
-          memberOrder: p.participant_order ? Math.max(1, p.participant_order - 1) : additionalMembers.length + 1,
-          createdAt: p.created_at || team.created_at,
-        });
-      }
-    }
-
-    for (const tm of members) {
-      const tmName = (tm.name || '').toLowerCase().trim();
-      const isLeaderName =
-        (team.leader?.name && tmName === team.leader.name.toLowerCase().trim()) ||
-        (leaderPart?.full_name && tmName === leaderPart.full_name.toLowerCase().trim());
-
-      const alreadyCovered =
-        seenMemberKeys.has(tmName) ||
-        seenMemberKeys.has(tm.id) ||
-        additionalMembers.some((m) => m.name.toLowerCase().trim() === tmName);
-
-      if (!alreadyCovered && (!isLeaderName || participants.length === 0)) {
-        seenMemberKeys.add(tmName || tm.id);
-        additionalMembers.push({
-          id: tm.id,
-          name: tm.name || '—',
-          fullName: tm.name || '—',
-          email: '—',
-          phone: '—',
-          mobileNumber: '—',
-          institution: '—',
-          institutionName: '—',
-          standardClass: '—',
-          memberOrder: tm.member_order || additionalMembers.length + 1,
-          createdAt: tm.created_at || team.created_at,
-        });
-      }
-    }
-
-    const effectiveMemberCount = additionalMembers.length;
-    const totalTeamSize = 1 + effectiveMemberCount;
+    const teamMetrics = resolveRegistrationMetrics(
+      reg || { registration_type: 'TEAM', participants: [] },
+      team
+    );
+    const leaderPart = teamMetrics.leaderParticipant;
+    const additionalMembers = teamMetrics.additionalMembers;
+    const effectiveMemberCount = teamMetrics.memberCount;
+    const totalTeamSize = teamMetrics.totalTeamSize;
 
     return {
       id: team.id,
