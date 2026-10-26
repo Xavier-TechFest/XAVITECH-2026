@@ -699,7 +699,7 @@ export const EVENTS: EventItem[] = [
   {
     id: "runtime-rush",
     name: "RUNTIME RUSH",
-    fullTitle: "RUNTper participantIME RUSH — Code Sprint",
+    fullTitle: "RUNTIME RUSH — Code Sprint",
     badge: "Track B",
     badgeLevel: "Advanced",
     trackId: "track-b",
@@ -761,7 +761,7 @@ export const EVENTS: EventItem[] = [
       minTeamSize: 1,
       maxTeamSize: 2,
       feeAmount: 250,
-      feeBasis: "per_participant",
+      feeBasis: "per_team",
       feeDisplay: "₹250 registration fee",
       deadline: "TBA",
       teamNameRequired: true,

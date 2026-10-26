@@ -82,11 +82,10 @@ export const calculatePayableAmount = (event, registration, participants = []) =
     return Number((unitFee * count).toFixed(2));
   }
 
-  // 4. Runtime Rush charges ₹250 for each registered participant (1 participant = ₹250, 2 participants = ₹500).
+  // 4. Runtime Rush: ₹250 fixed registration fee per registration (1 or 2 participants = ₹250 total)
   if (event.slug === 'runtime-rush') {
-    const count = resolvedCount > 0 ? resolvedCount : 1;
-    const unitFee = baseFee > 0 ? baseFee : 250.0;
-    return Number((unitFee * count).toFixed(2));
+    const fee = baseFee > 0 ? baseFee : 250.0;
+    return Number(fee.toFixed(2));
   }
 
   // 5. Model United Nations (MUN / Unscripted Nations): ₹500 per delegate (Individual: ₹500, Team of 2: ₹1,000)
