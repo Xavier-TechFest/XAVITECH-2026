@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  ExternalLink,
   FileText,
   Image as ImageIcon,
   Lock,
@@ -128,6 +129,13 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
   const [uploadStatusMessage, setUploadStatusMessage] = useState<string | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [submitResult, setSubmitResult] = useState<CreatedRegistrationResponse | null>(null);
+
+  // Participant-Specific Document Upload State (Confirmation / Continuation View)
+  const [uploadingParticipantId, setUploadingParticipantId] = useState<string | null>(null);
+  const [participantUploadErrors, setParticipantUploadErrors] = useState<Record<string, string | null>>({});
+  const [participantUploadSuccess, setParticipantUploadSuccess] = useState<Record<string, string | null>>({});
+  const participantUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const targetUploadParticipantRef = useRef<{ id: string; participantOrder?: number } | null>(null);
 
   // Continuation Loading State
   const [isLoadingExistingRegistration, setIsLoadingExistingRegistration] = useState(isContinuation);
@@ -793,8 +801,158 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
 
   // Payment Initiation Handler for manual PAY NOW button
   const handlePayNow = async () => {
-    if (!submitResult || isInitiatingPayment) return;
+    if (!submitResult || isInitiatingPayment || uploadingParticipantId !== null) return;
     await initiatePaymentFlow(submitResult);
+  };
+
+  // Handler to open file picker for a specific participant
+  const handleTriggerParticipantUpload = (participant: any) => {
+    if (uploadingParticipantId !== null || isInitiatingPayment || isSubmitting) {
+      return;
+    }
+
+    const partKey = participant.id || String(participant.participantOrder);
+    targetUploadParticipantRef.current = {
+      id: participant.id || String(participant.participantOrder),
+      participantOrder: participant.participantOrder,
+    };
+
+    setParticipantUploadErrors((prev) => ({ ...prev, [partKey]: null }));
+    setParticipantUploadSuccess((prev) => ({ ...prev, [partKey]: null }));
+
+    if (participantUploadInputRef.current) {
+      participantUploadInputRef.current.value = "";
+      participantUploadInputRef.current.click();
+    }
+  };
+
+  // Handler executed when a file is selected for the participant
+  const handleParticipantFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const target = targetUploadParticipantRef.current;
+    if (!target || !submitResult) return;
+
+    const partKey = target.id;
+
+    // Reset input so selecting the same file triggers change again
+    if (participantUploadInputRef.current) {
+      participantUploadInputRef.current.value = "";
+    }
+
+    // 1. Client-side file size validation (max 5MB)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      setParticipantUploadErrors((prev) => ({
+        ...prev,
+        [partKey]: `File size exceeds 5MB limit (${(file.size / (1024 * 1024)).toFixed(2)} MB). Please select a smaller file.`,
+      }));
+      return;
+    }
+
+    // 2. Client-side file format validation (PDF, JPG, PNG, WEBP)
+    const allowedMimeTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+    ];
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+    const originalName = file.name.toLowerCase();
+    const hasAllowedExt = allowedExtensions.some((ext) => originalName.endsWith(ext));
+    const mimeValid = file.type ? allowedMimeTypes.includes(file.type.toLowerCase()) : hasAllowedExt;
+
+    if (!mimeValid || !hasAllowedExt) {
+      setParticipantUploadErrors((prev) => ({
+        ...prev,
+        [partKey]: "Invalid file format. Please upload a PDF, JPG, PNG, or WEBP file.",
+      }));
+      return;
+    }
+
+    // 3. Authenticate and upload to backend
+    setUploadingParticipantId(partKey);
+    setParticipantUploadErrors((prev) => ({ ...prev, [partKey]: null }));
+    setParticipantUploadSuccess((prev) => ({ ...prev, [partKey]: null }));
+
+    try {
+      const token = await getIdToken();
+      if (!token) {
+        throw new Error("Authentication session expired. Please sign in again.");
+      }
+
+      const regId = submitResult.id || submitResult.registrationId || activeRegId;
+      if (!regId) {
+        throw new Error("Registration identifier missing. Please refresh the page.");
+      }
+
+      const res = await api.uploadParticipantDocument(
+        token,
+        regId,
+        target.id,
+        file,
+        "id_card"
+      );
+
+      // 4. Update submitResult state immutably with confirmed URL and viewUrl
+      const uploadedDocUrl = res.document?.url;
+      const uploadedDocViewUrl = res.document?.viewUrl || uploadedDocUrl;
+
+      setSubmitResult((prev) => {
+        if (!prev || !prev.participants) return prev;
+        const updatedParticipants = prev.participants.map((p: any) => {
+          const isTarget =
+            p.id === target.id ||
+            (target.participantOrder && p.participantOrder === target.participantOrder);
+
+          if (isTarget) {
+            return {
+              ...p,
+              idCardUrl: uploadedDocUrl,
+              documents: {
+                ...(p.documents || {}),
+                idCard: {
+                  url: uploadedDocUrl,
+                  viewUrl: uploadedDocViewUrl,
+                  publicId: res.document?.publicId,
+                  mimeType: res.document?.mimeType,
+                  resourceType: res.document?.resourceType,
+                },
+              },
+            };
+          }
+          return p;
+        });
+
+        return {
+          ...prev,
+          participants: updatedParticipants,
+        };
+      });
+
+      setParticipantUploadSuccess((prev) => ({
+        ...prev,
+        [partKey]: "ID card uploaded successfully!",
+      }));
+
+      // Background re-fetch to ensure 100% database synchronization
+      api
+        .fetchRegistrationDetails(token, regId)
+        .then((fresh) => {
+          if (fresh) setSubmitResult(fresh);
+        })
+        .catch(() => {});
+    } catch (err: any) {
+      console.error(`Upload failed for participant ${partKey}:`, err);
+      setParticipantUploadErrors((prev) => ({
+        ...prev,
+        [partKey]: err.message || "Failed to upload ID card. Please try again.",
+      }));
+    } finally {
+      setUploadingParticipantId(null);
+    }
   };
 
   // Final Submit to Backend API
@@ -1166,39 +1324,132 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
               <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400 block">
                 Registered Participants ({submitResult.participants.length})
               </span>
-              <div className="space-y-1.5">
-                {submitResult.participants.map((p: any, pIdx: number) => (
-                  <div key={p.id || pIdx} className="flex items-center justify-between text-xs text-slate-300">
-                    <span className="truncate max-w-[240px]">
-                      {p.participantOrder ? `${p.participantOrder}. ` : ""}{p.fullName || p.name || `Participant ${pIdx + 1}`}
-                      {p.participantRole === "LEADER" ? " (Leader)" : ""}
-                    </span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {p.idCardUrl && (
-                        <span className="rounded bg-cyan-400/10 text-cyan-300 px-1.5 py-0.5 text-[10px] font-mono border border-cyan-400/20">
-                          ID Card
-                        </span>
+              <div className="space-y-2">
+                {submitResult.participants.map((p: any, pIdx: number) => {
+                  const rawIdCardUrl = p.documents?.idCard?.url || p.idCardUrl;
+                  const viewIdCardUrl =
+                    p.documents?.idCard?.viewUrl ||
+                    (rawIdCardUrl?.toLowerCase().endsWith(".pdf")
+                      ? rawIdCardUrl.replace(/\.pdf$/i, ".jpg")
+                      : rawIdCardUrl);
+                  const hasIdCard = Boolean(rawIdCardUrl);
+                  const partKey = p.id || String(p.participantOrder || pIdx + 1);
+                  const isUploadingThis = uploadingParticipantId === partKey || uploadingParticipantId === p.id;
+                  const partError = participantUploadErrors[partKey] || (p.id ? participantUploadErrors[p.id] : null);
+                  const partSuccess = participantUploadSuccess[partKey] || (p.id ? participantUploadSuccess[p.id] : null);
+
+                  return (
+                    <div
+                      key={p.id || pIdx}
+                      className="rounded border border-white/10 bg-white/[0.02] p-2.5 sm:p-3 space-y-1.5 transition"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-300">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="font-mono text-cyan-400 font-semibold text-[11px]">
+                            #{p.participantOrder || pIdx + 1}
+                          </span>
+                          <span className="font-medium text-white truncate max-w-[200px] sm:max-w-[240px]">
+                            {p.fullName || p.name || `Participant ${pIdx + 1}`}
+                          </span>
+                          {p.participantRole === "LEADER" && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-amber-400/10 text-amber-300 border border-amber-400/20">
+                              Leader
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {hasIdCard ? (
+                            <a
+                              href={viewIdCardUrl || rawIdCardUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded bg-cyan-400/10 text-cyan-300 hover:text-cyan-200 hover:bg-cyan-400/20 px-2 py-0.5 text-[10px] font-mono border border-cyan-400/30 transition inline-flex items-center gap-1 font-medium"
+                            >
+                              <span>ID Card</span>
+                              <ExternalLink size={10} />
+                            </a>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleTriggerParticipantUpload(p)}
+                              disabled={uploadingParticipantId !== null || isInitiatingPayment || isSubmitting}
+                              className="rounded bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 border border-amber-400/30 px-2.5 py-1 text-[10px] font-mono transition inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer font-medium"
+                            >
+                              {isUploadingThis ? (
+                                <>
+                                  <Loader2 size={11} className="animate-spin text-amber-300" />
+                                  <span>Uploading...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Upload size={11} />
+                                  <span>Upload ID Card</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+
+                          {p.profilePhotoUrl && (
+                            <a
+                              href={p.profilePhotoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded bg-purple-400/10 text-purple-300 hover:bg-purple-400/20 px-1.5 py-0.5 text-[10px] font-mono border border-purple-400/20 transition inline-flex items-center gap-1"
+                            >
+                              <span>Photo</span>
+                              <ExternalLink size={9} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Per-participant upload error message */}
+                      {partError && (
+                        <div className="text-[11px] text-rose-300 flex items-center gap-1.5 pl-0.5 pt-0.5 font-mono">
+                          <AlertCircle size={12} className="shrink-0 text-rose-400" />
+                          <span>{partError}</span>
+                        </div>
                       )}
-                      {p.profilePhotoUrl && (
-                        <span className="rounded bg-purple-400/10 text-purple-300 px-1.5 py-0.5 text-[10px] font-mono border border-purple-400/20">
-                          Photo
-                        </span>
+
+                      {/* Per-participant upload success notification */}
+                      {partSuccess && (
+                        <div className="text-[11px] text-emerald-300 flex items-center gap-1.5 pl-0.5 pt-0.5 font-mono">
+                          <CheckCircle2 size={12} className="shrink-0 text-emerald-400" />
+                          <span>{partSuccess}</span>
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
-              Verification Documents
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
-              <CheckCircle2 size={12} /> Stored in Cloud
-            </span>
-          </div>
+          {/* Verification Documents Global Status */}
+          {(() => {
+            const allUploaded =
+              !submitResult.participants ||
+              submitResult.participants.length === 0 ||
+              submitResult.participants.every((p: any) => Boolean(p.documents?.idCard?.url || p.idCardUrl));
+
+            return (
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <span className="font-oxanium text-xs uppercase tracking-wider text-slate-400">
+                  Verification Documents
+                </span>
+                {allUploaded ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
+                    <CheckCircle2 size={12} /> Stored in Cloud
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 px-2.5 py-0.5 text-xs font-semibold text-amber-300">
+                    <AlertCircle size={12} /> Action Required: Missing ID Card
+                  </span>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Payment Status & Action Card */}
           <div className="rounded border border-amber-400/20 bg-amber-400/[.03] p-5 space-y-4">
@@ -1284,7 +1535,7 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
                     <button
                       type="button"
                       onClick={handlePayNow}
-                      disabled={isInitiatingPayment}
+                      disabled={isInitiatingPayment || uploadingParticipantId !== null}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded bg-amber-400 px-8 py-3.5 font-oxanium text-xs font-bold uppercase tracking-widest text-slate-950 hover:bg-amber-300 transition shadow-lg shadow-amber-950/40 disabled:opacity-50 cursor-pointer"
                     >
                       {isInitiatingPayment ? (
@@ -1358,6 +1609,16 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
             Browse Other Events
           </Link>
         </div>
+
+        {/* Hidden File Picker Input for Participant ID Card Upload */}
+        <input
+          type="file"
+          ref={participantUploadInputRef}
+          onChange={handleParticipantFileChange}
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          className="hidden"
+          aria-hidden="true"
+        />
       </section>
     );
   };

@@ -83,7 +83,7 @@ export const EVENT_DOCUMENT_RULES = {
     eventName: 'THOUGHTLAB',
     aliases: ['ideathon'],
     requiresIdCard: true,
-    requiresProfilePhoto: true,
+    requiresProfilePhoto: false,
     allMembersRequireId: true,
     coreMembersCount: 2,
   },
