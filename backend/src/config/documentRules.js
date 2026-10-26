@@ -68,7 +68,7 @@ export const EVENT_DOCUMENT_RULES = {
     eventName: 'CIRCUIT OF MINDS',
     aliases: ['tech-quiz'],
     requiresIdCard: true,
-    requiresProfilePhoto: true,
+    requiresProfilePhoto: false,
     allMembersRequireId: true,
     coreMembersCount: 2,
   },
