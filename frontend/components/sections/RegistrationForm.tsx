@@ -2954,6 +2954,7 @@ function getRegistrationTotal(
 ): number | null {
   if (event.id === "innocraft") return participantPool === "School" ? 800 : 1000;
   if (event.id === "unscripted-nations") return teamSize === 2 ? 1000 : 500;
+  if (event.id === "runtime-rush") return 250;
   if (config.feeAmount === undefined) return null;
   if (config.feeBasis === "per_team") return config.feeAmount;
   if (config.feeBasis === "per_player" || config.feeBasis === "per_participant") {
