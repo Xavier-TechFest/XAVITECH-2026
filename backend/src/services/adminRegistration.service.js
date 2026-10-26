@@ -964,6 +964,9 @@ export const adminRegistrationService = {
                 publicId: p.id_card_public_id,
                 mimeType: p.id_card_mime_type,
                 resourceType: p.id_card_resource_type,
+                viewUrl: p.id_card_url.toLowerCase().endsWith('.pdf')
+                  ? p.id_card_url.replace(/\.pdf$/i, '.jpg')
+                  : p.id_card_url,
               }
             : null,
           profilePhoto: p.profile_photo_url
@@ -972,6 +975,7 @@ export const adminRegistrationService = {
                 publicId: p.profile_photo_public_id,
                 mimeType: p.profile_photo_mime_type,
                 resourceType: p.profile_photo_resource_type,
+                viewUrl: p.profile_photo_url,
               }
             : null,
         },
@@ -1075,6 +1079,9 @@ export const adminRegistrationService = {
                 publicId: leaderParticipant.id_card_public_id,
                 mimeType: leaderParticipant.id_card_mime_type,
                 resourceType: leaderParticipant.id_card_resource_type,
+                viewUrl: leaderParticipant.id_card_url.toLowerCase().endsWith('.pdf')
+                  ? leaderParticipant.id_card_url.replace(/\.pdf$/i, '.jpg')
+                  : leaderParticipant.id_card_url,
               }
             : null,
           profilePhoto: leaderParticipant.profile_photo_url
@@ -1820,6 +1827,9 @@ export const adminRegistrationService = {
                 publicId: p.id_card_public_id,
                 mimeType: p.id_card_mime_type,
                 resourceType: p.id_card_resource_type,
+                viewUrl: p.id_card_url.toLowerCase().endsWith('.pdf')
+                  ? p.id_card_url.replace(/\.pdf$/i, '.jpg')
+                  : p.id_card_url,
               }
             : null,
           profilePhoto: p.profile_photo_url
@@ -1828,6 +1838,7 @@ export const adminRegistrationService = {
                 publicId: p.profile_photo_public_id,
                 mimeType: p.profile_photo_mime_type,
                 resourceType: p.profile_photo_resource_type,
+                viewUrl: p.profile_photo_url,
               }
             : null,
         },

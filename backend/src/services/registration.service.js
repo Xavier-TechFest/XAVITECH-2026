@@ -7,6 +7,8 @@ import { getSupabaseClient } from '../config/database.js';
 import eventService from './event.service.js';
 import teamService from './team.service.js';
 import userService from './user.service.js';
+import documentService from './document.service.js';
+import cloudinaryService from './cloudinary.service.js';
 import { calculatePayableAmount } from './payment.service.js';
 import { generateRegistrationId } from '../utils/registrationId.js';
 import logger from '../utils/logger.util.js';
@@ -72,7 +74,10 @@ export const formatRegistrationResponse = (reg) => {
           collegeName: reg.user.college_name || null,
         }
       : undefined,
-    participants: (reg.participants || []).map((p) => ({
+    participants: (Array.isArray(reg.participants)
+      ? [...reg.participants].sort((a, b) => (a.participant_order || 0) - (b.participant_order || 0))
+      : []
+    ).map((p) => ({
       id: p.id,
       teamMemberId: p.team_member_id || null,
       participantOrder: p.participant_order,
@@ -86,6 +91,26 @@ export const formatRegistrationResponse = (reg) => {
       standardClass: p.standard_class || null,
       idCardUrl: p.id_card_url || null,
       profilePhotoUrl: p.profile_photo_url || null,
+      documents: {
+        idCard: p.id_card_url
+          ? {
+              url: p.id_card_url,
+              viewUrl: cloudinaryService.getViewableUrl(p.id_card_url),
+              publicId: p.id_card_public_id || null,
+              mimeType: p.id_card_mime_type || null,
+              resourceType: p.id_card_resource_type || null,
+            }
+          : null,
+        profilePhoto: p.profile_photo_url
+          ? {
+              url: p.profile_photo_url,
+              viewUrl: p.profile_photo_url,
+              publicId: p.profile_photo_public_id || null,
+              mimeType: p.profile_photo_mime_type || null,
+              resourceType: p.profile_photo_resource_type || null,
+            }
+          : null,
+      },
       customFields: p.custom_fields || {},
     })),
   };
@@ -204,16 +229,27 @@ export const registrationService = {
       activeStatuses
     );
 
+    let registrationRecord = null;
+    let registrationId = null;
+
     if (existingRegistration) {
-      const error = new Error(
-        `You already have an active registration for this event (Registration ID: ${existingRegistration.registration_id}, Status: ${existingRegistration.status})`
-      );
-      error.statusCode = 409;
-      error.data = {
-        existingRegistrationId: existingRegistration.registration_id,
-        status: existingRegistration.status,
-      };
-      throw error;
+      if (existingRegistration.status === 'DRAFT') {
+        logger.info(
+          `Reusing existing DRAFT registration ${existingRegistration.registration_id} for user ${user.id} on event ${eventId}`
+        );
+        registrationRecord = existingRegistration;
+        registrationId = existingRegistration.registration_id;
+      } else {
+        const error = new Error(
+          `You already have an active registration for this event (Registration ID: ${existingRegistration.registration_id}, Status: ${existingRegistration.status})`
+        );
+        error.statusCode = 409;
+        error.data = {
+          existingRegistrationId: existingRegistration.registration_id,
+          status: existingRegistration.status,
+        };
+        throw error;
+      }
     }
 
     // 4. Team Association & Validation for TEAM registrations
@@ -288,31 +324,46 @@ export const registrationService = {
       }
     }
 
-    // 5. Generate unique, non-sequential registration ID
-    let registrationId = generateRegistrationId();
-    let collisionCheck = await RegistrationModel.getRegistrationByRegistrationId(registrationId);
-    let attempts = 0;
-
-    while (collisionCheck && attempts < 5) {
+    // 5 & 6. Create registration record in PostgreSQL or update reused draft
+    if (!registrationRecord) {
       registrationId = generateRegistrationId();
-      collisionCheck = await RegistrationModel.getRegistrationByRegistrationId(registrationId);
-      attempts++;
+      let collisionCheck = await RegistrationModel.getRegistrationByRegistrationId(registrationId);
+      let attempts = 0;
+
+      while (collisionCheck && attempts < 5) {
+        registrationId = generateRegistrationId();
+        collisionCheck = await RegistrationModel.getRegistrationByRegistrationId(registrationId);
+        attempts++;
+      }
+
+      const requestedStatus = (payload.status || 'DRAFT').toUpperCase();
+      const initialStatus = ['DRAFT', 'PAYMENT_PENDING'].includes(requestedStatus)
+        ? requestedStatus
+        : 'DRAFT';
+
+      registrationRecord = await RegistrationModel.createRegistration({
+        registration_id: registrationId,
+        user_id: user.id,
+        event_id: eventId,
+        team_id: teamIdToAssociate,
+        registration_type: registrationType,
+        status: initialStatus,
+      });
+    } else {
+      // Reused draft: refresh team and registration type, clean up old participants
+      const client = getSupabaseClient();
+      if (client) {
+        await client.from('registration_participants').delete().eq('registration_id', registrationRecord.id);
+        await client
+          .from('registrations')
+          .update({
+            team_id: teamIdToAssociate,
+            registration_type: registrationType,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', registrationRecord.id);
+      }
     }
-
-    // 6. Create registration record in PostgreSQL (DRAFT by default, or requested valid status)
-    const requestedStatus = (payload.status || 'DRAFT').toUpperCase();
-    const initialStatus = ['DRAFT', 'PAYMENT_PENDING'].includes(requestedStatus)
-      ? requestedStatus
-      : 'DRAFT';
-
-    const registrationRecord = await RegistrationModel.createRegistration({
-      registration_id: registrationId,
-      user_id: user.id,
-      event_id: eventId,
-      team_id: teamIdToAssociate,
-      registration_type: registrationType,
-      status: initialStatus,
-    });
 
     // 7. Store participant snapshot records and persist team members
     const createdTeamMemberIds = [];
@@ -335,8 +386,6 @@ export const registrationService = {
           const city = (p.city || '').trim();
           const studentId = (p.student_id || p.studentId || '').trim();
           const standardClass = (p.standard_class || p.standardClass || p.standard || p.year || p.course || '').trim();
-          const idCardUrl = p.id_card_url || p.idCardUrl || null;
-          const profilePhotoUrl = p.profile_photo_url || p.profilePhotoUrl || null;
 
           const {
             full_name, fullName: _fn, name: _n,
@@ -384,8 +433,8 @@ export const registrationService = {
             city: city,
             student_id: studentId,
             standard_class: standardClass,
-            id_card_url: idCardUrl,
-            profile_photo_url: profilePhotoUrl,
+            id_card_url: null,
+            profile_photo_url: null,
             custom_fields: customFields || {},
           });
         }
@@ -738,6 +787,16 @@ export const registrationService = {
           throw error;
         }
       }
+    }
+
+    // 5.5 Validate mandatory documents before status transition to PAYMENT_PENDING
+    const docValidation = await documentService.validateRegistrationDocuments(registration.id, event, participants);
+    if (!docValidation.isValid) {
+      const error = new Error(docValidation.message);
+      error.statusCode = 400;
+      error.code = 'MANDATORY_DOCUMENT_MISSING';
+      error.data = { missingDocs: docValidation.missingDocs };
+      throw error;
     }
 
     // 6. Transition status to PAYMENT_PENDING

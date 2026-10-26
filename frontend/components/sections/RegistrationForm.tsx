@@ -958,7 +958,10 @@ export default function RegistrationForm({ event }: { event: EventItem }) {
         for (const [key, file] of fileEntries) {
           const [indexStr, fieldId] = key.split("-");
           const pIdx = Number(indexStr);
-          const participant = registrationRes.participants[pIdx];
+          // Find matching participant strictly by 1-based participantOrder (pIdx + 1)
+          const participant =
+            registrationRes.participants?.find((p: any) => p.participantOrder === pIdx + 1) ||
+            registrationRes.participants?.[pIdx];
           if (participant?.id) {
             const isPhoto = fieldId.toLowerCase().includes("photo");
             const docType = isPhoto ? "profile_photo" : "id_card";

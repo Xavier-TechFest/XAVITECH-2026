@@ -985,12 +985,14 @@ export interface AdminRegistrationDetail {
         publicId?: string;
         mimeType?: string;
         resourceType?: string;
+        viewUrl?: string;
       } | null;
       profilePhoto?: {
         url: string;
         publicId?: string;
         mimeType?: string;
         resourceType?: string;
+        viewUrl?: string;
       } | null;
     };
     idCardUrl?: string | null;

@@ -4,6 +4,7 @@ import UserModel from '../models/user.model.js';
 import userService from './user.service.js';
 import cloudinaryService from './cloudinary.service.js';
 import logger from '../utils/logger.util.js';
+import { getEventDocumentRules } from '../config/documentRules.js';
 
 /**
  * Normalizes document type strings from various frontend forms / params
@@ -150,9 +151,36 @@ class DocumentService {
 
     const docType = normalizeDocumentType(rawDocType);
     const mimeType = (file.mimetype || '').toLowerCase();
+    const originalName = (file.originalname || '').toLowerCase();
+
+    // Enforce 5MB file size limit
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    const fileSize = file.size || (file.buffer ? file.buffer.length : 0);
+    if (fileSize > MAX_FILE_SIZE) {
+      const error = new Error(`File size exceeds 5MB limit (${(fileSize / (1024 * 1024)).toFixed(2)} MB). Please upload a smaller file.`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Enforce allowed MIME types and file extensions (PDF, JPG, PNG, WEBP)
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'application/pdf',
+    ];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+    const hasAllowedExt = allowedExtensions.some((ext) => originalName.endsWith(ext));
+
+    if (!allowedMimeTypes.includes(mimeType) || !hasAllowedExt) {
+      const error = new Error('Invalid file format. Only PDF, JPG, PNG, and WEBP files are permitted.');
+      error.statusCode = 400;
+      throw error;
+    }
 
     // Strict profile photo validation: PDF is disallowed
-    if (docType === 'profile_photo' && (mimeType === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf'))) {
+    if (docType === 'profile_photo' && (mimeType === 'application/pdf' || originalName.endsWith('.pdf'))) {
       const error = new Error('PDF files are not permitted for profile photos. Please upload a JPG, PNG, or WEBP image.');
       error.statusCode = 400;
       throw error;
@@ -181,6 +209,12 @@ class DocumentService {
     } catch (uploadError) {
       logger.error('Failed to upload file to Cloudinary:', uploadError);
       const error = new Error(`Cloudinary upload failed: ${uploadError.message || 'Storage error'}`);
+      error.statusCode = 500;
+      throw error;
+    }
+
+    if (!uploadResult || !uploadResult.secure_url || !uploadResult.public_id) {
+      const error = new Error('Cloudinary failed to return a valid storage URL or public ID.');
       error.statusCode = 500;
       throw error;
     }
@@ -238,6 +272,7 @@ class DocumentService {
       participantOrder: participant.participant_order,
       document: {
         url: uploadResult.secure_url,
+        viewUrl: cloudinaryService.getViewableUrl(uploadResult.secure_url),
         publicId: uploadResult.public_id,
         mimeType: mimeType,
         resourceType: uploadResult.resource_type,
@@ -337,6 +372,7 @@ class DocumentService {
               publicId: participant.id_card_public_id,
               mimeType: participant.id_card_mime_type,
               resourceType: participant.id_card_resource_type,
+              viewUrl: cloudinaryService.getViewableUrl(participant.id_card_url),
             }
           : null,
         profilePhoto: participant.profile_photo_url
@@ -345,9 +381,104 @@ class DocumentService {
               publicId: participant.profile_photo_public_id,
               mimeType: participant.profile_photo_mime_type,
               resourceType: participant.profile_photo_resource_type,
+              viewUrl: cloudinaryService.getViewableUrl(participant.profile_photo_url),
             }
           : null,
       },
+    };
+  }
+
+  /**
+   * Authoritatively validates that all required documents exist for a registration's participants.
+   *
+   * @param {string} registrationId - Registration UUID
+   * @param {Object} event - Event record or configuration
+   * @param {Array<Object>} [cachedParticipants] - Optional pre-loaded participants
+   * @returns {Promise<{ isValid: boolean, message?: string, missingDocs?: Array }>}
+   */
+  async validateRegistrationDocuments(registrationId, event, cachedParticipants = null) {
+    let participants = cachedParticipants;
+    if (!Array.isArray(participants) || participants.length === 0) {
+      participants = await RegistrationParticipantModel.getParticipantsByRegistrationId(registrationId);
+    }
+
+    if (!participants || participants.length === 0) {
+      return {
+        isValid: false,
+        message: 'No participant records found for registration.',
+        missingDocs: [],
+      };
+    }
+
+    const eventSlug = event?.slug || event?.id || '';
+    const rules = getEventDocumentRules(eventSlug);
+
+    const missingDocs = [];
+
+    // Sort participants by participant_order
+    const sorted = [...participants].sort((a, b) => (a.participant_order || 0) - (b.participant_order || 0));
+
+    for (const p of sorted) {
+      const order = p.participant_order || 1;
+      const isLeader = order === 1;
+      const participantName = (p.full_name || (isLeader ? 'Team Leader' : `Participant ${order}`)).trim();
+
+      // Check ID Card requirement
+      if (rules.requiresIdCard) {
+        let isIdRequiredForThisParticipant = true;
+
+        // In Battleground Blitz, P5 is an optional substitute.
+        // If P5 has no name or fields, ID is not strictly required unless registered as active.
+        if (eventSlug === 'loot-goblins' || eventSlug === 'battleground-blitz') {
+          if (order === 5 && (!p.full_name || p.full_name.trim().length === 0)) {
+            isIdRequiredForThisParticipant = false;
+          }
+        }
+
+        if (isIdRequiredForThisParticipant) {
+          const hasValidId = Boolean(p.id_card_url && p.id_card_public_id);
+          if (!hasValidId) {
+            missingDocs.push({
+              participantId: p.id,
+              participantOrder: order,
+              participantRole: p.participant_role || (isLeader ? 'LEADER' : 'MEMBER'),
+              name: participantName,
+              docType: 'id_card',
+              docLabel: 'College ID card',
+            });
+          }
+        }
+      }
+
+      // Check Profile Photo requirement
+      if (rules.requiresProfilePhoto) {
+        const hasValidPhoto = Boolean(p.profile_photo_url && p.profile_photo_public_id);
+        if (!hasValidPhoto) {
+          missingDocs.push({
+            participantId: p.id,
+            participantOrder: order,
+            participantRole: p.participant_role || (isLeader ? 'LEADER' : 'MEMBER'),
+            name: participantName,
+            docType: 'profile_photo',
+            docLabel: 'Profile Photo',
+          });
+        }
+      }
+    }
+
+    if (missingDocs.length > 0) {
+      const first = missingDocs[0];
+      const message = `Mandatory document missing: Participant ${first.participantOrder} (${first.name}) is missing a required ${first.docLabel}.`;
+      return {
+        isValid: false,
+        message,
+        missingDocs,
+      };
+    }
+
+    return {
+      isValid: true,
+      missingDocs: [],
     };
   }
 }

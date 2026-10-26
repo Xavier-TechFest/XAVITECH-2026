@@ -78,6 +78,10 @@ export const RegistrationModel = {
       throw error;
     }
 
+    if (data && Array.isArray(data.participants)) {
+      data.participants.sort((a, b) => (a.participant_order || 0) - (b.participant_order || 0));
+    }
+
     return data;
   },
 
@@ -108,6 +112,10 @@ export const RegistrationModel = {
 
     if (error) {
       throw error;
+    }
+
+    if (data && Array.isArray(data.participants)) {
+      data.participants.sort((a, b) => (a.participant_order || 0) - (b.participant_order || 0));
     }
 
     return data;

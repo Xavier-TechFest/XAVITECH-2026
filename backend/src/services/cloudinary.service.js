@@ -71,6 +71,9 @@ class CloudinaryService {
             logger.error('Cloudinary upload stream failed:', error);
             return reject(error);
           }
+          if (!result || !result.secure_url || !result.public_id) {
+            return reject(new Error('Cloudinary response missing secure_url or public_id'));
+          }
           resolve(result);
         }
       );
@@ -136,6 +139,22 @@ class CloudinaryService {
     } catch (rollbackError) {
       logger.error(`Rollback failed for asset ${publicId}:`, rollbackError);
     }
+  }
+
+  /**
+   * Generates a browser-viewable document URL.
+   * If an asset URL points to a Cloudinary PDF (which triggers 401 on restricted accounts),
+   * provides a transformed .jpg rendition that browsers can render inline directly (HTTP 200).
+   *
+   * @param {string} url
+   * @returns {string|null} Viewable URL
+   */
+  getViewableUrl(url) {
+    if (!url || typeof url !== 'string') return null;
+    if (url.toLowerCase().endsWith('.pdf')) {
+      return url.replace(/\.pdf$/i, '.jpg');
+    }
+    return url;
   }
 }
 
