@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Countdown from "./Countdown";
 import Horizon from "@/components/effects/Horizon";
+import PostponementDog from "@/components/home/PostponementDog";
 
 const SPARK_COLORS = [
   "227, 148, 51", // marigold
@@ -10,7 +11,7 @@ const SPARK_COLORS = [
   "220, 230, 255", // starlight
 ];
 
-export default function Hero() {
+export default function Hero({ postponed = false }: { postponed?: boolean }) {
   const heroRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scanXRef = useRef<HTMLDivElement>(null);
@@ -397,7 +398,7 @@ export default function Hero() {
     <section
       ref={heroRef}
       id="top"
-      className="min-h-hero relative flex items-center overflow-hidden pb-16 pt-24 sm:pb-12 sm:pt-20"
+      className={`${postponed ? "min-h-[calc(100svh-4rem)]" : "min-h-hero"} relative flex items-center overflow-hidden pb-16 pt-24 sm:pb-12 sm:pt-20`}
     >
       {/* night sky base (translucent: the fixed 3D starfield shows through) */}
       <div
@@ -486,8 +487,7 @@ export default function Hero() {
 
           <div className="relative flex w-fit max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-3xl border border-cyan-300/20 bg-black/25 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-sm sm:rounded-full sm:px-4 sm:text-xs sm:tracking-[0.18em]">
             <span className="h-1.5 w-1.5 rounded-full bg-circuit shadow-[0_0_10px_rgba(53,224,201,0.9)]" />
-            Explore <span className="text-marigold">×</span> Create{" "}
-            <span className="text-marigold">×</span> Transcend
+            {postponed ? "Official update" : <>Explore <span className="text-marigold">×</span> Create{" "}<span className="text-marigold">×</span> Transcend</>}
           </div>
         </div>
 
@@ -508,38 +508,71 @@ export default function Hero() {
           />
         </h1>
         
-        <div className="flex flex-col items-center text-center">
-        {/* the hero's three-line structure: name+year / tagline (pill above) / host */}
-        <p className="mt-4 font-accent text-xs font-bold uppercase tracking-[0.32em] text-ink/90 sm:mt-5 sm:text-sm">
-          2026 <span className="mx-2 text-marigold">•</span> A Xavier Tech Fest
-        </p>
-
-        <p className="mt-5 max-w-prose text-base text-muted sm:mt-6 sm:text-xl">
-          A day-long technology festival on the campus of Xavier University —
-          infusing innovation and technology into the air.
-        </p>
-        </div>
+        {postponed ? (
+          <div className="mx-auto mt-3 w-full max-w-4xl text-center sm:mt-4">
+            <p className="font-accent text-[9px] font-semibold uppercase tracking-[0.3em] text-ink/80 sm:text-[11px]">
+              A Xavier Tech Fest <span className="mx-1.5 text-marigold">·</span> Official notice
+            </p>
+            <div className="postponement-frame relative mt-3 overflow-hidden border border-white/10 bg-[#05060a]/65 px-3 py-3.5 shadow-[0_0_36px_rgba(53,224,201,0.08)] backdrop-blur-md sm:mt-4 sm:px-8 sm:py-5">
+              <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-5 w-8 border-l-2 border-t-2 border-circuit sm:h-7 sm:w-12" />
+              <span aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-5 w-8 border-r-2 border-t-2 border-signal sm:h-7 sm:w-12" />
+              <span aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 h-5 w-8 border-b-2 border-l-2 border-circuit sm:h-7 sm:w-12" />
+              <span aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-5 w-8 border-b-2 border-r-2 border-signal sm:h-7 sm:w-12" />
+              <h2 className="bg-gradient-to-r from-circuit via-[#fff2dd] to-signal bg-clip-text font-space text-[clamp(2.35rem,9vw,5.6rem)] font-black uppercase leading-none tracking-[0.04em] text-transparent drop-shadow-[0_0_22px_rgba(53,224,201,0.16)]">
+                Postponed
+              </h2>
+              <div className="mt-2 flex items-center justify-center gap-2 sm:mt-3 sm:gap-4">
+                <span aria-hidden="true" className="h-px w-7 bg-gradient-to-r from-transparent to-circuit sm:w-14" />
+                <p className="font-oxanium text-[10px] font-semibold uppercase tracking-[0.2em] text-white/90 sm:text-sm sm:tracking-[0.32em]">
+                  Until further notice
+                </p>
+                <span aria-hidden="true" className="h-px w-7 bg-gradient-to-l from-transparent to-signal sm:w-14" />
+              </div>
+            </div>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-200 sm:mt-4 sm:text-base">
+              Don’t worry — all existing registrations will remain valid for the rescheduled event. We’ll share the new dates as soon as they’re finalised.
+            </p>
+            <p className="mt-2 font-oxanium text-[10px] font-medium uppercase tracking-[0.15em] text-circuit sm:text-xs sm:tracking-[0.22em]">
+              Thank you for standing with us. We’ll come back stronger.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center text-center">
+            <p className="mt-4 font-accent text-xs font-bold uppercase tracking-[0.32em] text-ink/90 sm:mt-5 sm:text-sm">
+              2026 <span className="mx-2 text-marigold">•</span> A Xavier Tech Fest
+            </p>
+            <p className="mt-5 max-w-prose text-base text-muted sm:mt-6 sm:text-xl">
+              A day-long technology festival on the campus of Xavier University —
+              infusing innovation and technology into the air.
+            </p>
+          </div>
+        )}
         
-        <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-x-10 gap-y-7 sm:mt-10 sm:gap-y-8">
-          <a
-            href="#events"
-            className="group relative w-full overflow-hidden rounded-full bg-marigold px-7 py-3.5 text-center text-sm font-semibold text-bg transition-transform duration-300 hover:-translate-y-0.5 sm:w-auto sm:py-3"
-          >
-            <span className="relative z-10">EXPLORE EVENTS</span>
-            <span className="absolute inset-0 -z-0 translate-x-[-105%] bg-gradient-to-r from-signal to-marigold transition-transform duration-500 group-hover:translate-x-0" />
-          </a>
+        {!postponed && (
+          <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-x-10 gap-y-7 sm:mt-10 sm:gap-y-8">
+            <a
+              href="#events"
+              className="group relative w-full overflow-hidden rounded-full bg-marigold px-7 py-3.5 text-center text-sm font-semibold text-bg transition-transform duration-300 hover:-translate-y-0.5 sm:w-auto sm:py-3"
+            >
+              <span className="relative z-10">EXPLORE EVENTS</span>
+              <span className="absolute inset-0 -z-0 translate-x-[-105%] bg-gradient-to-r from-signal to-marigold transition-transform duration-500 group-hover:translate-x-0" />
+            </a>
 
-          <Countdown />
-        </div>
+            <Countdown />
+          </div>
+        )}
       </div>
 
-      <p
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-16 z-10 text-center font-mono text-[10px] uppercase tracking-[0.3em] text-circuit/50 sm:bottom-6"
-      >
-        <span className="[@media(hover:none)]:hidden">Click</span>
-        <span className="hidden [@media(hover:none)]:inline">Tap</span> the sky to fire
-      </p>
+      {!postponed && (
+        <p
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-16 z-10 text-center font-mono text-[10px] uppercase tracking-[0.3em] text-circuit/50 sm:bottom-6"
+        >
+          <span className="[@media(hover:none)]:hidden">Click</span>
+          <span className="hidden [@media(hover:none)]:inline">Tap</span> the sky to fire
+        </p>
+      )}
+      {postponed && <PostponementDog />}
     </section>
   );
 }
