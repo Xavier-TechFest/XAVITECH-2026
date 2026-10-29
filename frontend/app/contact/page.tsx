@@ -5,6 +5,8 @@ import StaticSky from "@/components/effects/StaticSky";
 import Eyebrow from "@/components/ui/Eyebrow";
 import PersonCard from "@/components/sections/contact/PersonCard";
 import { patron, coPatron, convenor, overallCoordinators, tracks, webTeam } from "@/components/sections/contact/data";
+import { POSTPONEMENT_MODE } from "@/lib/siteMode";
+import PostponementLandingPage from "@/components/home/PostponementLandingPage";
 
 const eventCount = tracks.reduce((n, t) => n + t.events.length + (t.eventName ? 1 : 0), 0);
 const peopleCount =
@@ -15,12 +17,15 @@ const STATS: [string, string][] = [
   [String(eventCount), "Events"],
 ];
 
-export const metadata: Metadata = {
-  title: "Committee & Contact",
-  description: "The people organising XAVITECH 2026 — leadership, coordinators, track and event leads, and the web team.",
-};
+export const metadata: Metadata = POSTPONEMENT_MODE
+  ? { title: "XAVITECH 2026 — Postponement Update", description: "XAVITECH 2026 has been postponed until further notice." }
+  : {
+      title: "Committee & Contact",
+      description: "The people organising XAVITECH 2026 — leadership, coordinators, track and event leads, and the web team.",
+    };
 
 export default function ContactPage() {
+  if (POSTPONEMENT_MODE) return <PostponementLandingPage />;
   return (
     <>
       <StaticSky />

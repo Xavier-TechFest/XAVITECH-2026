@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import BrochureAnnouncement from "@/components/sections/BrochureAnnouncement";
+import { POSTPONEMENT_MODE } from "@/lib/siteMode";
 
 const links = [
   { label: "HOME", href: "/" },
@@ -15,10 +16,11 @@ const links = [
   { label: "COMMITTEE", href: "/contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ postponed = false }: { postponed?: boolean }) {
   const [open, setOpen] = useState(false);
   const { user, isAuthenticated, loading } = useAuth();
   const pathname = usePathname();
+  const postponementActive = postponed || POSTPONEMENT_MODE;
 
   // Logo / university name -> homepage. Already on the homepage? Just scroll to the top.
   const goHome = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -51,7 +53,7 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-line/60 bg-bg/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
-      {pathname === "/" && <BrochureAnnouncement />}
+      {pathname === "/" && !postponementActive && <BrochureAnnouncement />}
       <nav className="mx-auto flex max-w-6xl items-center justify-between pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] py-2 sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] md:py-4">
         <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
           <a href="https://xup.ac.in/" target="_blank" rel="noopener noreferrer" aria-label="Xavier University, Patna — visit website" title="Xavier University, Patna" className="flex h-8 w-8 shrink-0 items-center justify-center sm:h-10 sm:w-10">
@@ -62,7 +64,7 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <ul className="hidden items-center gap-8 md:flex">
+        <ul className={`${postponementActive ? "hidden" : "hidden md:flex"} items-center gap-8`}>
           {links.map((link) => {
             const route = link.href.split("#")[0];
             const isActive = !link.href.includes("#") &&
@@ -82,45 +84,51 @@ export default function Navbar() {
           })}
         </ul>
 
-        <div className="hidden items-center gap-3 md:flex">
-          <Link
-            href="/registration"
-            className="rounded-full bg-marigold px-5 py-2 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
-          >
-            Registration
-          </Link>
+        {postponementActive ? (
+          <a href="#contact" className="rounded-full border border-line px-4 py-2 text-xs font-medium text-ink transition-colors hover:border-marigold hover:text-marigold">
+            Contact
+          </a>
+        ) : (
+          <div className="hidden items-center gap-3 md:flex">
+            <Link
+              href="/registration"
+              className="rounded-full bg-marigold px-5 py-2 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
+            >
+              Registration
+            </Link>
 
-          {loading ? (
-            <div className="h-8 w-20 rounded-full bg-surface border border-line/50 animate-pulse" />
-          ) : isAuthenticated && user ? (
-            <Link
-              href="/profile"
-              className="flex items-center gap-2 pl-3 py-1.5 pr-1.5 rounded-full bg-surface border border-line text-xs font-mono text-ink hover:border-circuit transition-colors group"
-            >
-              <span className="max-w-[100px] truncate text-muted group-hover:text-ink">
-                {user.name?.split(" ")[0] || "Profile"}
-              </span>
-              <div className="w-6 h-6 rounded-full bg-surface-raised border border-line flex items-center justify-center text-[10px] font-bold text-circuit overflow-hidden">
-                {user.profileImage ? (
-                  <img
-                    src={user.profileImage}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  (user.name || user.email || "U").charAt(0).toUpperCase()
-                )}
-              </div>
-            </Link>
-          ) : (
-            <Link
-              href="/login"
-              className="text-xs font-mono font-medium px-4 py-2 rounded-full border border-line bg-surface text-ink hover:border-circuit hover:text-circuit transition-colors"
-            >
-              Sign In
-            </Link>
-          )}
-        </div>
+            {loading ? (
+              <div className="h-8 w-20 rounded-full bg-surface border border-line/50 animate-pulse" />
+            ) : isAuthenticated && user ? (
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 pl-3 py-1.5 pr-1.5 rounded-full bg-surface border border-line text-xs font-mono text-ink hover:border-circuit transition-colors group"
+              >
+                <span className="max-w-[100px] truncate text-muted group-hover:text-ink">
+                  {user.name?.split(" ")[0] || "Profile"}
+                </span>
+                <div className="w-6 h-6 rounded-full bg-surface-raised border border-line flex items-center justify-center text-[10px] font-bold text-circuit overflow-hidden">
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    (user.name || user.email || "U").charAt(0).toUpperCase()
+                  )}
+                </div>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="text-xs font-mono font-medium px-4 py-2 rounded-full border border-line bg-surface text-ink hover:border-circuit hover:text-circuit transition-colors"
+              >
+                Sign In
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* 44x44px touch target */}
         <button
@@ -129,7 +137,7 @@ export default function Navbar() {
           aria-expanded={open}
           aria-controls="mobile-menu"
           onClick={() => setOpen((v) => !v)}
-          className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 md:hidden"
+          className={`${postponementActive ? "hidden" : "flex md:hidden"} h-11 w-11 flex-col items-center justify-center gap-1.5`}
         >
           <span
             className={`h-[1.5px] w-5 bg-ink transition-transform ${
@@ -144,7 +152,7 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {open && (
+      {open && !postponementActive && (
         <div
           id="mobile-menu"
           className="max-h-[calc(100svh-4rem)] overflow-y-auto overscroll-contain border-t border-line/60 bg-bg pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pt-2 md:hidden"

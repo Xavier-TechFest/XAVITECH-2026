@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import EventDetailView from "@/components/sections/EventDetailView";
 import CosmosBackdrop from "@/components/experience/CosmosBackdrop";
 import DataStreams from "@/components/effects/DataStreams";
+import { POSTPONEMENT_MODE } from "@/lib/siteMode";
+import PostponementLandingPage from "@/components/home/PostponementLandingPage";
 
 interface EventDetailPageProps {
   params: {
@@ -24,6 +26,7 @@ export function generateStaticParams() {
 }
 
 export function generateMetadata({ params }: EventDetailPageProps) {
+  if (POSTPONEMENT_MODE) return { title: "XAVITECH 2026 — Postponement Update" };
   const event = getEventByIdOrSlug(params.id);
   if (!event) return { title: "Event Details — XAVITECH '26" };
 
@@ -34,6 +37,7 @@ export function generateMetadata({ params }: EventDetailPageProps) {
 }
 
 export default function EventDetailPage({ params }: EventDetailPageProps) {
+  if (POSTPONEMENT_MODE) return <PostponementLandingPage />;
   const event = getEventByIdOrSlug(params.id);
 
   if (!event) {

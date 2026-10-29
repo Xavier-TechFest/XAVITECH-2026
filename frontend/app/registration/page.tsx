@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EVENTS } from "@/lib/eventsData";
 import StubPage from "@/components/ui/StubPage";
+import { POSTPONEMENT_MODE } from "@/lib/siteMode";
+import PostponementLandingPage from "@/components/home/PostponementLandingPage";
 
-export const metadata: Metadata = { title: "Event Registration — XAVITECH 2026" };
+export const metadata: Metadata = { title: POSTPONEMENT_MODE ? "XAVITECH 2026 — Postponement Update" : "Event Registration — XAVITECH 2026" };
 
 const TRACK_ORDER: Record<string, number> = {
   "track-a": 0,
@@ -14,6 +16,7 @@ const TRACK_ORDER: Record<string, number> = {
 };
 
 export default function RegistrationPage() {
+  if (POSTPONEMENT_MODE) return <PostponementLandingPage />;
   const orderedEvents = EVENTS
     .map((event, index) => ({ event, index }))
     .sort((a, b) => (TRACK_ORDER[a.event.trackId] ?? Number.MAX_SAFE_INTEGER)

@@ -5,6 +5,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import RegistrationForm, { RegistrationLoadingSkeleton } from "@/components/sections/RegistrationForm";
 import ShardsBackdrop from "@/components/experience/ShardsBackdrop";
+import { POSTPONEMENT_MODE } from "@/lib/siteMode";
+import PostponementLandingPage from "@/components/home/PostponementLandingPage";
 
 interface RegisterPageProps {
   params: {
@@ -24,6 +26,7 @@ export function generateStaticParams() {
 }
 
 export function generateMetadata({ params }: RegisterPageProps) {
+  if (POSTPONEMENT_MODE) return { title: "XAVITECH 2026 — Postponement Update" };
   const event = getEventByIdOrSlug(params.id);
   if (!event) return { title: "Event Registration — XAVITECH '26" };
 
@@ -34,6 +37,7 @@ export function generateMetadata({ params }: RegisterPageProps) {
 }
 
 export default function RegisterPage({ params }: RegisterPageProps) {
+  if (POSTPONEMENT_MODE) return <PostponementLandingPage />;
   const event = getEventByIdOrSlug(params.id) || EVENTS[0];
 
   if (!event) {
