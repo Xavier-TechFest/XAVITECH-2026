@@ -398,7 +398,7 @@ export default function Hero({ postponed = false }: { postponed?: boolean }) {
     <section
       ref={heroRef}
       id="top"
-      className={`${postponed ? "min-h-[calc(100svh-4rem)]" : "min-h-hero"} relative flex items-center overflow-hidden pb-16 pt-24 sm:pb-12 sm:pt-20`}
+      className={`${postponed ? "min-h-[calc(100svh-5.5rem)] pb-8 pt-16 sm:pb-6 sm:pt-20" : "min-h-hero pb-16 pt-24 sm:pb-12 sm:pt-20"} relative flex items-center overflow-hidden`}
     >
       {/* night sky base (translucent: the fixed 3D starfield shows through) */}
       <div
@@ -493,7 +493,7 @@ export default function Hero({ postponed = false }: { postponed?: boolean }) {
 
         <h1
           ref={wordmarkRef}
-          className="mt-6 max-w-full will-change-transform"
+          className={`${postponed ? "mt-3 sm:mt-4" : "mt-6"} max-w-full will-change-transform`}
           style={{ transformStyle: "preserve-3d" }}
         >
           {/* Official logo. Intrinsic 2146x733 (≈2.93:1) — width/height set so
@@ -504,35 +504,36 @@ export default function Hero({ postponed = false }: { postponed?: boolean }) {
             width={2146}
             height={733}
             fetchPriority="high"
-            className="h-auto w-[min(92vw,760px)] drop-shadow-[0_0_44px_rgba(53,224,201,0.22)] sm:w-[min(70vw,900px)]"
+            className={`${postponed ? "w-[min(74vw,560px)] sm:w-[min(46vw,640px)]" : "w-[min(92vw,760px)] sm:w-[min(70vw,900px)]"} h-auto drop-shadow-[0_0_44px_rgba(53,224,201,0.22)]`}
           />
         </h1>
         
         {postponed ? (
-          <div className="mx-auto mt-3 w-full max-w-4xl text-center sm:mt-4">
+          <div className="mx-auto mt-2 w-full max-w-4xl text-center sm:mt-3">
             <p className="font-accent text-[9px] font-semibold uppercase tracking-[0.3em] text-ink/80 sm:text-[11px]">
               A Xavier Tech Fest <span className="mx-1.5 text-marigold">·</span> Official notice
             </p>
-            <div className="postponement-frame relative mt-3 overflow-hidden border border-white/10 bg-[#05060a]/65 px-3 py-3.5 shadow-[0_0_36px_rgba(53,224,201,0.08)] backdrop-blur-md sm:mt-4 sm:px-8 sm:py-5">
-              <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-5 w-8 border-l-2 border-t-2 border-circuit sm:h-7 sm:w-12" />
-              <span aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-5 w-8 border-r-2 border-t-2 border-signal sm:h-7 sm:w-12" />
-              <span aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 h-5 w-8 border-b-2 border-l-2 border-circuit sm:h-7 sm:w-12" />
-              <span aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-5 w-8 border-b-2 border-r-2 border-signal sm:h-7 sm:w-12" />
-              <h2 className="bg-gradient-to-r from-circuit via-[#fff2dd] to-signal bg-clip-text font-space text-[clamp(2.35rem,9vw,5.6rem)] font-black uppercase leading-none tracking-[0.04em] text-transparent drop-shadow-[0_0_22px_rgba(53,224,201,0.16)]">
-                Postponed
+            <div className="postponement-frame relative mt-2 overflow-hidden border border-white/10 bg-[#05060a]/65 px-3 py-2.5 shadow-[0_0_36px_rgba(53,224,201,0.08)] backdrop-blur-md sm:mt-3 sm:px-8 sm:py-3.5">
+              <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-4 w-7 border-l-2 border-t-2 border-circuit sm:h-6 sm:w-10" />
+              <span aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-4 w-7 border-r-2 border-t-2 border-signal sm:h-6 sm:w-10" />
+              <span aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 h-4 w-7 border-b-2 border-l-2 border-circuit sm:h-6 sm:w-10" />
+              <span aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-4 w-7 border-b-2 border-r-2 border-signal sm:h-6 sm:w-10" />
+              <h2 className="bg-gradient-to-r from-circuit via-[#fff2dd] to-signal bg-clip-text font-space text-[clamp(2rem,4.2vw,4rem)] font-black uppercase leading-none tracking-[0.035em] text-transparent drop-shadow-[0_0_22px_rgba(53,224,201,0.16)] sm:whitespace-nowrap">
+                <span className="block sm:inline">New Dates</span>
+                <span className="block sm:ml-3 sm:inline">Coming Soon</span>
               </h2>
-              <div className="mt-2 flex items-center justify-center gap-2 sm:mt-3 sm:gap-4">
+              <div className="mt-1.5 flex items-center justify-center gap-2 sm:mt-2 sm:gap-4">
                 <span aria-hidden="true" className="h-px w-7 bg-gradient-to-r from-transparent to-circuit sm:w-14" />
                 <p className="font-oxanium text-[10px] font-semibold uppercase tracking-[0.2em] text-white/90 sm:text-sm sm:tracking-[0.32em]">
-                  Until further notice
+                  Stay tuned
                 </p>
                 <span aria-hidden="true" className="h-px w-7 bg-gradient-to-l from-transparent to-signal sm:w-14" />
               </div>
             </div>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-200 sm:mt-4 sm:text-base">
+            <p className="mx-auto mt-2.5 max-w-2xl text-xs leading-snug text-slate-200 sm:mt-3 sm:text-sm sm:leading-relaxed">
               Don’t worry — all existing registrations will remain valid for the rescheduled event. We’ll share the new dates as soon as they’re finalised.
             </p>
-            <p className="mt-2 font-oxanium text-[10px] font-medium uppercase tracking-[0.15em] text-circuit sm:text-xs sm:tracking-[0.22em]">
+            <p className="mt-1.5 font-oxanium text-[9px] font-medium uppercase tracking-[0.12em] text-circuit sm:mt-2 sm:text-[10px] sm:tracking-[0.18em]">
               Thank you for standing with us. We’ll come back stronger.
             </p>
           </div>
